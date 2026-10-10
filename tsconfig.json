@@ -1,16 +1,18 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
+  // https://nuxt.com/docs/guide/concepts/typescript
   "files": [],
   "references": [
     {
-      "path": "./apps/meal-app-client"
+      "path": "./.nuxt/tsconfig.app.json"
     },
     {
-      "path": "./apps/meal-app-service-e2e"
+      "path": "./.nuxt/tsconfig.server.json"
     },
     {
-      "path": "./apps/meal-app-service"
+      "path": "./.nuxt/tsconfig.shared.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.node.json"
     }
   ]
 }

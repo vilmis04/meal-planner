@@ -1,0 +1,38 @@
+/*
+ * Color values here must stay in sync with the `vuetify.vuetifyOptions.theme`
+ * block in nuxt.config.ts, so Vuetify components and CSS-modules layout code
+ * (which reads these custom properties) always agree visually.
+ */
+:root,
+:root[data-theme="light"] {
+  --color-primary: #16a34a;
+  --color-secondary: #f59e0b;
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+  --color-success: #16a34a;
+  --color-on-background: #0f172a;
+  --color-on-surface: #0f172a;
+  --color-border: #e2e8f0;
+}
+
+:root[data-theme="dark"] {
+  --color-primary: #4ade80;
+  --color-secondary: #fbbf24;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
+  --color-info: #60a5fa;
+  --color-success: #4ade80;
+  --color-on-background: #e2e8f0;
+  --color-on-surface: #e2e8f0;
+  --color-border: #334155;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
