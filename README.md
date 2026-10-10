@@ -1,101 +1,58 @@
-# MealAppMonorepo
+# Meal Planner
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Nuxt 4 app deployed to a self-hosted Coolify instance, using Supabase for the database and auth, Vuetify as the component library, and CSS Modules for page/layout structure.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Setup
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-
-## Run tasks
-
-To run the dev server for your app, use:
-
-```sh
-npx nx dev meal-app-client
+```bash
+npm install
+cp .env.example .env
 ```
 
-To create a production bundle:
+Fill in `.env` with your Supabase project's URL, anon key, and service role key from the Supabase dashboard (Project Settings → API).
 
-```sh
-npx nx build meal-app-client
+## Development Server
+
+```bash
+npm run dev
 ```
 
-To see all available targets to run for a project, run:
+Runs on `http://localhost:3000`.
 
-```sh
-npx nx show project meal-app-client
+## Production
+
+```bash
+npm run build      # Nitro build for the node-server preset
+npm start          # serve .output/server/index.mjs on port 3000
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### Deploying on Coolify
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+1. Create a new application from this Git repository and choose the **Dockerfile** build pack.
+2. Set the exposed port to `3000` and attach your domain (Coolify provisions TLS).
+3. Add these environment variables as runtime variables:
+   - `NUXT_PUBLIC_SUPABASE_URL`
+   - `NUXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NUXT_SUPABASE_SERVICE_ROLE_KEY` (mark as secret, never expose to the client)
+4. Enable the Git webhook for automatic deploys.
 
-## Add new projects
+Place the Coolify server in the same region as the Supabase project to keep SSR auth/DB calls fast.
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+## Database migrations
 
-Use the plugin's generator to create new projects.
+Keep every schema change as SQL in `supabase/migrations/` so the database can be replayed on any Supabase instance (managed or self-hosted). Avoid dashboard-only changes.
 
-To generate a new application, use:
+## Styling conventions
 
-```sh
-npx nx g @nx/next:app demo
-```
+- **Vuetify** components (`v-btn`, `v-card`, form inputs, etc.) own look and feel.
+- **CSS Modules** (`<style module>` in SFCs, or `Component.module.css` files) own page/layout structure — grids, containers, spacing wrappers.
+- Shared design tokens live in `app/assets/css/tokens.css` (spacing, radii, breakpoints) and `app/assets/css/theme.css` (light/dark color custom properties). The color values there are kept in sync with the `vuetify.vuetifyOptions.theme` block in `nuxt.config.ts` so Vuetify and CSS-Modules layout code always agree.
+- Toggle the theme with `useAppTheme()` (`app/composables/useAppTheme.ts`); the choice persists in a `theme` cookie and is applied via an `data-theme` attribute on `<html>` set server-side, avoiding a flash of the wrong theme.
 
-To generate a new library, use:
+## Auth
 
-```sh
-npx nx g @nx/react:lib mylib
-```
+Auth uses Supabase's `@supabase/ssr` cookie-based session pattern:
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- `server/middleware/supabase.ts` creates a per-request Supabase server client, refreshes the session, and exposes it via `event.context.supabase` / `event.context.supabaseUser`.
+- `app/plugins/supabase.client.ts` creates the browser client and keeps `useSupabaseUser()` in sync via `onAuthStateChange`.
+- `app/middleware/auth.ts` is a named route middleware (see `app/pages/index.vue`) that redirects to `/login` when signed out.
