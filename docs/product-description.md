@@ -122,6 +122,8 @@ Why not make the whole plan AI-generated:
 
 **Translations:** locale files (LT, EN) hold UI keys. Recipe content gets translation tables keyed by locale, e.g. `recipe_translations` (recipe, locale, name, instructions), `recipe_ingredient_translations` (or names via `ingredient_translations` on the canonical table), `tip_translations`, and translated category names. The existing Lithuanian columns become the LT rows; EN rows are added by a reviewed (AI-assisted, one-off) translation migration. `profiles` gains `locale` and `theme`.
 
+See [architecture.md](architecture.md) for how the system is built and hosted (self-hosted Coolify, Nuxt, Supabase).
+
 ## 5. Open questions and assumptions
 
 - **Ingredient normalisation.** Names are free text in Lithuanian ("Fetos sūris", "Vyšniniai pomidorai"). Merging and categorising requires a canonical ingredient table. Assumed to be built with a one-off AI-assisted mapping, reviewed by hand.

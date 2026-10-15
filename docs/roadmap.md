@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases are ordered so each ends in something usable. Story IDs refer to [user-stories.md](user-stories.md); features are described in [product-description.md](product-description.md).
+Technical design, hosting on Coolify and the per-phase engineering work are in [architecture.md](architecture.md). Phases are ordered so each ends in something usable. Story IDs refer to [user-stories.md](user-stories.md); features are described in [product-description.md](product-description.md).
 
 ## Phase 1: Accounts and households
 Goal: people can sign up, form a household, and share a space.
