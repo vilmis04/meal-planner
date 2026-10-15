@@ -2,7 +2,7 @@
 
 Stories are grouped by epic and ordered roughly by implementation sequence. Each is sized to be one task (S = under 1 day, M = 1 to 3 days, L = 3 to 5 days). Phase refers to [roadmap.md](roadmap.md). Product context is in [product-description.md](product-description.md).
 
-Conventions: all user-visible text uses translation keys with LT and EN values (X1), and every screen must work in light and dark themes. "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
+Conventions: every screen is designed mobile-first, then enhanced for tablet and desktop to show more at once (see product description); all user-visible text uses translation keys with LT and EN values (X1), and every screen must work in light and dark themes. "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
 
 ---
 
@@ -100,6 +100,7 @@ As a user with a non-full diet I want to see the swapped recipe.
 As a user I want to create an empty plan for a date range.
 - Choose start date and length (1 to 14 days; default 7) and type: individual (me) or household.
 - Creates four slots per day (breakfast, lunch, dinner, snack).
+- Option "exclude snacks from the shopping list" (default off) and option to skip snack slots entirely; both can be changed later.
 - Household plans require membership; individual plans are visible to me only.
 
 ### E2. Choose participants (S, Phase 2)
@@ -119,6 +120,8 @@ As a user I want a plan filled automatically.
 - Generation fills all unlocked slots following the rules in the product description: diet compatibility, preferences of all participants, batching (2-day recipes fill two consecutive days), variety.
 - **Workday priority:** on Monday to Friday, lunch and dinner are filled with batch recipes first, so cooking falls on the preceding day or weekend and workdays need minimal prep. Which days are workdays is a setting (default Mon to Fri).
 - Deterministic given a seed; no recipe appears more often than N times per plan unless no alternatives exist.
+- **Cooldown:** a recipe planned in recent plans is excluded or down-weighted for a configurable number of days (default 14), including liked recipes, so favourites do not fill every week. Cooldown is read from plan history; if too few recipes remain, it relaxes gradually, starting with the least-recently used.
+- Liked recipes are weighted higher but are never guaranteed; the weighting is covered by unit tests with fixed seeds.
 - If constraints cannot be met, the plan is generated best-effort and shows why a slot is empty or compromised.
 - No external AI is called.
 
@@ -161,6 +164,7 @@ As the system I need canonical ingredient names and categories to merge and grou
 ### G2. Generate shopping list from plan (L, Phase 2)
 As a user I want a list created from my plan.
 - One list per plan; created with the plan and refreshed when slots or participants change.
+- If the plan excludes snacks from the list, snack ingredients are left out of the list and reappear if the option is switched off.
 - Amounts = per-person amount x participants, summed per canonical ingredient and unit; 2-day batch recipes are cooked once but scaled for both days.
 - "To taste" items appear in an "extras" group without amounts.
 - Manual edits (G4, G5) are preserved on refresh.
@@ -220,6 +224,16 @@ As a user I want to see where I buy things.
 - Items bought per shop over a selectable range, most common items per shop.
 - Only recorded purchases are included.
 
+### I1a. Store recommendations on the list (M, Phase 5)
+As a shopper I want hints on where I usually buy an item.
+- Items show "last bought at <shop>" or "usually bought at <shop>" when there is enough purchase history (e.g. at least 3 purchases).
+- The list can be grouped or filtered by recommended shop.
+- Hints can be hidden, and never block marking items bought.
+
+### I1b. Online shop integration research (S, Phase 5, spike)
+As the team we want to know if linking to online grocery platforms is feasible.
+- Output is a short note on available APIs/export options per target shop, effort, and constraints. No implementation.
+
 ### I2. Preference insights (S, Phase 5)
 As a user I want to see my most-liked and most-skipped meals.
 
@@ -263,6 +277,13 @@ As a user I want light/dark mode to be reliable.
 
 ### X2. Tests and CI (M, Phase 1)
 Unit tests for the generator, scaling and merging logic; CI runs lint, type check, and tests on pull requests.
+
+### X4. Mobile-first responsive layout (M, Phase 1)
+As a user I want the app to work well on my phone and use space well on larger screens.
+- Layout is designed for phone widths first (single column, touch targets of at least 44 px, bottom or thumb-reachable primary actions).
+- At tablet and desktop widths, screens use the space: e.g. plan and shopping list side by side, wider week grid, recipe detail beside the slot picker, inline details instead of dialogs.
+- Defined breakpoints and shared layout components are used by all pages; no horizontal scrolling at 320 px; both themes and both languages are checked at all breakpoints.
+- Each new screen story is accepted only if checked at phone and desktop widths.
 
 ### X3. Tips surfaced in context (S, Phase 3)
 Show relevant `tips` (matched by tag) on plan and recipe screens, e.g. storage tips on a shopping list item.

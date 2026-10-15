@@ -10,6 +10,7 @@ Design principles:
 - **Everyone is considered.** Dietary preferences and likes/dislikes of every participant shape the plan.
 - **Nothing is wasted.** Quantities follow headcount and the list reflects what is already at home.
 - **Details on request.** Calories and macros are available but hidden from the main flow.
+- **Mobile-first, desktop-aware.** The app is mostly used on a phone (planning on the couch, shopping in the store), so every screen is designed for a small touch screen first: one column, large tap targets, thumb-reachable actions, readable at a glance in a shop. Tablet and desktop are fully supported and use the extra space instead of just stretching the phone layout. With room available, screens show more at once: for example the week grid with all four meals per day, a plan beside its shopping list, recipe detail next to the slot picker, and nutrition or preference hints inline instead of behind a tap. Layouts are responsive (breakpoints, not separate apps), and nothing is available only on one device size.
 
 ## 2. What exists today
 
@@ -54,6 +55,7 @@ Everything below builds on these. The main data-model gaps are: ingredient categ
 
 ### 3.3 Meal plans
 - A plan covers a period (default 7 days, any start date, 1 to 14 days) with four slots per day: breakfast, lunch, dinner, snack.
+- **Snack options when creating a plan:** snacks stay in the plan, but the user can choose to **exclude snacks from the shopping list** (for example when snacks are bought ad hoc or already at home). The option can also be set to skip snack slots entirely. Changing it later updates the list.
 - Two kinds:
   - **Household plan:** created for the household. Each plan has a **participants** list, defaulting to all members, adjustable per plan (and per week).
   - **Individual plan:** belongs to one user. Used when a member is away, has a special diet, or opts out of the household plan.
@@ -66,9 +68,9 @@ Generation takes the period, participants, and constraints, and fills unlocked s
 
 Rules, in priority order:
 1. **Hard filters:** a recipe must be compatible with every participant's dietary preference, or have a protein swap that makes it so (3.7).
-2. **Preferences:** exclude "hate" meals for any participant; strongly prefer "like"; "dislike less" is a weak penalty. For a household, each participant's preference counts.
+2. **Preferences:** exclude "hate" meals for any participant; prefer "like"; "enjoy less" is a weak penalty. For a household, each participant's preference counts. Liking a meal raises its weight but never guarantees it: **liked meals have a cooldown** so they do not return every week and fill the plan with the same dishes. After a meal is planned it is ineligible (or heavily down-weighted) for a configurable number of days (default about 14, longer for non-liked meals), and the weight recovers gradually afterwards. Within a plan, the same recipe is capped per week. Cooldown is based on plan history, and a user can override it by choosing a meal manually.
 3. **Batch cooking:** recipes with `portion_days = 2` fill two consecutive days. **Workdays are prioritised:** cook on day N, eat on N and N+1, so workday cooking is minimal. Weekends carry the cooking load.
-4. **Variety:** avoid repeating a recipe, or the same main protein, too often in a plan, and avoid repeats from the previous plans.
+4. **Variety:** avoid repeating a recipe, or the same main protein, too often in a plan, and apply the cooldown above across previous plans, so even favourites rotate.
 5. **Meal timing:** the app's tips recommend 4 meals every 3 to 5 hours; slots follow that order.
 
 **AI or randomised?** Recommendation: a **deterministic, rule-based planner (constraint filter + weighted random choice)** for the plan itself, with **AI used where language understanding helps**:
@@ -88,6 +90,8 @@ Why not make the whole plan AI-generated:
 - **Categories:** items grouped (fruit and vegetables, meat and fish, dairy and eggs, grains and bread, pantry, frozen, other).
 - **Shared:** a household plan's list is visible and editable by all household members, with updates visible to the others.
 - **Store tracking (optional):** when an item is bought, the user may record the shop. Stored per purchase for later insights (3.10).
+- **Store recommendations (later):** from purchase history the list can hint where to buy: "last bought at Maxima", "usually bought at Lidl". Hints are shown per item or grouped by shop, so a shopper can split the list by store. Hints appear only when there is enough history and never block the flow.
+- **Online shopping integration (post-MVP):** a later iteration may connect to online grocery platforms to send the list to a cart or pull prices and availability. Not in scope for the MVP; shop and item data are kept in a form that makes this possible.
 
 ### 3.6 Preferences
 - On any meal, a user can mark: **enjoy**, **enjoy less**, **hate**. Unmarked is neutral.
@@ -110,7 +114,7 @@ Why not make the whole plan AI-generated:
 - On that day the app creates the plan for the next period and its shopping list, using the normal generator, and notifies members. Scheduled plans are drafts the household can adjust before the period begins.
 
 ### 3.10 Insights (later)
-- Spend and frequency by shop, items usually bought at each shop, most-liked meals, how often meals are swapped. Enabled by the optional shop field and preference data.
+- Spend and frequency by shop, items usually bought at each shop, store recommendations for future lists (3.5), most-liked meals, how often meals are swapped. Enabled by the optional shop field and preference data.
 
 ## 4. Data model additions (outline)
 
