@@ -25,7 +25,7 @@ How the Meal Planner is built and run. Product scope is in [product-description.
     |-- server middleware: Supabase session from cookies
     |            |                       \
     |            v                        v
-    |     Supabase (Postgres + Auth +     Anthropic API
+    |     Supabase (Postgres + Auth +     Gemini API
     |     Realtime, RLS, pg_cron)         (server-side only)
     v
  Browser <-- Supabase Realtime (shared shopping list)
@@ -41,13 +41,13 @@ Components:
 | Supabase Auth | Email/password login, sessions | Exists; server middleware reads the session via `@supabase/ssr`. |
 | Supabase Realtime | Live updates of shared shopping lists | New (G6). |
 | Coolify | Build, deploy, TLS, env vars, scheduled tasks, logs | Self-hosted. |
-| Anthropic API | Protein swaps, plan polish, one-off recipe translation | New, server-side only. |
+| Gemini API (Google) | Protein swaps, plan polish, one-off recipe translation | New, server-side only. |
 
 ## 3. Hosting on self-hosted Coolify
 
 - **Application:** one Coolify application from the Git repo, Dockerfile build pack, port 3000, domain with automatic TLS, Git webhook for deploy on push to `main`. This is the current setup.
 - **Environments:** a `production` and a `staging` application in Coolify, each with its own Supabase project (or database) and its own env vars. Pull requests can use Coolify preview deployments if Supabase credentials for a non-production project are supplied.
-- **Configuration:** runtime env vars only (never baked into the image): `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_ANON_KEY`, `NUXT_SUPABASE_SERVICE_ROLE_KEY` (secret), plus new `NUXT_ANTHROPIC_API_KEY` (secret) and `NUXT_CRON_SECRET` (secret, for scheduled endpoints). Mapped through `runtimeConfig`, public values only where the browser needs them.
+- **Configuration:** runtime env vars only (never baked into the image): `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_ANON_KEY`, `NUXT_SUPABASE_SERVICE_ROLE_KEY` (secret), plus new `NUXT_GEMINI_API_KEY` (secret) and `NUXT_CRON_SECRET` (secret, for scheduled endpoints). Mapped through `runtimeConfig`, public values only where the browser needs them.
 - **Health:** add `/api/health` (app up, DB reachable) and configure it as the Coolify health check so a bad deploy is not switched in.
 - **Scaling:** one container is enough for the expected load (households, not the public internet). The app is stateless (sessions in cookies, data in Supabase), so it can run multiple replicas later without changes.
 - **Logs and alerts:** container logs in Coolify; deploy and health-check failure notifications through Coolify's notification channels. Add structured server logs (JSON) in API routes and the scheduled job.
@@ -68,7 +68,7 @@ server/
   api/              thin HTTP handlers: validate input, call domain code, return JSON
   middleware/       Supabase session per request
   tasks/ or api/cron/  scheduled plan creation (H2)
-  utils/            Supabase and Anthropic clients
+  utils/            Supabase and AI (Gemini) clients
 shared/ (or domain/)
   planner/          plan generator (pure)
   shopping/         scaling, unit conversion, merging (pure)
@@ -106,7 +106,7 @@ Rules:
 
 **Scheduled plan creation (H2).** Coolify scheduled task (or Supabase `pg_cron` with `pg_net`) calls `POST /api/cron/create-plans` daily with `NUXT_CRON_SECRET`. The endpoint finds schedules due today in each user's/household's timezone, creates plans idempotently (unique key on schedule + period start), generates them, and writes a notification row. Chosen default: Coolify scheduled task, because it keeps all deployment config in one place.
 
-**AI protein swaps (D2).** An admin/batch script (run locally or as a one-off Coolify command) calls the Anthropic API per recipe and diet, validates the structured output (ingredient exists, replacement fits the diet), and stores it in `recipe_protein_swaps` per language. The UI only reads the table, so there is no AI call or cost at view time.
+**AI protein swaps (D2).** An admin/batch script (run locally or as a one-off Coolify command) calls the Gemini API per recipe and diet, validates the structured output (ingredient exists, replacement fits the diet), and stores it in `recipe_protein_swaps` per language. The UI only reads the table, so there is no AI call or cost at view time.
 
 **Translations (X1, X1b).** UI strings come from `locales/*.json` through the i18n module; recipe content is read from translation tables joined on the active locale with LT fallback.
 
@@ -118,7 +118,7 @@ Rules:
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.
 - **Accessibility:** Vuetify defaults, 44 px targets, contrast checked in both themes.
 - **Observability:** structured logs, health endpoint, error tracking (optional self-hosted tool such as GlitchTip or Sentry on Coolify).
-- **Privacy:** data is personal (diet, preferences). Minimise it, document what is stored, support account and household deletion (cascade), and send only recipe/diet text, never personal identifiers, to the AI provider.
+- **Privacy:** data is personal (diet, preferences). Minimise it, document what is stored, support account and household deletion (cascade), and send only recipe/diet text, never personal identifiers, to the AI provider (Gemini free-tier data may be used for product improvement, so this matters).
 
 ## 8. Testing and CI/CD
 
@@ -138,7 +138,7 @@ Rules:
 | 4 | i18n library | Nuxt i18n. |
 | 5 | Testing stack | Vitest, Playwright, SQL tests for RLS. |
 | 6 | Where does plan generation run? | Server API route using pure shared modules (also usable client-side for previews). |
-| 7 | AI provider and key handling | Anthropic API, key as Coolify secret, server-side only, outputs cached. |
+| 7 | AI provider and key handling | Google Gemini API (free tier suits the low, one-off volume; paid tier if limits bite). Wrapped behind a small `ai` module so the provider can be swapped. Key as Coolify secret, server-side only, outputs cached. Note: free-tier prompts may be used by Google to improve its products, so send only recipe text. |
 | 8 | Error tracking | Optional; self-hosted tool on Coolify when needed. |
 | 9 | Email (invites, password reset, notifications) | Supabase Auth mail for auth; configure SMTP for production. Other notifications are in-app for now. |
 
@@ -149,5 +149,5 @@ Rules:
 | 1 | CI, tests setup, i18n foundation, responsive shell, `/api/health`, staging environment in Coolify, profile/household tables and RLS helper functions. |
 | 2 | Plan, list and preference tables with RLS, `shopping` pure module, ingredient canonicalisation and translation tables. |
 | 3 | `planner` module and generate endpoint, Realtime for lists. |
-| 4 | Anthropic integration and swap batch script, scheduled job endpoint, notification table. |
+| 4 | Gemini integration and swap batch script, scheduled job endpoint, notification table. |
 | 5 | Insight queries/views, optional PWA install and offline list view. |
