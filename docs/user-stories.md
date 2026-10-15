@@ -2,7 +2,7 @@
 
 Stories are grouped by epic and ordered roughly by implementation sequence. Each is sized to be one task (S = under 1 day, M = 1 to 3 days, L = 3 to 5 days). Phase refers to [roadmap.md](roadmap.md). Product context is in [product-description.md](product-description.md).
 
-Conventions: "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
+Conventions: all user-visible text uses translation keys with LT and EN values (X1), and every screen must work in light and dark themes. "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
 
 ---
 
@@ -10,7 +10,7 @@ Conventions: "member" = signed-in user in a household; "participant" = a person 
 
 ### A1. Sign up and log in (M, Phase 1)
 As a visitor I want to create an account and log in so my data is saved.
-- Sign-up with email and password; login (already exists) shows errors for wrong credentials.
+- Sign-up with email and password; login (already exists) shows errors for wrong credentials. Messages are translated (X1).
 - Unauthenticated users are redirected to `/login` from every other page (middleware exists).
 - After login the user lands on the home page.
 
@@ -22,7 +22,7 @@ As a user I want to reset a forgotten password.
 ### A3. Profile (S, Phase 1)
 As a user I want a profile with a display name.
 - `profiles` row is created on sign-up (trigger), 1:1 with auth user.
-- I can edit display name; others in my household see it.
+- I can edit display name, language and theme; others in my household see my name.
 - Only I can update my profile; household members can read it.
 
 ---
@@ -232,8 +232,34 @@ As a user I want to adjust a plan by text ("no fish this week, quick dinners Mon
 
 ## Cross-cutting
 
-### X1. UI language (S, Phase 1)
-Decide and document UI language handling (content stays Lithuanian); extract strings to a single place so localisation is possible later.
+### X1. i18n foundation (M, Phase 1)
+As a developer I want all UI text behind translation keys so no string is hard-coded.
+- i18n module is set up with LT and EN locale files; default is browser language, fallback EN.
+- Existing pages (login, home, layout) are migrated to keys.
+- A lint rule or CI check flags missing keys between locales and literal text in templates.
+- Plurals, dates and numbers use locale formatting.
+
+### X1a. Language switcher (S, Phase 1)
+As a user I want to switch between LT and EN.
+- Switcher is visible on every page, including login; the change applies immediately without reload.
+- Choice persists (cookie; saved to profile once signed in, see A3) and is used on the next visit.
+
+### X1b. Translatable recipe content (L, Phase 2)
+As a user I want recipes and tips in my language.
+- Translation tables for recipes (name, instructions), ingredients and tips exist; current Lithuanian content is migrated to LT rows.
+- EN translations are added for all seeded recipes, ingredients and tips via a reviewed migration; a report lists missing translations.
+- Recipe list, detail, plans and shopping lists show the active language, falling back to LT if a translation is missing.
+- Shopping categories and canonical ingredient names (G1) are translated in both languages.
+
+### X1c. Translated AI swaps (S, Phase 4)
+As a user I want protein swaps in my language.
+- Swaps (D2) are stored for both languages (generated once, translated, cached); no AI call at view time.
+
+### X1d. Theme polish (S, Phase 1)
+As a user I want light/dark mode to be reliable.
+- The existing toggle works on every page, including login, and persists across reloads without a flash of the wrong theme.
+- Default follows the OS preference until the user chooses; the choice is saved to the profile when signed in.
+- All new components use theme tokens; acceptance checked in both themes for each new screen (add to the definition of done).
 
 ### X2. Tests and CI (M, Phase 1)
 Unit tests for the generator, scaling and merging logic; CI runs lint, type check, and tests on pull requests.

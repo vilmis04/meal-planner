@@ -6,7 +6,8 @@ Phases are ordered so each ends in something usable. Story IDs refer to [user-st
 Goal: people can sign up, form a household, and share a space.
 - A1 sign-up and login, A2 password reset, A3 profile
 - B1 create household, B2 invite, B3 manage members
-- X1 language approach, X2 tests and CI
+- X1 i18n foundation (LT/EN), X1a language switcher, X1d theme polish (toggle already exists)
+- X2 tests and CI
 
 Done when: two people can sign up and see each other in one household.
 
@@ -15,6 +16,7 @@ Goal: a household can build a week by hand and shop from a shared list. Useful o
 - C1 dietary preference, C2 recipe browse, C3 and C4 meal preferences
 - D1 recipe protein metadata
 - E1 to E3 plan shell, participants, manual slots; E6 overview
+- X1b translatable recipe content (LT/EN), done together with G1 so canonical ingredients are bilingual
 - G1 ingredient canonicalisation, G2 list generation, G3 to G5 categories, edits, crossing out
 
 Done when: a household can fill a week, get a merged, categorised list scaled to participants, and cross items off.
@@ -31,7 +33,7 @@ Done when: pressing "generate" gives a valid week respecting diets, preferences,
 
 ## Phase 4: AI swaps and scheduling
 Goal: mixed diets work well and planning happens automatically.
-- D2 AI protein swaps (batch-generated and cached), D3 show swaps
+- D2 AI protein swaps (batch-generated and cached), D3 show swaps, X1c translated swaps
 - H1 to H3 scheduled creation and notification
 
 Done when: a vegetarian and a full-diet member can share a plan with swap-adjusted quantities, and the next week's plan appears on the chosen day.
@@ -41,6 +43,8 @@ Done when: a vegetarian and a full-diet member can share a plan with swap-adjust
 - Backlog candidates: personal calorie targets, multiple households, user-created recipes, pantry inventory, export/print of lists, native-feeling mobile (PWA) experience.
 
 ## Sequencing notes
+- i18n (X1) comes first on purpose: retrofitting translation keys later touches every screen. From Phase 1 on, no new UI text is merged without keys in both languages, and every new screen is checked in both themes.
+- Recipe translations (X1b) share a migration pass with ingredient canonicalisation (G1); do them together.
 - E4 depends on C1, C3, D1 (inputs) and is the main logic investment; keep it a pure, well-tested module.
 - G2 depends on G1; do not start list generation until ingredient mapping exists.
 - Swap work (D2) is deliberately after the generator: the generator first treats incompatible recipes as excluded, then uses cached swaps to widen the candidate pool.

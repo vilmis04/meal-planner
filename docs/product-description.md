@@ -23,7 +23,8 @@ The repo is a Nuxt 4 app (Vuetify, CSS Modules) on Supabase, deployed with Cooli
 | Batch cooking | `recipes.portion_days` (1 or 2): one cooked batch covers N days. 17 lunch/dinner recipes are marked 2 days. |
 | Tips | `tips` table: short planning/storage/substitution tips with `tags`. Includes substitution tips (garnish swaps, chicken to white fish, etc.). |
 | Security | RLS on: readable by signed-in users, writes only through the service role. |
-| Language | Recipe and tip content is in Lithuanian. The UI is currently English. |
+| Theme | Light/dark toggle in the default layout (`AppThemeToggle`, `useAppTheme`), choice stored in a cookie and applied to Vuetify and `data-theme`. |
+| Language | Recipe and tip content is in Lithuanian. UI strings are hard-coded English. No translation layer yet. |
 
 Everything below builds on these. The main data-model gaps are: ingredient category and canonical name, recipe dietary tags and main-protein metadata, and every user/household/plan/shopping concept.
 
@@ -32,6 +33,19 @@ Everything below builds on these. The main data-model gaps are: ingredient categ
 ### 3.1 Accounts and profile
 - Sign up, log in, log out (exists; needs sign-up, password reset, profile).
 - Profile holds display name and **dietary preference** (3.7) and **recipe preferences** (3.6).
+
+### 3.1a Theme (light / dark)
+- Users can switch between a light and a dark theme at any time; the toggle is available on every page (exists today).
+- The choice persists across sessions and is applied on first render (no flash). Post-MVP: default to the OS preference (`prefers-color-scheme`) until the user chooses, and store the choice on the profile so it follows the user across devices.
+- All new screens (plans, lists, nutrition, swaps) must use the theme tokens so both themes are supported from the start.
+
+### 3.1b Languages and translations (LT / EN)
+- The app supports **Lithuanian (LT) and English (EN)**. A language switcher is available on every page; the choice persists (cookie, later on the profile) and defaults to the browser language, falling back to EN.
+- **No text is hard-coded in components.** Every UI string (labels, buttons, errors, validation messages, empty states, notifications, emails) is referenced by a translation key and has an LT and an EN value. Adding a language later means adding one locale file. Plurals, dates, numbers and units follow the active locale.
+- **Recipe content is translated too.** Recipe names, instructions, ingredient names, tips, shopping categories, and AI-generated protein swaps exist in LT and EN. Today's seed content is Lithuanian, so EN translations are added to the data (see section 4) and recipes are shown in the user's language, falling back to LT when a translation is missing.
+- Canonical ingredients (3.5) carry a name per language, so the shopping list is shown, merged, and categorised in the active language, and the same item is recognised regardless of language.
+- Protein swaps (3.7) are generated and stored per language, or generated in one language and translated once and cached.
+- Household members may use different languages; shared content (lists, plans) is rendered per viewer.
 
 ### 3.2 Households
 - A user can create a household and invite others by link or email. Invitees accept to join.
@@ -102,10 +116,12 @@ Why not make the whole plan AI-generated:
 
 `profiles`, `households`, `household_members`, `household_invites`, `meal_plans` (kind, owner/household, start/end), `meal_plan_participants`, `meal_plan_slots` (date, meal type, recipe, locked, swap), `user_recipe_preferences`, `recipe_protein_swaps` (recipe, diet, swapped ingredients), `ingredients` (canonical name, category), `shopping_lists`, `shopping_items` (quantity, unit, category, state: to-buy / have-at-home / bought, source: generated / manual), `stores`, `purchases` (item, store), `plan_schedules`. Recipes gain `diet_tags`/`main_proteins`; ingredients link to the canonical `ingredients` table.
 
+**Translations:** locale files (LT, EN) hold UI keys. Recipe content gets translation tables keyed by locale, e.g. `recipe_translations` (recipe, locale, name, instructions), `recipe_ingredient_translations` (or names via `ingredient_translations` on the canonical table), `tip_translations`, and translated category names. The existing Lithuanian columns become the LT rows; EN rows are added by a reviewed (AI-assisted, one-off) translation migration. `profiles` gains `locale` and `theme`.
+
 ## 5. Open questions and assumptions
 
 - **Ingredient normalisation.** Names are free text in Lithuanian ("Fetos sūris", "Vyšniniai pomidorai"). Merging and categorising requires a canonical ingredient table. Assumed to be built with a one-off AI-assisted mapping, reviewed by hand.
-- **Language.** Recipe content is Lithuanian; UI language and localisation are not decided. Assumed: keep content Lithuanian, UI English first, localisation later.
+- **Language.** Decided: LT and EN, all UI text via translation keys, recipes and tips translated too. Open: which i18n library (Nuxt i18n is the assumed choice), and who reviews the EN recipe translations. LT is the source language of the content; EN is produced by AI-assisted translation and reviewed before release.
 - **One household per user** in the MVP.
 - **Per-person quantities and macros** assumed the same for all members (no personal calorie targets). Targets are a possible future feature.
 - **Realtime sync** of the shared list is assumed available via Supabase Realtime.
