@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar flat border>
-      <v-app-bar-title>Meal Planner</v-app-bar-title>
+      <v-app-bar-title>{{ t("app.title") }}</v-app-bar-title>
       <v-spacer />
       <AppThemeToggle />
     </v-app-bar>
@@ -13,6 +13,10 @@
     </v-main>
   </v-app>
 </template>
+
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
 
 <style module>
 .container {

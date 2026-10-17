@@ -1,0 +1,21 @@
+{
+  "app": { "title": "Meal Planner" },
+  "auth": {
+    "signIn": { "title": "Sign in", "subtitle": "Access your meal planner", "submit": "Sign in", "toSignUp": "Create account" },
+    "signUp": { "title": "Create account", "subtitle": "Sign up to save your meal plans", "submit": "Create account", "toSignIn": "I already have an account" },
+    "fields": { "email": "Email", "password": "Password", "confirmPassword": "Confirm password" },
+    "errors": {
+      "invalidCredentials": "Wrong email or password.",
+      "emailNotConfirmed": "Please confirm your email address before signing in.",
+      "userAlreadyExists": "An account with this email already exists.",
+      "weakPassword": "Password is too weak. Use at least 6 characters.",
+      "invalidEmail": "Enter a valid email address.",
+      "passwordMismatch": "Passwords do not match.",
+      "required": "This field is required.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "confirmEmailSent": "Account created. Check your email to confirm your address, then sign in.",
+    "signOut": "Sign out"
+  },
+  "home": { "welcome": "Welcome back", "signedInAs": "Signed in as {email}" }
+}
