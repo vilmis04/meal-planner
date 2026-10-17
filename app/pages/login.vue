@@ -1,22 +1,28 @@
 <template>
   <div :class="$style.wrapper">
-    <v-card :class="$style.card" title="Sign in" subtitle="Access your meal planner">
+    <v-card :class="$style.card" :title="t('auth.signIn.title')" :subtitle="t('auth.signIn.subtitle')">
       <v-card-text>
         <v-form @submit.prevent="handleSignIn">
-          <v-text-field v-model="email" label="Email" type="email" autocomplete="email" required />
+          <v-text-field
+            v-model="email"
+            :label="t('auth.fields.email')"
+            type="email"
+            autocomplete="email"
+            required
+          />
           <v-text-field
             v-model="password"
-            label="Password"
+            :label="t('auth.fields.password')"
             type="password"
             autocomplete="current-password"
             required
           />
-          <v-alert v-if="errorMessage" type="error" density="compact" :class="$style.alert">
-            {{ errorMessage }}
+          <v-alert v-if="errorKey" type="error" density="compact" :class="$style.alert">
+            {{ t(errorKey) }}
           </v-alert>
           <div :class="$style.actions">
-            <v-btn type="submit" color="primary" :loading="isSubmitting">Sign in</v-btn>
-            <v-btn variant="text" :loading="isSubmitting" @click="handleSignUp">Create account</v-btn>
+            <v-btn type="submit" color="primary" :loading="isSubmitting">{{ t("auth.signIn.submit") }}</v-btn>
+            <v-btn variant="text" to="/signup">{{ t("auth.signIn.toSignUp") }}</v-btn>
           </div>
         </v-form>
       </v-card-text>
@@ -25,16 +31,18 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n();
 const supabase = useSupabaseClient();
 const router = useRouter();
+const toErrorKey = useAuthErrorKey();
 
 const email = ref("");
 const password = ref("");
-const errorMessage = ref("");
+const errorKey = ref("");
 const isSubmitting = ref(false);
 
 async function handleSignIn() {
-  errorMessage.value = "";
+  errorKey.value = "";
   isSubmitting.value = true;
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -45,26 +53,7 @@ async function handleSignIn() {
   isSubmitting.value = false;
 
   if (error) {
-    errorMessage.value = error.message;
-    return;
-  }
-
-  await router.push("/");
-}
-
-async function handleSignUp() {
-  errorMessage.value = "";
-  isSubmitting.value = true;
-
-  const { error } = await supabase.auth.signUp({
-    email: email.value,
-    password: password.value,
-  });
-
-  isSubmitting.value = false;
-
-  if (error) {
-    errorMessage.value = error.message;
+    errorKey.value = toErrorKey(error);
     return;
   }
 

@@ -1,0 +1,21 @@
+{
+  "app": { "title": "Valgiaraštis" },
+  "auth": {
+    "signIn": { "title": "Prisijungimas", "subtitle": "Prieik prie savo valgiaraščio", "submit": "Prisijungti", "toSignUp": "Sukurti paskyrą" },
+    "signUp": { "title": "Sukurti paskyrą", "subtitle": "Užsiregistruok, kad išsaugotum valgiaraščius", "submit": "Sukurti paskyrą", "toSignIn": "Jau turiu paskyrą" },
+    "fields": { "email": "El. paštas", "password": "Slaptažodis", "confirmPassword": "Pakartok slaptažodį" },
+    "errors": {
+      "invalidCredentials": "Neteisingas el. paštas arba slaptažodis.",
+      "emailNotConfirmed": "Prieš prisijungdamas patvirtink savo el. pašto adresą.",
+      "userAlreadyExists": "Paskyra su šiuo el. paštu jau egzistuoja.",
+      "weakPassword": "Slaptažodis per silpnas. Naudok bent 6 simbolius.",
+      "invalidEmail": "Įvesk teisingą el. pašto adresą.",
+      "passwordMismatch": "Slaptažodžiai nesutampa.",
+      "required": "Šis laukas privalomas.",
+      "generic": "Kažkas nepavyko. Bandyk dar kartą."
+    },
+    "confirmEmailSent": "Paskyra sukurta. Patikrink el. paštą, patvirtink adresą ir prisijunk.",
+    "signOut": "Atsijungti"
+  },
+  "home": { "welcome": "Sveikas sugrįžęs", "signedInAs": "Prisijungta kaip {email}" }
+}

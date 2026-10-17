@@ -17,7 +17,22 @@ export default defineNuxtConfig({
     preset: "node-server",
   },
 
-  modules: ["vuetify-nuxt-module"],
+  modules: ["vuetify-nuxt-module", "@nuxtjs/i18n"],
+
+  // Default is the browser language, falling back to EN.
+  i18n: {
+    strategy: "no_prefix",
+    defaultLocale: "en",
+    locales: [
+      { code: "en", language: "en-US", name: "English", file: "en.json" },
+      { code: "lt", language: "lt-LT", name: "Lietuvių", file: "lt.json" },
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: "i18n_locale",
+      fallbackLocale: "en",
+    },
+  },
 
   // Palette values here must stay in sync with app/assets/css/theme.css,
   // which mirrors the same colors as CSS custom properties for CSS-modules layout code.
