@@ -55,4 +55,15 @@ Auth uses Supabase's `@supabase/ssr` cookie-based session pattern:
 
 - `server/middleware/supabase.ts` creates a per-request Supabase server client, refreshes the session, and exposes it via `event.context.supabase` / `event.context.supabaseUser`.
 - `app/plugins/supabase.client.ts` creates the browser client and keeps `useSupabaseUser()` in sync via `onAuthStateChange`.
-- `app/middleware/auth.ts` is a named route middleware (see `app/pages/index.vue`) that redirects to `/login` when signed out.
+- `app/middleware/auth.global.ts` runs on every route: signed-out users go to `/login`, signed-in users visiting `/login` go to `/`.
+- `/login` has Sign in and Create account tabs (email + password) and a "Continue with Google" button. Supabase errors are mapped to translation keys in `app/utils/getAuthErrorKey.ts`.
+- `server/routes/auth/callback.get.ts` finishes Google sign-in by exchanging the PKCE code for a session cookie, then redirects to `/`.
+
+Supabase project settings this app expects:
+
+- **Confirm email must stay off** (Authentication → Sign In / Providers → Email). Sign-up then returns a session and the user lands on the home page straight away.
+- **Google provider** must be configured before "Continue with Google" works; see [docs/google-sign-in-setup.md](docs/google-sign-in-setup.md).
+
+## Translations
+
+UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language, falls back to English, and is remembered in a `locale` cookie. Every key must exist in both files.
