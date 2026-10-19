@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { t } = useI18n();
+const { isDark, toggleTheme } = useAppTheme();
+</script>
+
 <template>
   <v-btn
     :icon="isDark ? 'mdi-weather-night' : 'mdi-weather-sunny'"
@@ -6,8 +11,3 @@
     @click="toggleTheme"
   />
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n();
-const { isDark, toggleTheme } = useAppTheme();
-</script>

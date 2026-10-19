@@ -1,3 +1,18 @@
+<script setup lang="ts">
+defineOptions({ name: "LoginPage" });
+definePageMeta({ layout: "auth" });
+
+type AuthTab = "signIn" | "signUp";
+
+const { t } = useI18n();
+const route = useRoute();
+
+const activeTab = ref<AuthTab>("signIn");
+const isOAuthFailed = computed(() => route.query.error === "oauth");
+
+useHead({ title: () => t("auth.pageTitle") });
+</script>
+
 <template>
   <v-card :class="$style.card" variant="flat" border>
     <v-tabs v-model="activeTab" :class="$style.tabs" color="primary">
@@ -15,21 +30,6 @@
     </div>
   </v-card>
 </template>
-
-<script setup lang="ts">
-defineOptions({ name: "LoginPage" });
-definePageMeta({ layout: "auth" });
-
-type AuthTab = "signIn" | "signUp";
-
-const { t } = useI18n();
-const route = useRoute();
-
-const activeTab = ref<AuthTab>("signIn");
-const isOAuthFailed = computed(() => route.query.error === "oauth");
-
-useHead({ title: () => t("auth.pageTitle") });
-</script>
 
 <style module>
 .card {

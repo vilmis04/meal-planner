@@ -1,3 +1,16 @@
+<script setup lang="ts">
+type ValidationRule = (value: string) => true | string;
+
+defineProps<{
+  label: string;
+  autocomplete: "current-password" | "new-password";
+  rules: ValidationRule[];
+}>();
+
+const password = defineModel<string>({ required: true });
+const isVisible = ref(false);
+</script>
+
 <template>
   <v-text-field
     v-model="password"
@@ -11,16 +24,3 @@
     @click:append-inner="isVisible = !isVisible"
   />
 </template>
-
-<script setup lang="ts">
-type ValidationRule = (value: string) => true | string;
-
-defineProps<{
-  label: string;
-  autocomplete: "current-password" | "new-password";
-  rules: ValidationRule[];
-}>();
-
-const password = defineModel<string>({ required: true });
-const isVisible = ref(false);
-</script>

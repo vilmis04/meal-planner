@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
+
 <template>
   <v-app>
     <v-main>
@@ -20,10 +24,6 @@
     </v-main>
   </v-app>
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n();
-</script>
 
 <style module>
 .hero {

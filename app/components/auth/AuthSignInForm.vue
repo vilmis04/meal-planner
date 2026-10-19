@@ -1,21 +1,3 @@
-<template>
-  <v-form :class="$style.form" @submit.prevent="handleSubmit">
-    <AuthEmailField v-model="email" />
-    <AuthPasswordField
-      v-model="password"
-      :label="t('auth.fields.password')"
-      :rules="[rules.required]"
-      autocomplete="current-password"
-    />
-    <v-alert v-if="errorKey" type="error" variant="tonal" density="compact">
-      {{ t(errorKey) }}
-    </v-alert>
-    <v-btn type="submit" color="primary" size="large" block :loading="isSubmitting">
-      {{ t("auth.signIn.submit") }}
-    </v-btn>
-  </v-form>
-</template>
-
 <script setup lang="ts">
 import type { SubmitEventPromise } from "vuetify";
 
@@ -42,6 +24,24 @@ async function handleSubmit(event: SubmitEventPromise) {
   }
 }
 </script>
+
+<template>
+  <v-form :class="$style.form" @submit.prevent="handleSubmit">
+    <AuthEmailField v-model="email" />
+    <AuthPasswordField
+      v-model="password"
+      :label="t('auth.fields.password')"
+      :rules="[rules.required]"
+      autocomplete="current-password"
+    />
+    <v-alert v-if="errorKey" type="error" variant="tonal" density="compact">
+      {{ t(errorKey) }}
+    </v-alert>
+    <v-btn type="submit" color="primary" size="large" block :loading="isSubmitting">
+      {{ t("auth.signIn.submit") }}
+    </v-btn>
+  </v-form>
+</template>
 
 <style module>
 .form {

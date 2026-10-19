@@ -19,6 +19,15 @@ npm run dev
 
 Runs on `http://localhost:3000`.
 
+## Linting
+
+```bash
+npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs)
+npm run lint:fix   # apply auto-fixes
+```
+
+Vue single-file components put `<script>` first, then `<template>`, then `<style>` (`vue/block-order`).
+
 ## Production
 
 ```bash

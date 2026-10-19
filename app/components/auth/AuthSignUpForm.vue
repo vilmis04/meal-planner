@@ -1,30 +1,3 @@
-<template>
-  <v-form :class="$style.form" @submit.prevent="handleSubmit">
-    <AuthEmailField v-model="email" />
-    <AuthPasswordField
-      v-model="password"
-      :label="t('auth.fields.password')"
-      :rules="[rules.required, rules.minPasswordLength]"
-      autocomplete="new-password"
-    />
-    <AuthPasswordField
-      v-model="confirmPassword"
-      :label="t('auth.fields.confirmPassword')"
-      :rules="[rules.required, rules.matches(() => password)]"
-      autocomplete="new-password"
-    />
-    <v-alert v-if="errorKey" type="error" variant="tonal" density="compact">
-      {{ t(errorKey) }}
-    </v-alert>
-    <v-alert v-if="isSignInNeeded" type="info" variant="tonal" density="compact">
-      {{ t("auth.signUp.signInToContinue") }}
-    </v-alert>
-    <v-btn type="submit" color="primary" size="large" block :loading="isSubmitting">
-      {{ t("auth.signUp.submit") }}
-    </v-btn>
-  </v-form>
-</template>
-
 <script setup lang="ts">
 import type { SubmitEventPromise } from "vuetify";
 
@@ -63,6 +36,33 @@ async function handleSubmit(event: SubmitEventPromise) {
   isSignInNeeded.value = true;
 }
 </script>
+
+<template>
+  <v-form :class="$style.form" @submit.prevent="handleSubmit">
+    <AuthEmailField v-model="email" />
+    <AuthPasswordField
+      v-model="password"
+      :label="t('auth.fields.password')"
+      :rules="[rules.required, rules.minPasswordLength]"
+      autocomplete="new-password"
+    />
+    <AuthPasswordField
+      v-model="confirmPassword"
+      :label="t('auth.fields.confirmPassword')"
+      :rules="[rules.required, rules.matches(() => password)]"
+      autocomplete="new-password"
+    />
+    <v-alert v-if="errorKey" type="error" variant="tonal" density="compact">
+      {{ t(errorKey) }}
+    </v-alert>
+    <v-alert v-if="isSignInNeeded" type="info" variant="tonal" density="compact">
+      {{ t("auth.signUp.signInToContinue") }}
+    </v-alert>
+    <v-btn type="submit" color="primary" size="large" block :loading="isSubmitting">
+      {{ t("auth.signUp.submit") }}
+    </v-btn>
+  </v-form>
+</template>
 
 <style module>
 .form {

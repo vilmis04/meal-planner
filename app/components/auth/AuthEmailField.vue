@@ -1,3 +1,9 @@
+<script setup lang="ts">
+const { t } = useI18n();
+const rules = useAuthFieldRules();
+const email = defineModel<string>({ required: true });
+</script>
+
 <template>
   <v-text-field
     v-model="email"
@@ -9,9 +15,3 @@
     variant="outlined"
   />
 </template>
-
-<script setup lang="ts">
-const { t } = useI18n();
-const rules = useAuthFieldRules();
-const email = defineModel<string>({ required: true });
-</script>

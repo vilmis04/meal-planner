@@ -17,7 +17,7 @@ export default defineNuxtConfig({
     preset: "node-server",
   },
 
-  modules: ["vuetify-nuxt-module", "@nuxtjs/i18n"],
+  modules: ["vuetify-nuxt-module", "@nuxtjs/i18n", "@nuxt/eslint"],
 
   i18n: {
     strategy: "no_prefix",
