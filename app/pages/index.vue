@@ -1,14 +1,4 @@
-<template>
-  <div :class="$style.wrapper">
-    <h1>Welcome back</h1>
-    <p v-if="user">Signed in as {{ user.email }}</p>
-    <v-btn color="primary" variant="tonal" @click="handleSignOut">Sign out</v-btn>
-  </div>
-</template>
-
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
-
 const user = useSupabaseUser();
 const supabase = useSupabaseClient();
 const router = useRouter();
@@ -18,6 +8,14 @@ async function handleSignOut() {
   await router.push("/login");
 }
 </script>
+
+<template>
+  <div :class="$style.wrapper">
+    <h1>Welcome back</h1>
+    <p v-if="user">Signed in as {{ user.email }}</p>
+    <v-btn color="primary" variant="tonal" @click="handleSignOut">Sign out</v-btn>
+  </div>
+</template>
 
 <style module>
 .wrapper {

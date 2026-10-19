@@ -17,10 +17,24 @@ export default defineNuxtConfig({
     preset: "node-server",
   },
 
-  modules: ["vuetify-nuxt-module"],
+  modules: ["vuetify-nuxt-module", "@nuxtjs/i18n", "@nuxt/eslint"],
 
-  // Palette values here must stay in sync with app/assets/css/theme.css,
-  // which mirrors the same colors as CSS custom properties for CSS-modules layout code.
+  i18n: {
+    strategy: "no_prefix",
+    defaultLocale: "en",
+    locales: [
+      { code: "en", language: "en-US", name: "English", file: "en.json" },
+      { code: "lt", language: "lt-LT", name: "Lietuvių", file: "lt.json" },
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: "locale",
+      fallbackLocale: "en",
+    },
+  },
+
+  // Single source of truth for colors: Vuetify exposes each one as --v-theme-<name> on :root,
+  // and app/assets/css/theme.css aliases those for CSS-modules layout code.
   vuetify: {
     moduleOptions: {},
     vuetifyOptions: {
@@ -30,27 +44,36 @@ export default defineNuxtConfig({
           light: {
             dark: false,
             colors: {
-              primary: "#16A34A",
-              secondary: "#F59E0B",
-              background: "#FFFFFF",
-              surface: "#F8FAFC",
-              error: "#DC2626",
-              warning: "#D97706",
+              primary: "#0B6B43",
+              secondary: "#9A5B00",
+              background: "#F4F6F3",
+              surface: "#FFFFFF",
+              error: "#B8382A",
+              warning: "#9A5B00",
               info: "#2563EB",
-              success: "#16A34A",
+              success: "#0B6B43",
+              hero: "#0A4D31",
+              "on-hero": "#FFFFFF",
+              muted: "#5A6B62",
+              border: "#DDE4DE",
             },
           },
           dark: {
             dark: true,
             colors: {
-              primary: "#4ADE80",
-              secondary: "#FBBF24",
-              background: "#0F172A",
-              surface: "#1E293B",
-              error: "#F87171",
-              warning: "#FBBF24",
+              primary: "#6FD39C",
+              "on-primary": "#062A1A",
+              secondary: "#F2B544",
+              background: "#0D1612",
+              surface: "#15211B",
+              error: "#F08A7C",
+              warning: "#F2B544",
               info: "#60A5FA",
-              success: "#4ADE80",
+              success: "#6FD39C",
+              hero: "#0E4A31",
+              "on-hero": "#F1F7F3",
+              muted: "#98AA9F",
+              border: "#26382F",
             },
           },
         },
