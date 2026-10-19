@@ -33,8 +33,8 @@ export default defineNuxtConfig({
     },
   },
 
-  // Palette values here must stay in sync with app/assets/css/theme.css,
-  // which mirrors the same colors as CSS custom properties for CSS-modules layout code.
+  // Single source of truth for colors: Vuetify exposes each one as --v-theme-<name> on :root,
+  // and app/assets/css/theme.css aliases those for CSS-modules layout code.
   vuetify: {
     moduleOptions: {},
     vuetifyOptions: {
@@ -52,6 +52,10 @@ export default defineNuxtConfig({
               warning: "#9A5B00",
               info: "#2563EB",
               success: "#0B6B43",
+              hero: "#0A4D31",
+              "on-hero": "#FFFFFF",
+              muted: "#5A6B62",
+              border: "#DDE4DE",
             },
           },
           dark: {
@@ -66,6 +70,10 @@ export default defineNuxtConfig({
               warning: "#F2B544",
               info: "#60A5FA",
               success: "#6FD39C",
+              hero: "#0E4A31",
+              "on-hero": "#F1F7F3",
+              muted: "#98AA9F",
+              border: "#26382F",
             },
           },
         },

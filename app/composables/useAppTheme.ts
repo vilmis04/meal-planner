@@ -8,12 +8,6 @@ export function useAppTheme() {
 
   theme.global.name.value = themeCookie.value;
 
-  useHead({
-    htmlAttrs: {
-      "data-theme": computed(() => theme.global.name.value),
-    },
-  });
-
   function toggleTheme() {
     const next: ThemeName = theme.global.name.value === "dark" ? "light" : "dark";
     theme.global.name.value = next;
