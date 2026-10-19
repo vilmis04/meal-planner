@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "Meal Planner"
+  },
+  "theme": {
+    "switchToLight": "Įjungti šviesią temą",
+    "switchToDark": "Įjungti tamsią temą"
+  },
+  "auth": {
+    "pageTitle": "Prisijungimas",
+    "hero": {
+      "tagline": "Planuokite savaitę kartu, apsipirkite vieną kartą ir gaminkite mažiau darbo dienomis."
+    },
+    "signIn": {
+      "tab": "Prisijungti",
+      "submit": "Prisijungti"
+    },
+    "signUp": {
+      "tab": "Sukurti paskyrą",
+      "submit": "Sukurti paskyrą",
+      "signInToContinue": "Paskyra sukurta. Prisijunkite, kad galėtumėte tęsti."
+    },
+    "fields": {
+      "email": "El. paštas",
+      "password": "Slaptažodis",
+      "confirmPassword": "Pakartokite slaptažodį"
+    },
+    "or": "arba",
+    "continueWithGoogle": "Tęsti su Google",
+    "validation": {
+      "required": "Šis laukas privalomas",
+      "email": "Įveskite teisingą el. pašto adresą",
+      "passwordMinLength": "Slaptažodyje turi būti bent {min} simboliai",
+      "passwordsMatch": "Slaptažodžiai nesutampa"
+    },
+    "errors": {
+      "generic": "Kažkas nepavyko. Bandykite dar kartą.",
+      "invalidCredentials": "Neteisingas el. paštas arba slaptažodis.",
+      "userAlreadyExists": "Paskyra su šiuo el. paštu jau yra. Prisijunkite.",
+      "weakPassword": "Slaptažodis per silpnas. Pasirinkite ilgesnį arba retesnį.",
+      "invalidEmail": "Šis el. pašto adresas netinkamas.",
+      "rateLimited": "Per daug bandymų. Palaukite kelias minutes ir bandykite dar kartą.",
+      "signUpDisabled": "Naujų paskyrų kūrimas šiuo metu išjungtas.",
+      "oauth": "Nepavyko prisijungti per Google. Bandykite dar kartą."
+    }
+  }
+}

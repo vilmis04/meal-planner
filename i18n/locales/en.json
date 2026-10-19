@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "Meal Planner"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "auth": {
+    "pageTitle": "Sign in",
+    "hero": {
+      "tagline": "Plan the week together, shop once, and cook less on workdays."
+    },
+    "signIn": {
+      "tab": "Sign in",
+      "submit": "Sign in"
+    },
+    "signUp": {
+      "tab": "Create account",
+      "submit": "Create account",
+      "signInToContinue": "Your account was created. Sign in to continue."
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    },
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "validation": {
+      "required": "This field is required",
+      "email": "Enter a valid email address",
+      "passwordMinLength": "Use at least {min} characters",
+      "passwordsMatch": "Passwords do not match"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "invalidCredentials": "Incorrect email or password.",
+      "userAlreadyExists": "An account with this email already exists. Sign in instead.",
+      "weakPassword": "This password is too weak. Choose a longer or less common one.",
+      "invalidEmail": "This email address is not valid.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "signUpDisabled": "Creating new accounts is turned off right now.",
+      "oauth": "Signing in with Google did not work. Please try again."
+    }
+  }
+}
