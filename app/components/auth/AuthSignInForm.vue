@@ -9,6 +9,12 @@ const { isSubmitting, errorKey, submit } = useAuthForm();
 const email = ref("");
 const password = ref("");
 
+// Carries the typed email over so the user does not have to type it again.
+const forgotPasswordLink = computed(() => ({
+  path: "/forgot-password",
+  query: email.value ? { email: email.value } : {},
+}));
+
 async function handleSubmit(event: SubmitEventPromise) {
   const { valid } = await event;
   if (!valid) {
@@ -34,6 +40,11 @@ async function handleSubmit(event: SubmitEventPromise) {
       :rules="[rules.required]"
       autocomplete="current-password"
     />
+    <div :class="$style.forgotPassword">
+      <NuxtLink :to="forgotPasswordLink" :class="$style.link">
+        {{ t("auth.signIn.forgotPassword") }}
+      </NuxtLink>
+    </div>
     <v-alert v-if="errorKey" type="error" variant="tonal" density="compact">
       {{ t(errorKey) }}
     </v-alert>
@@ -48,5 +59,23 @@ async function handleSubmit(event: SubmitEventPromise) {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+/* Pulled up against the password field's hint area, as in the mock-up. */
+.forgotPassword {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(-1 * var(--space-3));
+}
+
+.link {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
 </style>

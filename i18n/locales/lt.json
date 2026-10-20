@@ -13,17 +13,34 @@
     },
     "signIn": {
       "tab": "Prisijungti",
-      "submit": "Prisijungti"
+      "submit": "Prisijungti",
+      "forgotPassword": "Pamiršote slaptažodį?"
     },
     "signUp": {
       "tab": "Sukurti paskyrą",
       "submit": "Sukurti paskyrą",
       "signInToContinue": "Paskyra sukurta. Prisijunkite, kad galėtumėte tęsti."
     },
+    "forgotPassword": {
+      "pageTitle": "Slaptažodžio atkūrimas",
+      "title": "Atkurkite slaptažodį",
+      "hint": "Įveskite el. paštą, kuriuo prisijungiate. Atsiųsime nuorodą naujam slaptažodžiui nustatyti.",
+      "submit": "Siųsti nuorodą",
+      "resend": "Siųsti dar kartą",
+      "sent": "Jei paskyra su {email} yra, nuoroda jau siunčiama. Atidarykite ją šioje naršyklėje.",
+      "backToSignIn": "Grįžti į prisijungimą"
+    },
+    "resetPassword": {
+      "pageTitle": "Naujas slaptažodis",
+      "title": "Nustatykite naują slaptažodį",
+      "hint": "Pasirinkite naują slaptažodį. Jį išsaugoję liksite prisijungę.",
+      "submit": "Išsaugoti slaptažodį"
+    },
     "fields": {
       "email": "El. paštas",
       "password": "Slaptažodis",
-      "confirmPassword": "Pakartokite slaptažodį"
+      "confirmPassword": "Pakartokite slaptažodį",
+      "newPassword": "Naujas slaptažodis"
     },
     "or": "arba",
     "continueWithGoogle": "Tęsti su Google",
@@ -41,7 +58,10 @@
       "invalidEmail": "Šis el. pašto adresas netinkamas.",
       "rateLimited": "Per daug bandymų. Palaukite kelias minutes ir bandykite dar kartą.",
       "signUpDisabled": "Naujų paskyrų kūrimas šiuo metu išjungtas.",
-      "oauth": "Nepavyko prisijungti per Google. Bandykite dar kartą."
+      "oauth": "Nepavyko prisijungti per Google. Bandykite dar kartą.",
+      "resetLinkInvalid": "Ši nuoroda nebegalioja, jau buvo panaudota arba atidaryta kitoje naršyklėje. Paprašykite naujos nuorodos ir atidarykite ją šioje naršyklėje.",
+      "samePassword": "Pasirinkite slaptažodį, kuris skiriasi nuo dabartinio.",
+      "resetSessionExpired": "Atkūrimo nuoroda nebegalioja. Paprašykite naujos."
     }
   }
 }
