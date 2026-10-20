@@ -24,7 +24,7 @@ These steps were written without access to the live docs. Check menu names again
 1. **Authentication → Sign In / Providers → Google**: enable it, paste the Client ID and Client secret, save.
 2. **Authentication → URL Configuration**:
    - Site URL: the production app URL.
-   - Redirect URLs: `http://localhost:3000/auth/callback`, `https://<staging-domain>/auth/callback`, `https://<production-domain>/auth/callback`.
+   - Redirect URLs: `http://localhost:3000/auth/callback**`, `https://<staging-domain>/auth/callback**`, `https://<production-domain>/auth/callback**` (the `**` lets password reset links pass a `next` query; see [password-reset-setup.md](password-reset-setup.md)).
 
 ### Self-hosted on Coolify
 

@@ -65,13 +65,16 @@ Auth uses Supabase's `@supabase/ssr` cookie-based session pattern:
 - `server/middleware/supabase.ts` creates a per-request Supabase server client, refreshes the session, and exposes it via `event.context.supabase` / `event.context.supabaseUser`.
 - `app/plugins/supabase.client.ts` creates the browser client and keeps `useSupabaseUser()` in sync via `onAuthStateChange`.
 - `app/middleware/auth.global.ts` runs on every route: signed-out users go to `/login`, signed-in users visiting `/login` go to `/`.
-- `/login` has Sign in and Create account tabs (email + password) and a "Continue with Google" button. Supabase errors are mapped to translation keys in `app/utils/getAuthErrorKey.ts`.
-- `server/routes/auth/callback.get.ts` finishes Google sign-in by exchanging the PKCE code for a session cookie, then redirects to `/`.
+- `app/middleware/auth.global.ts` also treats `/forgot-password` as guest-only, and sends signed-out visitors of `/reset-password` to `/forgot-password`.
+- `/login` has Sign in and Create account tabs (email + password), a "Forgot password?" link and a "Continue with Google" button. Supabase errors are mapped to translation keys in `app/utils/getAuthErrorKey.ts`.
+- `/forgot-password` sends a Supabase reset email; `/reset-password` sets the new password once the reset link has signed the user in.
+- `server/routes/auth/callback.get.ts` finishes Google sign-in and reset links by exchanging the PKCE code for a session cookie, then redirects to the `next` path (same-origin only; default `/`).
 
 Supabase project settings this app expects:
 
 - **Confirm email must stay off** (Authentication → Sign In / Providers → Email). Sign-up then returns a session and the user lands on the home page straight away.
 - **Google provider** must be configured before "Continue with Google" works; see [docs/google-sign-in-setup.md](docs/google-sign-in-setup.md).
+- **Password reset** needs `/auth/callback**` redirect URLs, the bilingual reset email template and, for production, Mailgun as custom SMTP; see [docs/password-reset-setup.md](docs/password-reset-setup.md).
 
 ## Translations
 
