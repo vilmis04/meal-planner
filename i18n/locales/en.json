@@ -13,17 +13,34 @@
     },
     "signIn": {
       "tab": "Sign in",
-      "submit": "Sign in"
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?"
     },
     "signUp": {
       "tab": "Create account",
       "submit": "Create account",
       "signInToContinue": "Your account was created. Sign in to continue."
     },
+    "forgotPassword": {
+      "pageTitle": "Reset password",
+      "title": "Reset your password",
+      "hint": "Enter the email you sign in with. We'll send you a link to set a new password.",
+      "submit": "Send reset link",
+      "resend": "Send again",
+      "sent": "If an account exists for {email}, a reset link is on its way. Open it in this browser.",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "pageTitle": "Set a new password",
+      "title": "Set a new password",
+      "hint": "Choose a new password. You'll stay signed in after saving it.",
+      "submit": "Save password"
+    },
     "fields": {
       "email": "Email",
       "password": "Password",
-      "confirmPassword": "Confirm password"
+      "confirmPassword": "Confirm password",
+      "newPassword": "New password"
     },
     "or": "or",
     "continueWithGoogle": "Continue with Google",
@@ -41,7 +58,10 @@
       "invalidEmail": "This email address is not valid.",
       "rateLimited": "Too many attempts. Wait a few minutes and try again.",
       "signUpDisabled": "Creating new accounts is turned off right now.",
-      "oauth": "Signing in with Google did not work. Please try again."
+      "oauth": "Signing in with Google did not work. Please try again.",
+      "resetLinkInvalid": "This reset link has expired, was already used, or was opened in a different browser. Request a new link and open it in this browser.",
+      "samePassword": "Choose a password different from your current one.",
+      "resetSessionExpired": "Your reset link has expired. Request a new one."
     }
   }
 }

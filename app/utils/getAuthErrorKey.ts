@@ -13,6 +13,9 @@ const ERROR_KEY_BY_CODE: Partial<Record<string, string>> = {
   over_request_rate_limit: "auth.errors.rateLimited",
   over_email_send_rate_limit: "auth.errors.rateLimited",
   signup_disabled: "auth.errors.signUpDisabled",
+  same_password: "auth.errors.samePassword",
+  session_not_found: "auth.errors.resetSessionExpired",
+  session_expired: "auth.errors.resetSessionExpired",
 };
 
 export function getAuthErrorKey({ code }: AuthError): string {
