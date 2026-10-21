@@ -63,5 +63,37 @@
       "samePassword": "Choose a password different from your current one.",
       "resetSessionExpired": "Your reset link has expired. Request a new one."
     }
+  },
+  "home": {
+    "title": "Welcome back",
+    "greeting": "Welcome back, {name}"
+  },
+  "profile": {
+    "pageTitle": "Profile",
+    "title": "Profile",
+    "open": "Open profile",
+    "signOut": "Sign out",
+    "name": {
+      "label": "Display name",
+      "save": "Save",
+      "saved": "Name saved"
+    },
+    "language": {
+      "title": "Language"
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "validation": {
+      "nameRequired": "Enter a name",
+      "nameMaxLength": "Use at most {max} characters"
+    },
+    "errors": {
+      "loadFailed": "Your profile could not be loaded. Reload the page to try again.",
+      "saveFailed": "Could not save. Check your connection and try again."
+    }
   }
 }

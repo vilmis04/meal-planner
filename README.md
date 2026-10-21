@@ -56,7 +56,7 @@ Keep every schema change as SQL in `supabase/migrations/` so the database can be
 - **Vuetify** components (`v-btn`, `v-card`, form inputs, etc.) own look and feel.
 - **CSS Modules** (`<style module>` in SFCs, or `Component.module.css` files) own page/layout structure — grids, containers, spacing wrappers.
 - Shared design tokens live in `app/assets/css/tokens.css` (spacing, radii, breakpoints) and `app/assets/css/theme.css` (color custom properties). Colors are defined only in the `vuetify.vuetifyOptions.theme` block in `nuxt.config.ts`; Vuetify writes the active theme to `--v-theme-*` variables on `:root`, and `theme.css` aliases them as `--color-*` for CSS-Modules layout code. Add a new color to both themes in `nuxt.config.ts`, then alias it in `theme.css`.
-- Toggle the theme with `useAppTheme()` (`app/composables/useAppTheme.ts`); the choice persists in a `theme` cookie and is applied during the server render, so Vuetify's `:root` variables already match and there is no flash of the wrong theme.
+- The theme preference is `light`, `dark` or `system`. Change it through `useProfileSettings().changeTheme()` (saves to the profile when signed in). `useAppTheme()` keeps it in a `theme` cookie that `app/plugins/theme.ts` applies during the server render; for `system` the server uses the OS theme the browser last reported (`theme-system` cookie), so Vuetify's `:root` variables already match and there is no flash of the wrong theme.
 
 ## Auth
 
@@ -76,6 +76,21 @@ Supabase project settings this app expects:
 - **Google provider** must be configured before "Continue with Google" works; see [docs/google-sign-in-setup.md](docs/google-sign-in-setup.md).
 - **Password reset** needs `/auth/callback**` redirect URLs, the bilingual reset email template and, for production, Mailgun as custom SMTP; see [docs/password-reset-setup.md](docs/password-reset-setup.md).
 
+## Profile
+
+- `profiles` has one row per auth user, created by the `on_auth_user_created` trigger (`supabase/migrations/20261021000000_create_profiles.sql`). The display name comes from Google's `full_name`/`name`, else the part of the email before `@`. `locale` starts empty and is set to the language the user first browses in.
+- RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme` columns only); members of the same household can read it through `shares_household()`. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
+- `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme and language over the cookies. `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
+- `/me` edits the display name, language and theme, and holds sign-out.
+
+## Database tests
+
+pgTAP tests live in `supabase/tests/`. With the Supabase CLI and a local stack (`supabase start`), run:
+
+```bash
+supabase test db
+```
+
 ## Translations
 
-UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language, falls back to English, and is remembered in a `locale` cookie. Every key must exist in both files.
+UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language, falls back to English, and is remembered in a `locale` cookie. Once signed in, the language saved on the profile wins. Every key must exist in both files.

@@ -1,9 +1,14 @@
+<script setup lang="ts">
+const { t } = useI18n();
+</script>
+
 <template>
   <v-app>
     <v-app-bar flat border>
-      <v-app-bar-title>Meal Planner</v-app-bar-title>
+      <v-app-bar-title>{{ t("app.name") }}</v-app-bar-title>
       <v-spacer />
       <AppThemeToggle />
+      <v-btn icon="mdi-account-circle" variant="text" to="/me" :aria-label="t('profile.open')" />
     </v-app-bar>
 
     <v-main>
@@ -11,6 +16,8 @@
         <slot />
       </div>
     </v-main>
+
+    <AppSnackbar />
   </v-app>
 </template>
 
