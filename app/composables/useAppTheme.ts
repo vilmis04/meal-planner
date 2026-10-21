@@ -24,26 +24,26 @@ export function useAppTheme() {
 
   // Vuetify resolves "system" with matchMedia, which the server and the hydrating client
   // can't use without a mismatch, so they render the remembered theme until hydration ends.
-  function applyPreference(next: ThemePreference): void {
+  const applyPreference = (next: ThemePreference): void => {
     const isRenderingFromCookies = import.meta.server || nuxtApp.isHydrating;
     theme.global.name.value =
       next === "system" && isRenderingFromCookies ? getRememberedSystemTheme() : next;
-  }
+  };
 
-  function setPreference(next: ThemePreference): void {
+  const setPreference = (next: ThemePreference): void => {
     preferenceCookie.value = next;
     applyPreference(next);
-  }
+  };
 
-  function rememberSystemTheme(): void {
+  const rememberSystemTheme = (): void => {
     if (theme.isSystem.value) {
       systemThemeCookie.value = theme.global.name.value;
     }
-  }
+  };
 
-  function getRememberedSystemTheme(): ResolvedTheme {
+  const getRememberedSystemTheme = (): ResolvedTheme => {
     return resolvedThemeSchema.safeParse(systemThemeCookie.value).data ?? "light";
-  }
+  };
 
   return { preference, isDark, applyPreference, setPreference, rememberSystemTheme };
 }

@@ -7,13 +7,13 @@ interface SnackbarMessage {
 export function useAppSnackbar() {
   const message = useState<SnackbarMessage | null>("app-snackbar", () => null);
 
-  function show(textKey: string, color: SnackbarMessage["color"]): void {
+  const show = (textKey: string, color: SnackbarMessage["color"]): void => {
     message.value = { textKey, color };
-  }
+  };
 
-  function hide(): void {
+  const hide = (): void => {
     message.value = null;
-  }
+  };
 
   return { message: readonly(message), show, hide };
 }

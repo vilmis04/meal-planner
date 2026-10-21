@@ -11,7 +11,7 @@ export default defineNuxtPlugin({
     const { setPreference } = useAppTheme();
     const i18n = nuxtApp.$i18n;
 
-    async function applyProfile({ theme, locale }: Readonly<Profile>): Promise<void> {
+    const applyProfile = async ({ theme, locale }: Readonly<Profile>): Promise<void> => {
       setPreference(theme);
 
       // A new profile has no language yet: keep the one the user is browsing in.
@@ -20,9 +20,9 @@ export default defineNuxtPlugin({
       } else if (locale !== i18n.locale.value) {
         await i18n.setLocale(locale);
       }
-    }
+    };
 
-    async function syncWithUser(userId: string | undefined): Promise<void> {
+    const syncWithUser = async (userId: string | undefined): Promise<void> => {
       if (!userId) {
         clear();
         return;
@@ -34,7 +34,7 @@ export default defineNuxtPlugin({
       if (profile.value) {
         await applyProfile(profile.value);
       }
-    }
+    };
 
     await syncWithUser(user.value?.id);
 

@@ -5,7 +5,7 @@ export function useProfile() {
   const profile = useState<Profile | null>("profile", () => null);
 
   // Leaves the profile empty on failure; callers render without it rather than failing the page.
-  async function load(userId: string): Promise<void> {
+  const load = async (userId: string): Promise<void> => {
     const { data, error } = await supabase
       .from("profiles")
       .select(PROFILE_COLUMNS)
@@ -16,10 +16,10 @@ export function useProfile() {
     if (error) {
       console.error("Loading the profile failed", error);
     }
-  }
+  };
 
   // Resolves to false when nothing was saved, so callers can revert what they applied optimistically.
-  async function update(changes: ProfileChanges): Promise<boolean> {
+  const update = async (changes: ProfileChanges): Promise<boolean> => {
     if (!profile.value) {
       return false;
     }
@@ -43,11 +43,11 @@ export function useProfile() {
 
     profile.value = updatedProfile;
     return true;
-  }
+  };
 
-  function clear(): void {
+  const clear = (): void => {
     profile.value = null;
-  }
+  };
 
   return { profile: readonly(profile), load, update, clear };
 }

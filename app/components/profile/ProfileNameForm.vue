@@ -34,7 +34,9 @@ async function handleSubmit(event: SubmitEventPromise) {
   if (isSaved) {
     displayName.value = savedName.value;
   }
-  show(isSaved ? "profile.name.saved" : "profile.errors.saveFailed", isSaved ? "success" : "error");
+  const messageKey = isSaved ? "profile.name.saved" : "profile.errors.saveFailed";
+  const messageColor = isSaved ? "success" : "error";
+  show(messageKey, messageColor);
 }
 </script>
 

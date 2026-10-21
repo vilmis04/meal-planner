@@ -7,7 +7,7 @@ export function useProfileSettings() {
   const { preference, setPreference } = useAppTheme();
   const { locale, setLocale } = useI18n();
 
-  async function changeTheme(next: ThemePreference): Promise<boolean> {
+  const changeTheme = async (next: ThemePreference): Promise<boolean> => {
     const previous = preference.value;
     setPreference(next);
 
@@ -16,9 +16,9 @@ export function useProfileSettings() {
       setPreference(previous);
     }
     return isSaved;
-  }
+  };
 
-  async function changeLanguage(next: LocaleCode): Promise<boolean> {
+  const changeLanguage = async (next: LocaleCode): Promise<boolean> => {
     const previous = locale.value;
     await setLocale(next);
 
@@ -27,11 +27,10 @@ export function useProfileSettings() {
       await setLocale(previous);
     }
     return isSaved;
-  }
+  };
 
-  function changeDisplayName(next: string): Promise<boolean> {
-    return update({ displayName: next.trim() });
-  }
+  const changeDisplayName = (next: string): Promise<boolean> =>
+    update({ displayName: next.trim() });
 
   return { changeTheme, changeLanguage, changeDisplayName };
 }
