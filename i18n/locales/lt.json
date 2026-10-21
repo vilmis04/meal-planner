@@ -63,5 +63,37 @@
       "samePassword": "Pasirinkite slaptažodį, kuris skiriasi nuo dabartinio.",
       "resetSessionExpired": "Atkūrimo nuoroda nebegalioja. Paprašykite naujos."
     }
+  },
+  "home": {
+    "title": "Sveiki sugrįžę",
+    "greeting": "Sveiki sugrįžę, {name}"
+  },
+  "profile": {
+    "pageTitle": "Profilis",
+    "title": "Profilis",
+    "open": "Atidaryti profilį",
+    "signOut": "Atsijungti",
+    "name": {
+      "label": "Rodomas vardas",
+      "save": "Išsaugoti",
+      "saved": "Vardas išsaugotas"
+    },
+    "language": {
+      "title": "Kalba"
+    },
+    "theme": {
+      "title": "Tema",
+      "light": "Šviesi",
+      "dark": "Tamsi",
+      "system": "Sistemos"
+    },
+    "validation": {
+      "nameRequired": "Įveskite vardą",
+      "nameMaxLength": "Daugiausia {max} simbolių"
+    },
+    "errors": {
+      "loadFailed": "Nepavyko įkelti profilio. Perkraukite puslapį ir bandykite dar kartą.",
+      "saveFailed": "Nepavyko išsaugoti. Patikrinkite ryšį ir bandykite dar kartą."
+    }
   }
 }
