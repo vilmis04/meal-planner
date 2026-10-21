@@ -41,9 +41,8 @@ export function useAppTheme() {
     }
   };
 
-  const getRememberedSystemTheme = (): ResolvedTheme => {
-    return resolvedThemeSchema.safeParse(systemThemeCookie.value).data ?? "light";
-  };
+  const getRememberedSystemTheme = (): ResolvedTheme =>
+    resolvedThemeSchema.safeParse(systemThemeCookie.value).data ?? "light";
 
   return { preference, isDark, applyPreference, setPreference, rememberSystemTheme };
 }
