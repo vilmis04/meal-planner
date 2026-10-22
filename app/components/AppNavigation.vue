@@ -9,7 +9,7 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { key: "home", to: "/", icon: "mdi-home-outline", activeIcon: "mdi-home" },
-  { key: "plan", to: null, icon: "mdi-calendar-week-outline", activeIcon: "mdi-calendar-week" },
+  { key: "plan", to: null, icon: "mdi-calendar-week", activeIcon: "mdi-calendar-week" },
   { key: "list", to: null, icon: "mdi-cart-outline", activeIcon: "mdi-cart" },
   { key: "recipes", to: null, icon: "mdi-book-open-variant", activeIcon: "mdi-book-open-variant" },
   { key: "me", to: "/me", icon: "mdi-account-circle-outline", activeIcon: "mdi-account-circle" },

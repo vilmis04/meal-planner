@@ -83,6 +83,14 @@ Supabase project settings this app expects:
 - `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme and language over the cookies. `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
 - `/me` edits the display name, language and theme, and holds sign-out.
 
+## Households
+
+- `households` and `household_members` (one row per member). `household_members.user_id` is unique, so a user belongs to one household. There is no owner role: members are equal.
+- `create_household(household_name)` (`supabase/migrations/20261021000100_add_household_creation.sql`) is the only way to create a household. It trims and checks the name (1–50 characters), writes the household and your member row in one transaction, and raises `already_in_household`, `invalid_household_name` or `not_authenticated`. The tables have no insert policies, so direct inserts are denied.
+- `useHousehold()` loads your household and its members in one query (member names come through the `household_members.user_id` to `profiles.id` foreign key) and creates one through the function. `app/plugins/household.ts` forgets the loaded household when the signed-in user changes.
+- `/household` shows the create form or the household overview. The Home page has a household card and `/me` a Household row.
+- `AppNavigation` (mounted in `app/layouts/default.vue`) is the bottom bar on phones and a side rail from 960 px. Plan, List and Recipes are disabled until their pages exist: give their entry in `NAV_ITEMS` a `to` when they do.
+
 ## Database tests
 
 pgTAP tests live in `supabase/tests/`. With the Supabase CLI and a local stack (`supabase start`), run:

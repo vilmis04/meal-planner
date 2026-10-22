@@ -31,7 +31,7 @@ As a user I want a profile with a display name.
 
 ### B1. Create a household (S, Phase 1)
 As a user I want to create a household so I can plan with others.
-- I can create one with a name; I become `owner`.
+- I can create one with a name (1 to 50 characters); I become its first member. There is no owner role: all members are equal, as in the design.
 - A user can belong to only one household; creating a second is blocked with a message.
 
 ### B2. Invite members (M, Phase 1)
