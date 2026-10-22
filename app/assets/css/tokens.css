@@ -16,4 +16,7 @@
 
   --layout-max-width: 1120px;
   --auth-max-width: 440px;
+
+  --nav-height: 72px;
+  --nav-rail-width: 88px;
 }
