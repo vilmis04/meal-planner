@@ -1,7 +1,14 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const supabase = useSupabaseClient();
+const nextPath = useAuthNextPath();
 const isRedirecting = ref(false);
+
+// Brings the user back to the page they came for, such as an invite link.
+const redirectTo = computed(() => {
+  const callback = `${window.location.origin}/auth/callback`;
+  return nextPath.value === "/" ? callback : `${callback}?next=${encodeURIComponent(nextPath.value)}`;
+});
 
 // In the browser this only builds the Supabase authorize URL and navigates to it;
 // failures come back later through /auth/callback, so there is no error to show here.
@@ -9,7 +16,7 @@ async function handleClick() {
   isRedirecting.value = true;
   await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${window.location.origin}/auth/callback` },
+    options: { redirectTo: redirectTo.value },
   });
 }
 </script>

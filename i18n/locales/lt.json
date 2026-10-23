@@ -70,7 +70,8 @@
       "resetLinkInvalid": "Ši nuoroda nebegalioja, jau buvo panaudota arba atidaryta kitoje naršyklėje. Paprašykite naujos nuorodos ir atidarykite ją šioje naršyklėje.",
       "samePassword": "Pasirinkite slaptažodį, kuris skiriasi nuo dabartinio.",
       "resetSessionExpired": "Atkūrimo nuoroda nebegalioja. Paprašykite naujos."
-    }
+    },
+    "joinHint": "Jungiatės prie kieno nors namų ūkio? Prisijunkite arba susikurkite paskyrą ir iškart grįšite prie kvietimo."
   },
   "home": {
     "title": "Sveiki sugrįžę",
@@ -108,6 +109,70 @@
       "invalidName": "Pavadinimas turi būti iš 1–50 simbolių.",
       "generic": "Nepavyko sukurti namų ūkio. Patikrinkite ryšį ir bandykite dar kartą.",
       "loadFailed": "Nepavyko įkelti jūsų namų ūkio. Perkraukite puslapį ir bandykite dar kartą."
+    },
+    "invite": {
+      "title": "Kvietimas",
+      "hint": "Sukurkite nuorodą ir pasidalykite ja. Kiekviena nuoroda veikia vieną kartą ir 7 dienas.",
+      "create": "Sukurti kvietimo nuorodą",
+      "created": "Kvietimo nuoroda sukurta",
+      "copy": "Kopijuoti",
+      "copied": "Nuoroda nukopijuota",
+      "activeHint": "Nuoroda aktyvi. Saugumo sumetimais ją galima parodyti tik ką sukūrus. Norėdami nukopijuoti dar kartą, sukurkite naują.",
+      "expiresIn": "Nuoroda galios {count} dieną | Nuoroda galios {count} dienas",
+      "replace": "Nauja nuoroda",
+      "revoke": "Atšaukti nuorodą",
+      "revoked": "Nuoroda atšaukta",
+      "errors": {
+        "createFailed": "Nepavyko sukurti nuorodos. Patikrinkite ryšį ir bandykite dar kartą.",
+        "revokeFailed": "Nepavyko atšaukti nuorodos. Patikrinkite ryšį ir bandykite dar kartą.",
+        "loadFailed": "Nepavyko įkelti kvietimo nuorodos. Perkraukite puslapį ir bandykite dar kartą.",
+        "copyFailed": "Nepavyko nukopijuoti. Pažymėkite nuorodą ir nukopijuokite ranka."
+      }
+    },
+    "join": {
+      "pageTitle": "Prisijungti prie namų ūkio",
+      "joined": "Prisijungėte prie namų ūkio",
+      "retry": "Bandyti dar kartą",
+      "accept": {
+        "label": "Jus kviečia į",
+        "invitedBy": "Pakvietė {name}",
+        "hint": "Prisijungę matysite bendrus planus ir pirkinių sąrašus.",
+        "submit": "Prisijungti prie namų ūkio",
+        "decline": "Ne dabar"
+      },
+      "switch": {
+        "title": "Jau esate namų ūkyje „{name}“",
+        "hint": "Vartotojas gali būti tik viename namų ūkyje. Norėdami prisijungti prie „{invited}“, pirmiau turite palikti „{current}“.",
+        "lastMember": "Esate vienintelis „{name}“ narys. Išėjus namų ūkis bus ištrintas.",
+        "leave": "Palikti „{current}“ ir prisijungti prie „{invited}“",
+        "stay": "Likti „{name}“"
+      },
+      "member": {
+        "title": "Jau esate namų ūkyje „{name}“",
+        "hint": "Šis kvietimas skirtas namų ūkiui, kuriam jau priklausote.",
+        "action": "Atidaryti namų ūkį"
+      },
+      "errors": {
+        "expired": {
+          "title": "Nuoroda nebegalioja",
+          "hint": "Kvietimo nuorodos galioja 7 dienas. Paprašykite namų ūkio nario naujos nuorodos."
+        },
+        "revoked": {
+          "title": "Nuoroda atšaukta",
+          "hint": "Namų ūkio narys ją išjungė. Paprašykite naujos nuorodos."
+        },
+        "used": {
+          "title": "Nuoroda jau panaudota",
+          "hint": "Kiekviena nuoroda veikia tik vieną kartą. Paprašykite namų ūkio nario naujos."
+        },
+        "not_found": {
+          "title": "Nuoroda nerasta",
+          "hint": "Patikrinkite, ar nukopijavote visą nuorodą, arba paprašykite namų ūkio nario atsiųsti ją dar kartą."
+        },
+        "action": "Eiti į namų ūkį",
+        "acceptFailed": "Nepavyko prisijungti prie namų ūkio. Patikrinkite ryšį ir bandykite dar kartą.",
+        "loadFailed": "Nepavyko įkelti kvietimo. Patikrinkite ryšį ir bandykite dar kartą."
+      }
     }
   },
   "profile": {

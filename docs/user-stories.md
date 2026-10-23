@@ -35,10 +35,11 @@ As a user I want to create a household so I can plan with others.
 - A user can belong to only one household; creating a second is blocked with a message.
 
 ### B2. Invite members (M, Phase 1)
-As an owner I want to invite people to my household.
-- I can generate an invite link (expires after 7 days, revocable).
+As a member I want to invite people to my household. There is no owner role (see B1), so any member can invite.
+- I can generate an invite link (single use, expires after 7 days, revocable). A household has one live link; creating a new one revokes the old one.
 - Opening the link while signed in (or after sign-up/login) shows an accept screen; accepting adds me as `member`.
 - Expired, revoked, or already-used links show a clear error.
+- If I am already in a household, I am asked to leave it for the new one or stay; one household per user always holds. Leaving as its last member deletes the old household.
 
 ### B3. Manage members (S, Phase 1)
 As an owner I want to see and remove members; as a member I want to leave.

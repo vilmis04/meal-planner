@@ -5,10 +5,14 @@ export default defineNuxtPlugin({
   dependsOn: ["supabase"],
   setup() {
     const user = useSupabaseUser();
-    const { clear } = useHousehold();
+    const { clear: clearHousehold } = useHousehold();
+    const { clear: clearInvite } = useHouseholdInvite();
 
     if (import.meta.client) {
-      watch(() => user.value?.id, clear);
+      watch(() => user.value?.id, () => {
+        clearHousehold();
+        clearInvite();
+      });
     }
   },
 });

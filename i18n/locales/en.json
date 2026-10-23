@@ -70,7 +70,8 @@
       "resetLinkInvalid": "This reset link has expired, was already used, or was opened in a different browser. Request a new link and open it in this browser.",
       "samePassword": "Choose a password different from your current one.",
       "resetSessionExpired": "Your reset link has expired. Request a new one."
-    }
+    },
+    "joinHint": "Joining someone's household? Sign in or create an account and you'll come straight back to the invite."
   },
   "home": {
     "title": "Welcome back",
@@ -108,6 +109,70 @@
       "invalidName": "Household names must be 1 to 50 characters.",
       "generic": "Could not create the household. Check your connection and try again.",
       "loadFailed": "Your household could not be loaded. Reload the page to try again."
+    },
+    "invite": {
+      "title": "Invite",
+      "hint": "Create a link and share it. Each link works once and for 7 days.",
+      "create": "Create invite link",
+      "created": "Invite link created",
+      "copy": "Copy",
+      "copied": "Link copied",
+      "activeHint": "A link is active. For safety it can only be shown right after it is created. Create a new link to copy it again.",
+      "expiresIn": "Expires in {count} day | Expires in {count} days",
+      "replace": "New link",
+      "revoke": "Revoke link",
+      "revoked": "Link revoked",
+      "errors": {
+        "createFailed": "Could not create the link. Check your connection and try again.",
+        "revokeFailed": "Could not revoke the link. Check your connection and try again.",
+        "loadFailed": "The invite link could not be loaded. Reload the page to try again.",
+        "copyFailed": "Could not copy. Select the link and copy it by hand."
+      }
+    },
+    "join": {
+      "pageTitle": "Join household",
+      "joined": "You joined the household",
+      "retry": "Try again",
+      "accept": {
+        "label": "You're invited to",
+        "invitedBy": "Invited by {name}",
+        "hint": "Joining adds you to the shared plans and shopping lists.",
+        "submit": "Join household",
+        "decline": "Not now"
+      },
+      "switch": {
+        "title": "You're already in {name}",
+        "hint": "A user can belong to only one household. To join {invited}, you first leave {current}.",
+        "lastMember": "You're the only member of {name}. If you leave, it is deleted.",
+        "leave": "Leave {current} and join {invited}",
+        "stay": "Stay in {name}"
+      },
+      "member": {
+        "title": "You're already in {name}",
+        "hint": "This invite is for the household you already belong to.",
+        "action": "Open household"
+      },
+      "errors": {
+        "expired": {
+          "title": "This link has expired",
+          "hint": "Invite links work for 7 days. Ask a member of the household for a new one."
+        },
+        "revoked": {
+          "title": "This link was revoked",
+          "hint": "A member turned it off. Ask them for a new link."
+        },
+        "used": {
+          "title": "This link was already used",
+          "hint": "Each link works once. Ask a member of the household for a new one."
+        },
+        "not_found": {
+          "title": "We can't find this link",
+          "hint": "Check that the whole link was copied, or ask a member of the household to send it again."
+        },
+        "action": "Go to household",
+        "acceptFailed": "Could not join the household. Check your connection and try again.",
+        "loadFailed": "This invite could not be loaded. Check your connection and try again."
+      }
     }
   },
   "profile": {

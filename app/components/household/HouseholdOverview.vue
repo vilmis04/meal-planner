@@ -58,6 +58,8 @@ const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
         </v-list>
       </v-card>
     </section>
+
+    <HouseholdInviteCard />
   </div>
 </template>
 

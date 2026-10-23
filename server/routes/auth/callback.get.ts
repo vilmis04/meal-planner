@@ -2,13 +2,14 @@ const OAUTH_FAILED_REDIRECT = "/login?error=oauth";
 const RESET_PASSWORD_PATH = "/reset-password";
 const RESET_LINK_FAILED_REDIRECT = "/forgot-password?error=link";
 
-// Only same-origin paths: "/reset-password" passes; "https://evil.example",
-// "//evil.example" and "/\evil.example" (which browsers treat as "//") do not.
-function getSafeNextPath(next: unknown): string {
-  if (typeof next !== "string" || !next.startsWith("/") || /^\/[/\\]/.test(next)) {
-    return "/";
+// A failed Google sign-in from an invite link keeps the invite, so the next try still returns to it.
+function getFailedRedirect(nextPath: string): string {
+  if (nextPath === RESET_PASSWORD_PATH) {
+    return RESET_LINK_FAILED_REDIRECT;
   }
-  return next;
+  return isJoinPath(nextPath)
+    ? `${OAUTH_FAILED_REDIRECT}&next=${encodeURIComponent(nextPath)}`
+    : OAUTH_FAILED_REDIRECT;
 }
 
 // Exchanging the PKCE code on the server sets the session cookies before the
@@ -17,8 +18,7 @@ function getSafeNextPath(next: unknown): string {
 export default defineEventHandler(async (event) => {
   const { code, error, next } = getQuery(event);
   const nextPath = getSafeNextPath(next);
-  const failedRedirect =
-    nextPath === RESET_PASSWORD_PATH ? RESET_LINK_FAILED_REDIRECT : OAUTH_FAILED_REDIRECT;
+  const failedRedirect = getFailedRedirect(nextPath);
 
   if (error || typeof code !== "string") {
     return sendRedirect(event, failedRedirect);
