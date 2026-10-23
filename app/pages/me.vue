@@ -24,6 +24,14 @@ async function handleSignOut() {
       <ProfileNameForm />
       <ProfileLanguageSetting />
       <ProfileThemeSetting />
+      <v-card to="/household" variant="flat" border :class="$style.row">
+        <v-list-item
+          :title="t('profile.household.title')"
+          :subtitle="t('profile.household.hint')"
+          prepend-icon="mdi-home-account"
+          append-icon="mdi-chevron-right"
+        />
+      </v-card>
     </template>
 
     <v-btn variant="outlined" size="large" block @click="handleSignOut">
@@ -45,5 +53,9 @@ async function handleSignOut() {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+}
+
+.row {
+  border-radius: var(--radius-lg);
 }
 </style>

@@ -6,6 +6,14 @@
     "switchToLight": "Switch to light theme",
     "switchToDark": "Switch to dark theme"
   },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "plan": "Plan",
+    "list": "List",
+    "recipes": "Recipes",
+    "me": "Me"
+  },
   "auth": {
     "pageTitle": "Sign in",
     "hero": {
@@ -68,6 +76,40 @@
     "title": "Welcome back",
     "greeting": "Welcome back, {name}"
   },
+  "household": {
+    "pageTitle": "Household",
+    "title": "Household",
+    "create": {
+      "title": "Create your household",
+      "hint": "A household is the group you plan meals and shop with. You can belong to one household.",
+      "nameLabel": "Household name",
+      "submit": "Create household",
+      "created": "Household created"
+    },
+    "overview": {
+      "heroLabel": "Your household",
+      "members": "Members",
+      "memberCount": "{count} member | {count} members",
+      "you": "{name} (you)",
+      "roleMember": "Member"
+    },
+    "homeCard": {
+      "createTitle": "Plan together",
+      "createHint": "Create a household to share plans and shopping lists.",
+      "createAction": "Create household",
+      "open": "Open household"
+    },
+    "validation": {
+      "nameRequired": "Enter a household name",
+      "nameMaxLength": "Use at most {max} characters"
+    },
+    "errors": {
+      "alreadyInHousehold": "You already belong to a household, and a user can be in only one.",
+      "invalidName": "Household names must be 1 to 50 characters.",
+      "generic": "Could not create the household. Check your connection and try again.",
+      "loadFailed": "Your household could not be loaded. Reload the page to try again."
+    }
+  },
   "profile": {
     "pageTitle": "Profile",
     "title": "Profile",
@@ -94,6 +136,10 @@
     "errors": {
       "loadFailed": "Your profile could not be loaded. Reload the page to try again.",
       "saveFailed": "Could not save. Check your connection and try again."
+    },
+    "household": {
+      "title": "Household",
+      "hint": "Create or open your household"
     }
   }
 }

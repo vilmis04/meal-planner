@@ -98,7 +98,7 @@ select is(
   (select name from public.households), 'Home', 'I can read my household');
 select throws_ok(
   $$ insert into public.households (name) values ('Second home') $$,
-  '42501', null, 'households cannot be created yet (B1 adds that)');
+  '42501', null, 'households cannot be inserted directly (create_household is the only way)');
 
 -- Jonas is outside the household (T4, T12)
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000c", "role": "authenticated"}';
