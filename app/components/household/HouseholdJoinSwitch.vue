@@ -16,7 +16,7 @@ const { t } = useI18n();
 <template>
   <div :class="$style.wrapper">
     <section :class="$style.hero">
-      <v-icon icon="mdi-home-switch-outline" size="32" />
+      <v-icon icon="mdi-swap-horizontal" size="32" />
       <h2 :class="$style.title">{{ t("household.join.switch.title", { name: current.name }) }}</h2>
       <p :class="$style.hint">
         {{ t("household.join.switch.hint", { current: current.name, invited: preview.householdName }) }}

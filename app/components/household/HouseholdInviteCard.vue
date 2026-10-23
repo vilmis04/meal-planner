@@ -130,15 +130,16 @@ async function handleCopy() {
   background-color: var(--color-background);
 }
 
+/* Wraps instead of cutting off, so the whole link can be checked before it is shared. */
 .link {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
+  padding-block: var(--space-1);
   color: var(--color-muted);
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   user-select: all;
 }
 
