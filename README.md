@@ -68,6 +68,7 @@ Auth uses Supabase's `@supabase/ssr` cookie-based session pattern:
 - `app/middleware/auth.global.ts` also treats `/forgot-password` as guest-only, and sends signed-out visitors of `/reset-password` to `/forgot-password`.
 - `/login` has Sign in and Create account tabs (email + password), a "Forgot password?" link and a "Continue with Google" button. Supabase errors are mapped to translation keys in `app/utils/getAuthErrorKey.ts`.
 - `/forgot-password` sends a Supabase reset email; `/reset-password` sets the new password once the reset link has signed the user in.
+- Every auth screen honours `?next=<same-origin path>` (validated by `shared/utils/getSafeNextPath.ts`): the auth guard sends signed-out visitors of `/join/<token>` to `/login?next=/join/<token>`, and sign-in, sign-up and Google sign-in all return to it.
 - `server/routes/auth/callback.get.ts` finishes Google sign-in and reset links by exchanging the PKCE code for a session cookie, then redirects to the `next` path (same-origin only; default `/`).
 
 Supabase project settings this app expects:
@@ -89,6 +90,8 @@ Supabase project settings this app expects:
 - `create_household(household_name)` (`supabase/migrations/20261021000100_add_household_creation.sql`) is the only way to create a household. It trims and checks the name (1–50 characters), writes the household and your member row in one transaction, and raises `already_in_household`, `invalid_household_name` or `not_authenticated`. The tables have no insert policies, so direct inserts are denied.
 - `useHousehold()` loads your household and its members in one query (member names come through the `household_members.user_id` to `profiles.id` foreign key) and creates one through the function. `app/plugins/household.ts` forgets the loaded household when the signed-in user changes.
 - `/household` shows the create form or the household overview. The Home page has a household card and `/me` a Household row.
+- Invites (`supabase/migrations/20261023000000_add_household_invites.sql`): any member can create a link for their household (`create_household_invite()`), which works once and for 7 days, and revoke it (`revoke_household_invite()`). There is one live link per household: creating a new one revokes the old one. Only the SHA-256 hash of the 192-bit token is stored, so the URL is shown only right after it is created; the invite card on `/household` shows status, expiry and Revoke afterwards. `household_invites` has no write policies and its `token_hash` column is not readable.
+- `/join/<token>` previews a link with `get_household_invite()` (valid, expired, revoked, used or not found) and joins with `accept_household_invite(token, leave_current)`. A user who is already in another household chooses between staying and leaving it for the new one; leaving removes them from the old household, which is deleted if they were its last member. The whole switch is one transaction, and concurrent use of one link is serialised by a row lock, so the second user sees "already used".
 - `AppNavigation` (mounted in `app/layouts/default.vue`) is the bottom bar on phones and a side rail from 960 px. Plan, List and Recipes are disabled until their pages exist: give their entry in `NAV_ITEMS` a `to` when they do.
 
 ## Database tests

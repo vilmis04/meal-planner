@@ -3,10 +3,13 @@ defineOptions({ name: "HouseholdPage" });
 
 const { t } = useI18n();
 const { household, loadFailed, load } = useHousehold();
+const { load: loadInvite } = useHouseholdInvite();
 
 useHead({ title: () => t("household.pageTitle") });
 
 await callOnce("household", load, { mode: "navigation" });
+// Whoever is in a household can see its live invite.
+await callOnce("household-invite", () => (household.value ? loadInvite() : undefined), { mode: "navigation" });
 </script>
 
 <template>

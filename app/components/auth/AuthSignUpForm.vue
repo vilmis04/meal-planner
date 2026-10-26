@@ -5,6 +5,7 @@ const { t } = useI18n();
 const supabase = useSupabaseClient();
 const rules = useAuthFieldRules();
 const { isSubmitting, errorKey, submit } = useAuthForm();
+const nextPath = useAuthNextPath();
 
 const email = ref("");
 const password = ref("");
@@ -29,7 +30,7 @@ async function handleSubmit(event: SubmitEventPromise) {
   }
 
   if (response.data.session) {
-    await navigateTo("/");
+    await navigateTo(nextPath.value);
     return;
   }
 

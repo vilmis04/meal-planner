@@ -1,4 +1,4 @@
-const GENERIC_HOUSEHOLD_ERROR_KEY = "household.errors.generic";
+export const GENERIC_HOUSEHOLD_ERROR_KEY = "household.errors.generic";
 
 // Messages raised by create_household() (supabase/migrations/20261021000100_add_household_creation.sql).
 const ERROR_KEY_BY_MESSAGE: Partial<Record<string, string>> = {
