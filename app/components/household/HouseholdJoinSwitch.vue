@@ -11,6 +11,7 @@ defineProps<{
 defineEmits<{ leave: [] }>();
 
 const { t } = useI18n();
+const { isOwner } = useHousehold();
 </script>
 
 <template>
@@ -27,7 +28,18 @@ const { t } = useI18n();
       <v-alert v-if="current.members.length === 1" type="warning" variant="tonal" density="compact">
         {{ t("household.join.switch.lastMember", { name: current.name }) }}
       </v-alert>
-      <v-btn color="error" size="large" block :loading="isJoining" @click="$emit('leave')">
+      <!-- The database refuses this switch too; this explains it before the button is pressed. -->
+      <v-alert v-else-if="isOwner" type="info" variant="tonal" density="compact">
+        {{ t("household.join.switch.ownerMustTransfer", { name: current.name }) }}
+      </v-alert>
+      <v-btn
+        color="error"
+        size="large"
+        block
+        :loading="isJoining"
+        :disabled="isOwner && current.members.length > 1"
+        @click="$emit('leave')"
+      >
         {{ t("household.join.switch.leave", { current: current.name, invited: preview.householdName }) }}
       </v-btn>
       <v-btn to="/household" variant="outlined" size="large" block :disabled="isJoining">

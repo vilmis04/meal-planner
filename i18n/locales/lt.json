@@ -92,7 +92,67 @@
       "members": "Nariai",
       "memberCount": "{count} narys | {count} nariai",
       "you": "{name} (jūs)",
-      "roleMember": "Narys"
+      "roleOwner": "Savininkas",
+      "roleMember": "Narys",
+      "subtitle": "{role} · {detail}",
+      "joined": "prisijungė {date}"
+    },
+    "members": {
+      "actions": "Veiksmai: {name}",
+      "makeOwner": "Padaryti savininku",
+      "remove": "Pašalinti",
+      "leave": "Palikti namų ūkį",
+      "delete": "Ištrinti namų ūkį",
+      "removed": "Narys pašalintas",
+      "transferred": "Savininko teisės perduotos",
+      "left": "Palikote namų ūkį",
+      "deleted": "Namų ūkis ištrintas",
+      "dialog": {
+        "cancel": "Atšaukti",
+        "close": "Uždaryti",
+        "remove": {
+          "title": "Pašalinti {name}?",
+          "text": "{name} iškart praras prieigą prie namų ūkio planų ir pirkinių sąrašų, bet galės prisijungti iš naujo su nauja kvietimo nuoroda.",
+          "confirm": "Pašalinti"
+        },
+        "transfer": {
+          "title": "Padaryti {name} savininku?",
+          "text": "{name} galės šalinti narius ir ištrinti namų ūkį. Jūs tapsite paprastu nariu.",
+          "confirm": "Padaryti savininku"
+        },
+        "leave": {
+          "title": "Palikti „{household}“?",
+          "text": "Iškart prarasite prieigą prie namų ūkio planų ir pirkinių sąrašų. Galėsite prisijungti iš naujo su nauja kvietimo nuoroda.",
+          "confirm": "Palikti"
+        },
+        "leaveLast": {
+          "title": "Palikti „{household}“?",
+          "text": "Esate vienintelis narys, todėl išėjus namų ūkis bus ištrintas.",
+          "confirm": "Palikti ir ištrinti"
+        },
+        "blocked": {
+          "title": "Pirmiausia perduokite „{household}“",
+          "text": "Esate šio namų ūkio savininkas, o jame dar yra kitų narių. Padarykite vieną iš jų savininku jo meniu arba ištrinkite namų ūkį visiems.",
+          "confirm": "Ištrinti namų ūkį"
+        },
+        "delete": {
+          "title": "Ištrinti „{household}“?",
+          "text": "Visi iškart praras prieigą prie jo planų ir pirkinių sąrašų. Šio veiksmo atšaukti negalima.",
+          "confirm": "Ištrinti"
+        }
+      },
+      "errors": {
+        "removeFailed": "Nepavyko pašalinti nario. Patikrinkite ryšį ir bandykite dar kartą.",
+        "transferFailed": "Nepavyko pakeisti savininko. Patikrinkite ryšį ir bandykite dar kartą.",
+        "leaveFailed": "Nepavyko palikti namų ūkio. Patikrinkite ryšį ir bandykite dar kartą.",
+        "deleteFailed": "Nepavyko ištrinti namų ūkio. Patikrinkite ryšį ir bandykite dar kartą.",
+        "notOwner": "Tai gali daryti tik savininkas.",
+        "ownerMustTransfer": "Esate šio namų ūkio savininkas, o jame yra kitų narių. Pirmiausia padarykite savininku kitą narį arba ištrinkite namų ūkį.",
+        "memberNotFound": "Šio žmogaus namų ūkyje nebėra.",
+        "notInHousehold": "Jūs nebe šiame namų ūkyje.",
+        "cannotRemoveSelf": "Savęs pašalinti negalima. Pasirinkite „Palikti namų ūkį“.",
+        "invalidNewOwner": "Pasirinkite kitą namų ūkio narį."
+      }
     },
     "homeCard": {
       "createTitle": "Planuokite kartu",
@@ -144,6 +204,7 @@
         "title": "Jau esate namų ūkyje „{name}“",
         "hint": "Vartotojas gali būti tik viename namų ūkyje. Norėdami prisijungti prie „{invited}“, pirmiau turite palikti „{current}“.",
         "lastMember": "Esate vienintelis „{name}“ narys. Išėjus namų ūkis bus ištrintas.",
+      "ownerMustTransfer": "Esate „{name}“ savininkas, o jame yra kitų narių. Pirmiausia namų ūkio puslapyje padarykite savininku kitą narį arba ištrinkite namų ūkį.",
         "leave": "Palikti „{current}“ ir prisijungti prie „{invited}“",
         "stay": "Likti „{name}“"
       },

@@ -92,7 +92,67 @@
       "members": "Members",
       "memberCount": "{count} member | {count} members",
       "you": "{name} (you)",
-      "roleMember": "Member"
+      "roleOwner": "Owner",
+      "roleMember": "Member",
+      "subtitle": "{role} · {detail}",
+      "joined": "joined {date}"
+    },
+    "members": {
+      "actions": "Actions for {name}",
+      "makeOwner": "Make owner",
+      "remove": "Remove",
+      "leave": "Leave household",
+      "delete": "Delete household",
+      "removed": "Member removed",
+      "transferred": "Ownership transferred",
+      "left": "You left the household",
+      "deleted": "Household deleted",
+      "dialog": {
+        "cancel": "Cancel",
+        "close": "Close",
+        "remove": {
+          "title": "Remove {name}?",
+          "text": "{name} will lose access to household plans and shopping lists right away, and can rejoin with a new invite link.",
+          "confirm": "Remove"
+        },
+        "transfer": {
+          "title": "Make {name} the owner?",
+          "text": "{name} will be able to remove members and delete the household. You become a regular member.",
+          "confirm": "Make owner"
+        },
+        "leave": {
+          "title": "Leave {household}?",
+          "text": "You will lose access to household plans and shopping lists right away. You can rejoin with a new invite link.",
+          "confirm": "Leave"
+        },
+        "leaveLast": {
+          "title": "Leave {household}?",
+          "text": "You are the only member, so the household is deleted when you leave.",
+          "confirm": "Leave and delete"
+        },
+        "blocked": {
+          "title": "Hand over {household} first",
+          "text": "You own this household and other members are still in it. Make one of them the owner from their menu, or delete the household for everyone.",
+          "confirm": "Delete household"
+        },
+        "delete": {
+          "title": "Delete {household}?",
+          "text": "Everyone will lose access to its plans and shopping lists right away. This cannot be undone.",
+          "confirm": "Delete"
+        }
+      },
+      "errors": {
+        "removeFailed": "Could not remove the member. Check your connection and try again.",
+        "transferFailed": "Could not change the owner. Check your connection and try again.",
+        "leaveFailed": "Could not leave the household. Check your connection and try again.",
+        "deleteFailed": "Could not delete the household. Check your connection and try again.",
+        "notOwner": "Only the owner can do that.",
+        "ownerMustTransfer": "You own this household and others are in it. Make someone else the owner or delete it first.",
+        "memberNotFound": "That person is no longer in the household.",
+        "notInHousehold": "You are no longer in this household.",
+        "cannotRemoveSelf": "You cannot remove yourself. Use Leave household instead.",
+        "invalidNewOwner": "Choose another member of the household."
+      }
     },
     "homeCard": {
       "createTitle": "Plan together",
@@ -144,6 +204,7 @@
         "title": "You're already in {name}",
         "hint": "A user can belong to only one household. To join {invited}, you first leave {current}.",
         "lastMember": "You're the only member of {name}. If you leave, it is deleted.",
+      "ownerMustTransfer": "You own {name} and others are in it. Make someone else the owner or delete it from the household page first.",
         "leave": "Leave {current} and join {invited}",
         "stay": "Stay in {name}"
       },

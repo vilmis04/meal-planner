@@ -1,15 +1,37 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue";
-import type { Household, HouseholdMember } from "~/types/household.types";
+import type { Household, HouseholdMember, MemberActionResult } from "~/types/household.types";
+
+type DialogKind = "remove" | "transfer" | "leave" | "leaveLast" | "blocked" | "delete";
 
 const MAX_HERO_AVATARS = 3;
 
+const DIALOG_ICON: Record<DialogKind, string> = {
+  remove: "mdi-account-remove-outline",
+  transfer: "mdi-crown-outline",
+  leave: "mdi-logout",
+  leaveLast: "mdi-logout",
+  blocked: "mdi-crown-outline",
+  delete: "mdi-delete-outline",
+};
+
+const SUCCESS_KEY: Partial<Record<DialogKind, string>> = {
+  remove: "household.members.removed",
+  transfer: "household.members.transferred",
+  leave: "household.members.left",
+  leaveLast: "household.members.left",
+  delete: "household.members.deleted",
+};
+
 const props = defineProps<{ household: DeepReadonly<Household> }>();
 
-const { t } = useI18n();
+const { t, d } = useI18n();
 const user = useSupabaseUser();
+const { isOwner, removeMember, transferOwnership, leave, deleteHousehold } = useHousehold();
+const { show } = useAppSnackbar();
 
 const heroMembers = computed(() => props.household.members.slice(0, MAX_HERO_AVATARS));
+const hasOtherMembers = computed(() => props.household.members.length > 1);
 
 const initial = (member: DeepReadonly<HouseholdMember>): string => member.displayName.charAt(0).toUpperCase();
 const isCurrentUser = (member: DeepReadonly<HouseholdMember>): boolean => member.userId === user.value?.id;
@@ -19,9 +41,74 @@ const memberName = (member: DeepReadonly<HouseholdMember>): string =>
     ? t("household.overview.you", { name: member.displayName })
     : member.displayName;
 
-// Other members' emails are not visible to the user, so they get their role instead.
+// Other members' emails are not visible to the user, so they get when they joined instead.
 const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
-  (isCurrentUser(member) && user.value?.email) || t("household.overview.roleMember");
+  t("household.overview.subtitle", {
+    role: t(member.role === "owner" ? "household.overview.roleOwner" : "household.overview.roleMember"),
+    detail:
+      (isCurrentUser(member) && user.value?.email) ||
+      t("household.overview.joined", { date: d(new Date(member.joinedAt), { day: "numeric", month: "short" }) }),
+  });
+
+// The dialog keeps its kind and member while it closes, so its text does not change as it fades out.
+const dialogKind = ref<DialogKind>("leave");
+const dialogMember = ref<DeepReadonly<HouseholdMember> | null>(null);
+const isDialogOpen = ref(false);
+const isBusy = ref(false);
+
+const dialogParams = computed(() => ({
+  name: dialogMember.value?.displayName ?? "",
+  household: props.household.name,
+}));
+
+function openDialog(kind: DialogKind, member: DeepReadonly<HouseholdMember> | null = null) {
+  dialogKind.value = kind;
+  dialogMember.value = member;
+  isDialogOpen.value = true;
+}
+
+function handleLeave() {
+  if (!hasOtherMembers.value) {
+    openDialog("leaveLast");
+    return;
+  }
+  // An owner cannot walk away from people who still depend on the household.
+  openDialog(isOwner.value ? "blocked" : "leave");
+}
+
+async function runAction(kind: DialogKind): Promise<MemberActionResult> {
+  const memberId = dialogMember.value?.userId ?? "";
+  switch (kind) {
+    case "remove":
+      return removeMember(memberId);
+    case "transfer":
+      return transferOwnership(memberId);
+    case "delete":
+      return deleteHousehold();
+    default:
+      return leave();
+  }
+}
+
+async function handleConfirm() {
+  if (isBusy.value) {
+    return;
+  }
+
+  // Not an action itself: it leads on to deleting.
+  if (dialogKind.value === "blocked") {
+    openDialog("delete");
+    return;
+  }
+
+  const kind = dialogKind.value;
+  isBusy.value = true;
+  const result = await runAction(kind);
+  isBusy.value = false;
+  isDialogOpen.value = false;
+
+  show(result.isDone ? (SUCCESS_KEY[kind] ?? "") : result.errorKey, result.isDone ? "success" : "error");
+}
 </script>
 
 <template>
@@ -53,6 +140,13 @@ const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
                   <span :class="$style.initial">{{ initial(member) }}</span>
                 </v-avatar>
               </template>
+              <template v-if="isOwner && !isCurrentUser(member)" #append>
+                <HouseholdMemberMenu
+                  :member-name="member.displayName"
+                  @make-owner="openDialog('transfer', member)"
+                  @remove="openDialog('remove', member)"
+                />
+              </template>
             </v-list-item>
           </template>
         </v-list>
@@ -60,6 +154,34 @@ const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
     </section>
 
     <HouseholdInviteCard />
+
+    <section :class="$style.actions">
+      <v-btn variant="outlined" color="error" size="large" block prepend-icon="mdi-logout" @click="handleLeave">
+        {{ t("household.members.leave") }}
+      </v-btn>
+      <v-btn
+        v-if="isOwner && hasOtherMembers"
+        variant="text"
+        color="error"
+        size="large"
+        block
+        prepend-icon="mdi-delete-outline"
+        @click="openDialog('delete')"
+      >
+        {{ t("household.members.delete") }}
+      </v-btn>
+    </section>
+
+    <HouseholdConfirmDialog
+      v-model="isDialogOpen"
+      :icon="DIALOG_ICON[dialogKind]"
+      :title="t(`household.members.dialog.${dialogKind}.title`, dialogParams)"
+      :text="t(`household.members.dialog.${dialogKind}.text`, dialogParams)"
+      :confirm-label="t(`household.members.dialog.${dialogKind}.confirm`)"
+      :cancel-label="t(dialogKind === 'blocked' ? 'household.members.dialog.close' : 'household.members.dialog.cancel')"
+      :is-busy="isBusy"
+      @confirm="handleConfirm"
+    />
   </div>
 </template>
 
@@ -146,5 +268,11 @@ const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
 
 .initial {
   font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 </style>
