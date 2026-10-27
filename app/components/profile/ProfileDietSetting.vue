@@ -71,9 +71,11 @@ async function handleUpdate(next: Diet | null) {
           :data-testid="`diet-${option.diet}`"
         >
           <template #label>
-            <span :class="$style.label">{{ option.label }}</span>
-            <span v-if="option.isSelected" :class="$style.tag">{{ t("profile.diet.selected") }}</span>
-            <span v-else-if="option.hint" :class="$style.optionHint">{{ option.hint }}</span>
+            <span :class="$style.content">
+              <span :class="$style.label">{{ option.label }}</span>
+              <span v-if="option.isSelected" :class="$style.tag">{{ t("profile.diet.selected") }}</span>
+              <span v-else-if="option.hint" :class="$style.optionHint">{{ option.hint }}</span>
+            </span>
           </template>
         </v-radio>
       </v-radio-group>
@@ -124,7 +126,6 @@ async function handleUpdate(next: Diet | null) {
   flex: 1 1 auto;
   min-width: 0;
   padding-top: var(--space-1);
-  gap: var(--space-2);
   color: inherit;
   opacity: 1;
 }
@@ -142,6 +143,15 @@ async function handleUpdate(next: Diet | null) {
   background-color: rgb(var(--v-theme-primary), 0.12);
   color: var(--color-primary);
   font-weight: 700;
+}
+
+/* The label and its tag or hint share a baseline even though they differ in size. */
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .label {
