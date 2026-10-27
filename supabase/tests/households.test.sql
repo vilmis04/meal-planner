@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
 
-select plan(25);
+select plan(26);
 
 -- Fixtures, created as the migration owner. Ana and Monika already share a household;
 -- Jonas and Dana have none.
@@ -15,9 +15,9 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000d', 'dana@example.com', '{"full_name": "Dana"}');
 
 insert into public.households (id, name) values ('00000000-0000-0000-0000-0000000000f1', 'Home');
-insert into public.household_members (household_id, user_id) values
-  ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000a'),
-  ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000b');
+insert into public.household_members (household_id, user_id, role) values
+  ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000a', 'owner'),
+  ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000b', 'member');
 
 -- Name constraint (AC1), checked as the migration owner
 select throws_ok(
@@ -43,6 +43,8 @@ select is(
   1, 'I am a member of the household I created');
 select is(
   (select count(*)::int from public.household_members), 1, 'I am its only member');
+select is(
+  (select role from public.household_members), 'owner', 'the creator of a household owns it (B3)');
 select results_eq(
   $$ select profiles.display_name from public.household_members
      join public.profiles on profiles.id = household_members.user_id $$,

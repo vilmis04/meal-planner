@@ -31,11 +31,11 @@ As a user I want a profile with a display name.
 
 ### B1. Create a household (S, Phase 1)
 As a user I want to create a household so I can plan with others.
-- I can create one with a name (1 to 50 characters); I become its first member. There is no owner role: all members are equal, as in the design.
+- I can create one with a name (1 to 50 characters); I become its first member and its owner (the owner role arrives with B3).
 - A user can belong to only one household; creating a second is blocked with a message.
 
 ### B2. Invite members (M, Phase 1)
-As a member I want to invite people to my household. There is no owner role (see B1), so any member can invite.
+As a member I want to invite people to my household. Any member can invite, not only the owner.
 - I can generate an invite link (single use, expires after 7 days, revocable). A household has one live link; creating a new one revokes the old one.
 - Opening the link while signed in (or after sign-up/login) shows an accept screen; accepting adds me as `member`.
 - Expired, revoked, or already-used links show a clear error.
@@ -44,8 +44,9 @@ As a member I want to invite people to my household. There is no owner role (see
 ### B3. Manage members (S, Phase 1)
 As an owner I want to see and remove members; as a member I want to leave.
 - Member list shows names and roles.
-- Owner can remove a member; a member can leave; the owner cannot leave without transferring ownership or deleting the household.
-- Removed members lose access to household plans and lists immediately.
+- Owner can remove a member; a member can leave; the owner cannot leave without transferring ownership or deleting the household. A sole owner leaving deletes the household, as B2's household switch already does for a last member.
+- Removed members lose access to household plans and lists immediately: their membership row is deleted, and every household policy asks `is_household_member()`. Removing someone also revokes the invite links they created, so they cannot rejoin with a link they still hold. Their open page refreshes when they navigate or return to the tab; a live push waits for G6 (Realtime).
+- Each household has exactly one owner: the creator, or for households that existed before B3 the member who joined first. The owner can hand ownership to another member.
 
 ---
 
