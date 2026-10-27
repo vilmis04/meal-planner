@@ -119,9 +119,11 @@ async function handleUpdate(next: Diet | null) {
   color: var(--color-muted);
 }
 
+/* The top padding moves the text down 2px so lowercase letters sit level with the radio mark. */
 .option :global(.v-label) {
   flex: 1 1 auto;
   min-width: 0;
+  padding-top: var(--space-1);
   gap: var(--space-2);
   color: inherit;
   opacity: 1;
@@ -151,6 +153,10 @@ async function handleUpdate(next: Diet | null) {
 .optionHint {
   flex: none;
   font-size: 12px;
+}
+
+.optionHint {
+  color: var(--color-muted);
 }
 
 .tag {
