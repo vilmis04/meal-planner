@@ -24,6 +24,14 @@ async function handleSignOut() {
       <ProfileNameForm />
       <ProfileLanguageSetting />
       <ProfileThemeSetting />
+      <v-card to="/me/preferences" variant="flat" border :class="$style.row">
+        <v-list-item
+          :title="t('profile.preferences.title')"
+          :subtitle="t('profile.preferences.summary', { diet: t(`profile.diet.options.${profile.diet}.label`) })"
+          prepend-icon="mdi-silverware-fork-knife"
+          append-icon="mdi-chevron-right"
+        />
+      </v-card>
       <v-card to="/household" variant="flat" border :class="$style.row">
         <v-list-item
           :title="t('profile.household.title')"

@@ -255,6 +255,38 @@
       "dark": "Dark",
       "system": "System"
     },
+    "preferences": {
+      "pageTitle": "Food preferences",
+      "title": "Food preferences",
+      "summary": "Diet: {diet}"
+    },
+    "diet": {
+      "title": "My diet",
+      "hint": "Each step includes everything above it.",
+      "selected": "Selected",
+      "options": {
+        "vegetarian": {
+          "label": "Vegetarian",
+          "hint": "Eggs, dairy, plants"
+        },
+        "fish": {
+          "label": "Fish"
+        },
+        "poultry": {
+          "label": "Poultry"
+        },
+        "pork": {
+          "label": "Pork"
+        },
+        "beef": {
+          "label": "Beef"
+        },
+        "full": {
+          "label": "Full",
+          "hint": "Everything"
+        }
+      }
+    },
     "validation": {
       "nameRequired": "Enter a name",
       "nameMaxLength": "Use at most {max} characters"
