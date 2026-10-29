@@ -236,6 +236,42 @@
       }
     }
   },
+  "recipes": {
+    "pageTitle": "Recipes",
+    "title": "Recipes",
+    "filter": {
+      "label": "Meal type",
+      "all": "All"
+    },
+    "mealType": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "batch": {
+      "single": "1 day",
+      "multi": "{count}-day batch"
+    },
+    "list": {
+      "label": "Recipes",
+      "empty": "No recipes here yet.",
+      "choose": "Choose a recipe to see its ingredients and instructions."
+    },
+    "detail": {
+      "back": "Back to recipes",
+      "ingredients": "Ingredients",
+      "ingredientsHint": "Amounts are for one person.",
+      "toTaste": "to taste",
+      "instructions": "Instructions"
+    },
+    "errors": {
+      "loadFailed": "Recipes could not be loaded. Reload the page to try again.",
+      "detailLoadFailed": "This recipe could not be loaded. Reload the page to try again.",
+      "notFound": "We could not find this recipe.",
+      "backToList": "See all recipes"
+    }
+  },
   "profile": {
     "pageTitle": "Profile",
     "title": "Profile",

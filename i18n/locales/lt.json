@@ -236,6 +236,42 @@
       }
     }
   },
+  "recipes": {
+    "pageTitle": "Receptai",
+    "title": "Receptai",
+    "filter": {
+      "label": "Patiekalo tipas",
+      "all": "Visi"
+    },
+    "mealType": {
+      "breakfast": "Pusryčiai",
+      "lunch": "Pietūs",
+      "dinner": "Vakarienė",
+      "snack": "Užkandis"
+    },
+    "batch": {
+      "single": "1 diena",
+      "multi": "{count} dienų partija"
+    },
+    "list": {
+      "label": "Receptai",
+      "empty": "Čia receptų dar nėra.",
+      "choose": "Pasirinkite receptą, kad pamatytumėte ingredientus ir gaminimo eigą."
+    },
+    "detail": {
+      "back": "Atgal į receptus",
+      "ingredients": "Ingredientai",
+      "ingredientsHint": "Kiekiai nurodyti vienam asmeniui.",
+      "toTaste": "pagal skonį",
+      "instructions": "Gaminimas"
+    },
+    "errors": {
+      "loadFailed": "Nepavyko įkelti receptų. Perkraukite puslapį ir bandykite dar kartą.",
+      "detailLoadFailed": "Nepavyko įkelti recepto. Perkraukite puslapį ir bandykite dar kartą.",
+      "notFound": "Šio recepto nepavyko rasti.",
+      "backToList": "Visi receptai"
+    }
+  },
   "profile": {
     "pageTitle": "Profilis",
     "title": "Profilis",
