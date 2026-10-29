@@ -16,7 +16,8 @@ const { t } = useI18n();
       <h2 :class="$style.title">{{ recipe.name }}</h2>
     </header>
 
-    <section :class="$style.section">
+    <!-- The seed has one recipe with no ingredients and no instructions yet; its empty sections are left out. -->
+    <section v-if="recipe.ingredients.length > 0" :class="$style.section">
       <div :class="$style.sectionHeading">
         <h3 :class="$style.sectionTitle">{{ t("recipes.detail.ingredients") }}</h3>
         <p :class="$style.hint">{{ t("recipes.detail.ingredientsHint") }}</p>
@@ -24,7 +25,6 @@ const { t } = useI18n();
       <RecipeIngredientList :ingredients="recipe.ingredients" />
     </section>
 
-    <!-- One seeded recipe has no instructions; the section is left out rather than shown empty. -->
     <section v-if="recipe.instructions" :class="$style.section">
       <h3 :class="$style.sectionTitle">{{ t("recipes.detail.instructions") }}</h3>
       <p :class="$style.instructions" data-testid="recipe-instructions">{{ recipe.instructions }}</p>
