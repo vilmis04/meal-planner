@@ -5,6 +5,9 @@ export const RECIPE_LIST_COLUMNS = "id, name, meal_type, portion_days";
 export const RECIPE_DETAIL_COLUMNS =
   "id, name, meal_type, instructions, portion_days, recipe_ingredients(position, item, amount, unit)";
 
+// Rows asked for per request when reading the whole list. Supabase answers at most 1000 per request by default.
+export const RECIPE_PAGE_SIZE = 1000;
+
 // MEAL_TYPES is in shared/utils/mealFilter.ts and matches the public.meal_type enum.
 const mealTypeSchema = z.enum(MEAL_TYPES);
 
