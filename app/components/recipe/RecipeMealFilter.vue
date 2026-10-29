@@ -24,6 +24,7 @@ function handleUpdate(next: MealFilter | null) {
     :model-value="modelValue"
     :aria-label="t('recipes.filter.label')"
     mandatory
+    column
     color="primary"
     @update:model-value="handleUpdate"
   >
@@ -42,7 +43,7 @@ function handleUpdate(next: MealFilter | null) {
 </template>
 
 <style module>
-/* Chips are 44px tall so each is a comfortable touch target; the group scrolls sideways when they do not fit. */
+/* Chips are 44px tall so each is a comfortable touch target; they wrap onto a second line when they do not fit. */
 .chip {
   min-height: 44px;
   padding-inline: var(--space-3);

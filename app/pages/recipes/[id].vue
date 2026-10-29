@@ -21,6 +21,7 @@ const listLocation = computed(() => ({ path: "/recipes", query: route.query }));
     <v-btn
       :to="listLocation"
       :class="$style.back"
+      exact
       variant="text"
       prepend-icon="mdi-arrow-left"
       data-testid="recipe-back"
@@ -32,7 +33,7 @@ const listLocation = computed(() => ({ path: "/recipes", query: route.query }));
     <v-alert v-else-if="result?.status === 'not-found'" type="warning" variant="tonal" data-testid="recipe-not-found">
       {{ t("recipes.errors.notFound") }}
       <template #append>
-        <v-btn :to="listLocation" variant="text" size="small">{{ t("recipes.errors.backToList") }}</v-btn>
+        <v-btn :to="listLocation" exact variant="text" size="small">{{ t("recipes.errors.backToList") }}</v-btn>
       </template>
     </v-alert>
     <v-alert v-else type="error" variant="tonal" data-testid="recipe-load-failed">

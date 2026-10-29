@@ -70,6 +70,11 @@ function recipeLocation(recipe: RecipeSummary): RouteLocationRaw {
   min-width: 0;
 }
 
+/* Without this the chips (a scroll container) shrink to nothing once the pane has a maximum height. */
+.listPane > * {
+  flex: none;
+}
+
 .detailPane {
   min-width: 0;
 }
