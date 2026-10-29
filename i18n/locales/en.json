@@ -263,8 +263,7 @@
       "ingredients": "Ingredients",
       "ingredientsHint": "Amounts are for one person.",
       "toTaste": "to taste",
-      "instructions": "Instructions",
-      "batchLabel": "Batch size"
+      "instructions": "Instructions"
     },
     "errors": {
       "loadFailed": "Recipes could not be loaded. Reload the page to try again.",

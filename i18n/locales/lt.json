@@ -263,8 +263,7 @@
       "ingredients": "Ingredientai",
       "ingredientsHint": "Kiekiai nurodyti vienam asmeniui.",
       "toTaste": "pagal skonį",
-      "instructions": "Gaminimas",
-      "batchLabel": "Porcijų trukmė"
+      "instructions": "Gaminimas"
     },
     "errors": {
       "loadFailed": "Nepavyko įkelti receptų. Perkraukite puslapį ir bandykite dar kartą.",
