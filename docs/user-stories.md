@@ -54,8 +54,8 @@ As an owner I want to see and remove members; as a member I want to leave.
 
 ### C1. Dietary preference (S, Phase 2)
 As a user I want to set my diet: vegetarian, fish, poultry, pork, beef, or full.
-- One value per user, default `full`, editable in profile.
-- Each level includes the proteins of the levels it implies (defined once in code and documented).
+- One value per user, default `full`, editable in profile (Food preferences, `/me/preferences`). Household members can read it, so plans can show each participant's diet.
+- Each level includes the proteins of the levels it implies (defined once in code, `shared/utils/diet.ts`, and documented in the README). `full` also allows `other_meat` (lamb, game, offal), so it differs from `beef`.
 
 ### C2. Recipe browse (M, Phase 2)
 As a user I want to browse and open recipes so I know what is available.

@@ -4,4 +4,4 @@ import type { LOCALE_CODES, THEME_PREFERENCES, profileRowSchema } from "~/utils/
 export type LocaleCode = (typeof LOCALE_CODES)[number];
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 export type Profile = z.output<typeof profileRowSchema>;
-export type ProfileChanges = Partial<Pick<Profile, "displayName" | "locale" | "theme">>;
+export type ProfileChanges = Partial<Pick<Profile, "displayName" | "locale" | "theme" | "diet">>;

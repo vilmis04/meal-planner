@@ -7,7 +7,7 @@ export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
 // Must match the profiles_display_name_trimmed_length constraint.
 export const DISPLAY_NAME_MAX_LENGTH = 50;
 
-export const PROFILE_COLUMNS = "id, display_name, locale, theme";
+export const PROFILE_COLUMNS = "id, display_name, locale, theme, diet";
 
 export const profileRowSchema = z
   .object({
@@ -15,10 +15,13 @@ export const profileRowSchema = z
     display_name: z.string(),
     locale: z.enum(LOCALE_CODES).nullable(),
     theme: z.enum(THEME_PREFERENCES),
+    // DIETS is the ladder in shared/utils/diet.ts; the profiles_diet_supported constraint matches it.
+    diet: z.enum(DIETS),
   })
   .transform((row) => ({
     id: row.id,
     displayName: row.display_name,
     locale: row.locale,
     theme: row.theme,
+    diet: row.diet,
   }));

@@ -255,6 +255,38 @@
       "dark": "Tamsi",
       "system": "Sistemos"
     },
+    "preferences": {
+      "pageTitle": "Maisto nuostatos",
+      "title": "Maisto nuostatos",
+      "summary": "Mityba: {diet}"
+    },
+    "diet": {
+      "title": "Mano mityba",
+      "hint": "Kiekvienas žingsnis apima viską, kas yra aukščiau.",
+      "selected": "Pasirinkta",
+      "options": {
+        "vegetarian": {
+          "label": "Vegetariška",
+          "hint": "Kiaušiniai, pieno produktai, augalai"
+        },
+        "fish": {
+          "label": "Žuvis"
+        },
+        "poultry": {
+          "label": "Paukštiena"
+        },
+        "pork": {
+          "label": "Kiauliena"
+        },
+        "beef": {
+          "label": "Jautiena"
+        },
+        "full": {
+          "label": "Visavalgis",
+          "hint": "Viskas"
+        }
+      }
+    },
     "validation": {
       "nameRequired": "Įveskite vardą",
       "nameMaxLength": "Daugiausia {max} simbolių"

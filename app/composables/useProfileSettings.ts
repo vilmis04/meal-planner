@@ -1,3 +1,4 @@
+import type { Diet } from "#shared/utils/diet";
 import type { LocaleCode, ThemePreference } from "~/types/profile.types";
 
 // Settings apply at once and are then saved to the profile when signed in;
@@ -32,5 +33,7 @@ export function useProfileSettings() {
   const changeDisplayName = (next: string): Promise<boolean> =>
     update({ displayName: next.trim() });
 
-  return { changeTheme, changeLanguage, changeDisplayName };
+  const changeDiet = (next: Diet): Promise<boolean> => update({ diet: next });
+
+  return { changeTheme, changeLanguage, changeDisplayName, changeDiet };
 }

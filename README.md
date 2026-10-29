@@ -80,9 +80,26 @@ Supabase project settings this app expects:
 ## Profile
 
 - `profiles` has one row per auth user, created by the `on_auth_user_created` trigger (`supabase/migrations/20261021000000_create_profiles.sql`). The display name comes from Google's `full_name`/`name`, else the part of the email before `@`. `locale` starts empty and is set to the language the user first browses in.
-- RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme` columns only); members of the same household can read it through `shares_household()`. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
+- RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme`, `diet` columns only); members of the same household can read it through `shares_household()`, so they can see each other's diet. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
 - `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme and language over the cookies. `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
-- `/me` edits the display name, language and theme, and holds sign-out.
+- `/me` edits the display name, language and theme, links to Household and Food preferences, and holds sign-out.
+- `/me/preferences` (Food preferences) holds the diet picker; the meal ratings (C3, C4) join it later.
+
+### Diet
+
+- `profiles.diet` is one value per user, `full` by default (`supabase/migrations/20261027000000_add_profile_diet.sql`). The check constraint `profiles_diet_supported` lists the six values; `DIETS` in `shared/utils/diet.ts` must match it. The migration only adds a column, so run it before deploying the app version that reads it.
+- The ladder is written once, as `DIET_LADDER` in `shared/utils/diet.ts`. Each step lists the proteins it adds and a diet allows its own step and every step before it, so `allowedProteins(diet)` and `isProteinAllowed(diet, protein)` are derived and the steps cannot drift out of order. Recipes will be tagged with the same `PROTEINS` (D1).
+
+  | Diet | Adds | Allows |
+  | --- | --- | --- |
+  | `vegetarian` | egg/dairy, plant | egg/dairy, plant |
+  | `fish` | fish | the above + fish |
+  | `poultry` | poultry | the above + poultry |
+  | `pork` | pork | the above + pork |
+  | `beef` | beef | the above + beef |
+  | `full` | other meat (lamb, game, offal) | everything |
+
+- To add or reorder a step: edit `DIET_LADDER`, add a migration that replaces the constraint, and add the `profile.diet.options.<diet>` translations in both locale files.
 
 ## Households
 
@@ -94,6 +111,14 @@ Supabase project settings this app expects:
 - `/join/<token>` previews a link with `get_household_invite()` (valid, expired, revoked, used or not found) and joins with `accept_household_invite(token, leave_current)`. A user who is already in another household chooses between staying and leaving it for the new one; leaving removes them from the old household, which is deleted if they were its last member. The whole switch is one transaction, and concurrent use of one link is serialised by a row lock, so the second user sees "already used".
 - Member management (B3, same migration as the role): `remove_household_member(user)` (owner only; also revokes the invite links that person created), `leave_household()`, `transfer_household_ownership(user)` and `delete_household()` (owner only). All lock the household row first, so they take turns, and raise `not_owner`, `owner_must_transfer`, `member_not_found`, `cannot_remove_self`, `invalid_new_owner` or `not_in_household`. An owner with other members cannot leave, and cannot switch households through an invite: they transfer ownership or delete the household first. The last member leaving deletes the household. `/household` shows a menu on each other member's row for the owner, a Leave button and, for an owner with company, Delete household.
 - `AppNavigation` (mounted in `app/layouts/default.vue`) is the bottom bar on phones and a side rail from 960 px. Plan, List and Recipes are disabled until their pages exist: give their entry in `NAV_ITEMS` a `to` when they do.
+
+## Unit tests
+
+Pure modules in `shared/` (such as the diet ladder) have Vitest tests next to them:
+
+```bash
+npm test
+```
 
 ## Database tests
 
