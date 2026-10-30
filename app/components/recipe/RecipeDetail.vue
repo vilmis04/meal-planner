@@ -4,6 +4,7 @@ import type { Recipe } from "~/types/recipe.types";
 defineProps<{ recipe: Recipe }>();
 
 const { t } = useI18n();
+const { isLoaded: isRatingLoaded } = useRecipeRatings();
 </script>
 
 <template>
@@ -14,6 +15,7 @@ const { t } = useI18n();
         <RecipeBatchChip :portion-days="recipe.portionDays" data-testid="recipe-batch" />
       </div>
       <h2 :class="$style.title">{{ recipe.name }}</h2>
+      <RecipeRatingToggle v-if="isRatingLoaded" :recipe-id="recipe.id" />
     </header>
 
     <!-- The seed has one recipe with no ingredients and no instructions yet; its empty sections are left out. -->

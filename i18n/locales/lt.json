@@ -265,6 +265,18 @@
       "toTaste": "pagal skonį",
       "instructions": "Gaminimas"
     },
+    "rating": {
+      "label": "Jūsų vertinimas",
+      "rate": "Įvertinti: {name}",
+      "options": {
+        "enjoy": "Mėgstu",
+        "enjoy_less": "Mažiau mėgstu",
+        "hate": "Nekenčiu"
+      },
+      "clear": "Išvalyti vertinimą",
+      "saveFailed": "Nepavyko išsaugoti vertinimo. Bandykite dar kartą.",
+      "loadFailed": "Nepavyko įkelti jūsų vertinimų, todėl jie paslėpti. Perkraukite puslapį ir bandykite dar kartą."
+    },
     "errors": {
       "loadFailed": "Nepavyko įkelti receptų. Perkraukite puslapį ir bandykite dar kartą.",
       "detailLoadFailed": "Nepavyko įkelti recepto. Perkraukite puslapį ir bandykite dar kartą.",

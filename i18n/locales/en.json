@@ -265,6 +265,18 @@
       "toTaste": "to taste",
       "instructions": "Instructions"
     },
+    "rating": {
+      "label": "Your rating",
+      "rate": "Rate {name}",
+      "options": {
+        "enjoy": "Enjoy",
+        "enjoy_less": "Enjoy less",
+        "hate": "Hate"
+      },
+      "clear": "Clear rating",
+      "saveFailed": "Your rating could not be saved. Try again.",
+      "loadFailed": "Your ratings could not be loaded, so they are hidden. Reload the page to try again."
+    },
     "errors": {
       "loadFailed": "Recipes could not be loaded. Reload the page to try again.",
       "detailLoadFailed": "This recipe could not be loaded. Reload the page to try again.",
