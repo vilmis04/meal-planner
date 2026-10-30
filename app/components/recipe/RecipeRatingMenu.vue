@@ -8,7 +8,7 @@ const { show } = useAppSnackbar();
 const current = computed(() => ratingOf(props.recipeId));
 // The button shows the current rating, or an outlined heart while the recipe is unrated.
 const buttonIcon = computed(() => (current.value ? RECIPE_RATING_DISPLAY[current.value].icon : UNRATED_ICON));
-const buttonColor = computed(() => (current.value ? RECIPE_RATING_DISPLAY[current.value].color : undefined));
+const buttonColor = computed(() => (current.value ? RECIPE_RATING_DISPLAY[current.value].color : "muted"));
 
 const options = computed(() =>
   RECIPE_RATINGS.map((rating) => ({

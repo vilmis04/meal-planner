@@ -48,13 +48,15 @@ async function handleTap(tapped: RecipeRating) {
 <style module>
 .group {
   display: flex;
+  margin-top: var(--space-1);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-muted) 45%, transparent);
   border-radius: 12px;
 }
 
+/* Sized by their labels and then sharing what is left, so a long label ("Mažiau mėgstu") never clips its icon. */
 .option {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-width: 0;
   height: 44px !important;
   padding-inline: var(--space-1) !important;
