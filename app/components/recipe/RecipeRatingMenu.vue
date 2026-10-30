@@ -1,5 +1,18 @@
 <script setup lang="ts">
-const props = defineProps<{ recipeId: string; recipeName: string }>();
+const props = withDefaults(
+  defineProps<{
+    recipeId: string;
+    recipeName: string;
+    // "heart" shows the current rating (recipe lists); "more" is a plain "⋯" button (the ratings list, where the
+    // rating is already shown beside the name).
+    trigger?: "heart" | "more";
+  }>(),
+  { trigger: "heart" },
+);
+
+// Sent when a rating is picked, before it is saved: the screen already follows it, and a list that drops this
+// recipe from view needs to know straight away.
+const emit = defineEmits<{ change: [] }>();
 
 const { t } = useI18n();
 const { ratingOf, rate } = useRecipeRatings();
@@ -7,8 +20,15 @@ const { show } = useAppSnackbar();
 
 const current = computed(() => ratingOf(props.recipeId));
 // The button shows the current rating, or an outlined heart while the recipe is unrated.
-const buttonIcon = computed(() => (current.value ? RECIPE_RATING_DISPLAY[current.value].icon : UNRATED_ICON));
-const buttonColor = computed(() => (current.value ? RECIPE_RATING_DISPLAY[current.value].color : "muted"));
+const buttonIcon = computed(() => {
+  if (props.trigger === "more") {
+    return "mdi-dots-horizontal";
+  }
+  return current.value ? RECIPE_RATING_DISPLAY[current.value].icon : UNRATED_ICON;
+});
+const buttonColor = computed(() =>
+  props.trigger === "heart" && current.value ? RECIPE_RATING_DISPLAY[current.value].color : "muted",
+);
 
 const options = computed(() =>
   RECIPE_RATINGS.map((rating) => ({
@@ -21,6 +41,7 @@ const options = computed(() =>
 );
 
 async function save(rating: RecipeRating | null) {
+  emit("change");
   const isSaved = await rate(props.recipeId, rating);
   if (!isSaved) {
     show("recipes.rating.saveFailed", "error");

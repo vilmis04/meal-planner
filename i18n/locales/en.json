@@ -306,7 +306,16 @@
     "preferences": {
       "pageTitle": "Food preferences",
       "title": "Food preferences",
-      "summary": "Diet: {diet}"
+      "summary": "Diet: {diet}",
+      "ratings": {
+        "title": "My meal ratings",
+        "tabs": "Rating",
+        "list": "Rated recipes",
+        "empty": "No recipes here yet.",
+        "none": "You have not rated any recipes yet. Rate them from the recipe list or from a recipe.",
+        "browse": "Browse recipes",
+        "loadFailed": "Your ratings could not be loaded. Reload the page to try again."
+      }
     },
     "diet": {
       "title": "My diet",

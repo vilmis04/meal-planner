@@ -83,7 +83,7 @@ Supabase project settings this app expects:
 - RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme`, `diet` columns only); members of the same household can read it through `shares_household()`, so they can see each other's diet. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
 - `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme and language over the cookies. `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
 - `/me` edits the display name, language and theme, links to Household and Food preferences, and holds sign-out.
-- `/me/preferences` (Food preferences) holds the diet picker; the list of rated meals (C4) joins it later. Ratings themselves are set on the recipes (see "Recipe ratings").
+- `/me/preferences` (Food preferences) holds the diet picker and "My meal ratings" (C4, see "Recipe ratings"), the user's rated recipes in one tab per rating.
 
 ### Diet
 
@@ -127,6 +127,7 @@ Supabase project settings this app expects:
 - `public.user_recipe_preferences` (`supabase/migrations/20261030000000_create_user_recipe_preferences.sql`) has one row per (`user_id`, `recipe_id`). The check constraint `user_recipe_preferences_rating_supported` lists the three values; `RECIPE_RATINGS` in `shared/utils/recipeRating.ts` must match it. The migration only adds a table, so run it before deploying the app version that reads it.
 - RLS: the owner alone can read, add, change (`rating` only) and delete a row. There is deliberately no household policy, so even a household member cannot read a rating. The plan generator (E4) reads everyone's ratings on the server with the service role, after checking household membership; `recipe_id` is indexed for that (`supabase/tests/user_recipe_preferences.test.sql`).
 - `useRecipeRatings()` holds the user's ratings in one shared map, loaded with the recipe list in `pages/recipes.vue`, so the list and the open recipe stay in step. `rate()` changes the screen at once and puts the old value back, with a message, if saving fails. If loading fails the controls are hidden and a warning is shown, so "unrated" is never shown falsely. The map is cleared whenever the signed-in user changes (`app/plugins/profile.ts`).
+- "My meal ratings" (C4, `ProfileMealRatings.vue` on `/me/preferences`) joins that map with the cached recipe list in the browser (`groupRecipesByRating()` in `shared/utils/recipeRating.ts`), so it needs no query of its own. It has a tab per rating with its count; the tab is kept in the address (`?rating=hate`). A row's "⋯" button opens the same menu as the recipe list (`RecipeRatingMenu`, `trigger="more"`): picking another rating moves the row to that tab, Clear removes it. If either list fails to load a warning replaces the section, so "nothing rated" is never shown falsely.
 
 ## Unit tests
 
