@@ -11,10 +11,14 @@ const { recipes, loadFailed, loadList } = useRecipes();
 
 useHead({ title: () => t("recipes.pageTitle") });
 
-// Loaded once and kept; a failed load leaves the list empty, so the next visit asks again.
-if (!recipes.value) {
-  await loadList();
-}
+const { isLoaded: isRatingLoaded, loadFailed: ratingsLoadFailed, load: loadRatings } = useRecipeRatings();
+
+// Loaded once and kept; a failed load leaves the list empty, so the next visit asks again. The user's own ratings
+// load beside it and fail on their own: the recipes still show, only without the rating controls.
+await Promise.all([
+  recipes.value ? undefined : loadList(),
+  isRatingLoaded.value ? undefined : loadRatings(),
+]);
 
 // The filter lives in the address (?meal=dinner), so reload and the back button keep it.
 const filter = computed(() => parseMealFilter(route.query.meal));
@@ -45,6 +49,9 @@ function recipeLocation(recipe: RecipeSummary): RouteLocationRaw {
         {{ t("recipes.errors.loadFailed") }}
       </v-alert>
       <template v-else>
+        <v-alert v-if="ratingsLoadFailed" type="warning" variant="tonal" density="compact" data-testid="ratings-load-failed">
+          {{ t("recipes.rating.loadFailed") }}
+        </v-alert>
         <RecipeMealFilter :model-value="filter" @update:model-value="changeFilter" />
         <RecipeList :recipes="visibleRecipes" :link-to="recipeLocation" />
       </template>

@@ -83,7 +83,7 @@ Supabase project settings this app expects:
 - RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme`, `diet` columns only); members of the same household can read it through `shares_household()`, so they can see each other's diet. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
 - `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme and language over the cookies. `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
 - `/me` edits the display name, language and theme, links to Household and Food preferences, and holds sign-out.
-- `/me/preferences` (Food preferences) holds the diet picker; the meal ratings (C3, C4) join it later.
+- `/me/preferences` (Food preferences) holds the diet picker; the list of rated meals (C4) joins it later. Ratings themselves are set on the recipes (see "Recipe ratings").
 
 ### Diet
 
@@ -120,6 +120,13 @@ Supabase project settings this app expects:
 - The detail shows ingredients per person's portion, in `position` order, as stored: amounts follow the active locale (`shared/utils/recipeAmount.ts`), units are the free text from the seed, and a missing amount reads "to taste". It also shows the instructions as one paragraph and a batch chip from `portion_days` ("1 day" or "N-day batch"). The list shows the chip only for batches. An empty ingredients or instructions section is not drawn (one seeded recipe has neither yet).
 - Calories and macros are never selected (`RECIPE_LIST_COLUMNS` and `RECIPE_DETAIL_COLUMNS` in `app/utils/recipe.ts`); F1 adds them behind its toggle.
 - Recipe names, ingredients and instructions are Lithuanian only until X1b adds translation tables; all other text is translated.
+
+### Recipe ratings
+
+- A user rates a recipe `enjoy`, `enjoy_less` or `hate` (C3) from the detail (a three-way toggle under the title; tapping the active option clears it) or from a list row (the heart button opens a menu with the three values and Clear). Unrated is no row.
+- `public.user_recipe_preferences` (`supabase/migrations/20261030000000_create_user_recipe_preferences.sql`) has one row per (`user_id`, `recipe_id`). The check constraint `user_recipe_preferences_rating_supported` lists the three values; `RECIPE_RATINGS` in `shared/utils/recipeRating.ts` must match it. The migration only adds a table, so run it before deploying the app version that reads it.
+- RLS: the owner alone can read, add, change (`rating` only) and delete a row. There is deliberately no household policy, so even a household member cannot read a rating. The plan generator (E4) reads everyone's ratings on the server with the service role, after checking household membership; `recipe_id` is indexed for that (`supabase/tests/user_recipe_preferences.test.sql`).
+- `useRecipeRatings()` holds the user's ratings in one shared map, loaded with the recipe list in `pages/recipes.vue`, so the list and the open recipe stay in step. `rate()` changes the screen at once and puts the old value back, with a message, if saving fails. If loading fails the controls are hidden and a warning is shown, so "unrated" is never shown falsely. The map is cleared whenever the signed-in user changes (`app/plugins/profile.ts`).
 
 ## Unit tests
 

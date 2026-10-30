@@ -8,6 +8,7 @@ export default defineNuxtPlugin({
   async setup(nuxtApp) {
     const user = useSupabaseUser();
     const { profile, load, update, clear } = useProfile();
+    const { clear: clearRatings } = useRecipeRatings();
     const { setPreference } = useAppTheme();
     const i18n = nuxtApp.$i18n;
 
@@ -39,7 +40,11 @@ export default defineNuxtPlugin({
     await syncWithUser(user.value?.id);
 
     if (import.meta.client) {
-      watch(() => user.value?.id, syncWithUser);
+      watch(() => user.value?.id, (userId) => {
+        // Ratings are private to one user: the next account must never see the previous one's.
+        clearRatings();
+        return syncWithUser(userId);
+      });
     }
   },
 });
