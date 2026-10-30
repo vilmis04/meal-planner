@@ -5,7 +5,7 @@ const router = useRouter();
 const { recipes, loadFailed: recipesLoadFailed } = useRecipes();
 const { ratings, isLoaded, loadFailed: ratingsLoadFailed } = useRecipeRatings();
 
-const tabs = ref<{ $el: HTMLElement } | null>(null);
+const tabsBox = ref<HTMLElement | null>(null);
 
 // The tab lives in the address (?rating=hate), so reload and the back button keep it.
 const tab = computed(() => parseRatingTab(route.query.rating));
@@ -36,7 +36,8 @@ function changeTab(next: unknown) {
 // would fall to the page; it is put on the selected tab instead.
 async function handleRowChange() {
   await nextTick();
-  tabs.value?.$el.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+  // The closing menu hands focus back to its button, which is gone by now; wait for that so it does not win.
+  setTimeout(() => tabsBox.value?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus(), 0);
 }
 </script>
 
@@ -55,26 +56,27 @@ async function handleRowChange() {
         </v-btn>
       </div>
       <template v-else>
-        <v-tabs
-          ref="tabs"
-          :model-value="tab"
-          :aria-label="t('profile.preferences.ratings.tabs')"
-          color="primary"
-          align-tabs="center"
-          grow
-          :class="$style.tabs"
-          @update:model-value="changeTab"
-        >
-          <v-tab
-            v-for="item in tabItems"
-            :key="item.rating"
-            :value="item.rating"
-            :class="$style.tab"
-            :data-testid="`meal-ratings-tab-${item.rating}`"
+        <div ref="tabsBox">
+          <v-tabs
+            :model-value="tab"
+            :aria-label="t('profile.preferences.ratings.tabs')"
+            color="primary"
+            align-tabs="center"
+            grow
+            :class="$style.tabs"
+            @update:model-value="changeTab"
           >
-            {{ item.label }} · {{ item.count }}
-          </v-tab>
-        </v-tabs>
+            <v-tab
+              v-for="item in tabItems"
+              :key="item.rating"
+              :value="item.rating"
+              :class="$style.tab"
+              :data-testid="`meal-ratings-tab-${item.rating}`"
+            >
+              {{ item.label }} · {{ item.count }}
+            </v-tab>
+          </v-tabs>
+        </div>
 
         <p v-if="visibleRecipes.length === 0" :class="$style.message" data-testid="meal-ratings-empty">
           {{ t("profile.preferences.ratings.empty") }}
