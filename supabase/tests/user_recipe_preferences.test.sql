@@ -17,10 +17,10 @@ insert into public.household_members (household_id, user_id) values
   ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000a'),
   ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000b');
 
-insert into public.recipes (id, name, meal_type) values
-  ('00000000-0000-0000-0000-0000000000c1', 'C3 test curry', 'dinner'),
-  ('00000000-0000-0000-0000-0000000000c2', 'C3 test porridge', 'breakfast'),
-  ('00000000-0000-0000-0000-0000000000c3', 'C3 test stew', 'dinner');
+insert into public.recipes (id, name, meal_type, main_proteins) values
+  ('00000000-0000-0000-0000-0000000000c1', 'C3 test curry', 'dinner', '{poultry}'),
+  ('00000000-0000-0000-0000-0000000000c2', 'C3 test porridge', 'breakfast', '{egg_dairy}'),
+  ('00000000-0000-0000-0000-0000000000c3', 'C3 test stew', 'dinner', '{beef}');
 
 -- Monika already rated one recipe; Ana, her household member, must never see it.
 insert into public.user_recipe_preferences (user_id, recipe_id, rating) values
