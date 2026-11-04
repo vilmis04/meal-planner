@@ -13,8 +13,11 @@
  *   full        + other meat (lamb, game, offal): everything
  *
  * To add or reorder a step, change DIET_LADDER only, then update the profiles_diet_supported
- * constraint in a new migration and the profile.diet.* translations. The proteins are the vocabulary
- * recipes will be tagged with (D1).
+ * constraint in a new migration and the profile.diet.* translations.
+ *
+ * The proteins are also the vocabulary recipes are tagged with (D1): recipes.main_proteins lists the
+ * proteins that decide diet fit, and isRecipeCompatible() reads them against this ladder. To add a
+ * protein, change PROTEINS and replace the recipes_main_proteins_supported constraint in a new migration.
  */
 
 export const PROTEINS = ["egg_dairy", "plant", "fish", "poultry", "pork", "beef", "other_meat"] as const;
@@ -46,4 +49,17 @@ export function allowedProteins(diet: Diet): readonly Protein[] {
 
 export function isProteinAllowed(diet: Diet, protein: Protein): boolean {
   return allowedProteins(diet).includes(protein);
+}
+
+export function isProtein(value: string): value is Protein {
+  return (PROTEINS as readonly string[]).includes(value);
+}
+
+/*
+ * A recipe fits a diet when the diet allows every one of its main proteins. An empty list means the
+ * recipe was never tagged (the database does not allow it); only "full" is safe then.
+ */
+export function isRecipeCompatible(diet: Diet, mainProteins: readonly Protein[]): boolean {
+  if (mainProteins.length === 0) return diet === "full";
+  return mainProteins.every((protein) => isProteinAllowed(diet, protein));
 }
