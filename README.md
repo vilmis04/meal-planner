@@ -88,7 +88,7 @@ Supabase project settings this app expects:
 ### Diet
 
 - `profiles.diet` is one value per user, `full` by default (`supabase/migrations/20261027000000_add_profile_diet.sql`). The check constraint `profiles_diet_supported` lists the six values; `DIETS` in `shared/utils/diet.ts` must match it. The migration only adds a column, so run it before deploying the app version that reads it.
-- The ladder is written once, as `DIET_LADDER` in `shared/utils/diet.ts`. Each step lists the proteins it adds and a diet allows its own step and every step before it, so `allowedProteins(diet)` and `isProteinAllowed(diet, protein)` are derived and the steps cannot drift out of order. Recipes will be tagged with the same `PROTEINS` (D1).
+- The ladder is written once, as `DIET_LADDER` in `shared/utils/diet.ts`. Each step lists the proteins it adds and a diet allows its own step and every step before it, so `allowedProteins(diet)` and `isProteinAllowed(diet, protein)` are derived and the steps cannot drift out of order. Recipes are tagged with the same `PROTEINS` (D1, see "Recipe proteins").
 
   | Diet | Adds | Allows |
   | --- | --- | --- |
@@ -120,6 +120,13 @@ Supabase project settings this app expects:
 - The detail shows ingredients per person's portion, in `position` order, as stored: amounts follow the active locale (`shared/utils/recipeAmount.ts`), units are the free text from the seed, and a missing amount reads "to taste". It also shows the instructions as one paragraph and a batch chip from `portion_days` ("1 day" or "N-day batch"). The list shows the chip only for batches. An empty ingredients or instructions section is not drawn (one seeded recipe has neither yet).
 - Calories and macros are never selected (`RECIPE_LIST_COLUMNS` and `RECIPE_DETAIL_COLUMNS` in `app/utils/recipe.ts`); F1 adds them behind its toggle.
 - Recipe names, ingredients and instructions are Lithuanian only until X1b adds translation tables; all other text is translated.
+
+### Recipe proteins
+
+- `recipes.main_proteins` (D1, `supabase/migrations/20261104000000_add_recipe_main_proteins.sql`) lists the proteins that decide whether a recipe fits a diet, from the `PROTEINS` vocabulary in `shared/utils/diet.ts`. The meat or fish in the dish is tagged (chicken pasta with cheese is `{poultry}`); `egg_dairy` or `plant` only when there is none. Several tags mean the dish has all of them (BLT is `{pork,poultry}`). When a recipe offers a choice of meat it is tagged with the option lower on the diet ladder, and an unspecified broth counts as vegetable.
+- The column is `not null` with no default, and two checks keep it to a non-empty list of known proteins (`recipes_main_proteins_supported`, `recipes_main_proteins_not_empty`). A seed migration that adds recipes must set it. The D1 migration tags all 123 seeded recipes, grouped by protein with the judgment calls commented; it adds the non-empty check after tagging, so a recipe name that does not match aborts it.
+- `isRecipeCompatible(diet, mainProteins)` in `shared/utils/diet.ts` is the one place that answers "does this recipe fit this diet": every main protein must be allowed by the diet. An empty list fits `full` only. `isProtein()` narrows a string from the database to a `Protein`. The ladder is not repeated in SQL; nothing filters by diet in the database yet.
+- To add a protein: add it to `PROTEINS` (and a ladder step), then replace `recipes_main_proteins_supported` in a new migration.
 
 ### Recipe ratings
 

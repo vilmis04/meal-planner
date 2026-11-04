@@ -77,9 +77,9 @@ As a user I want a page listing my marked recipes grouped by rating, so I can ch
 
 ### D1. Recipe protein metadata (M, Phase 2)
 As the system I need each recipe's main protein(s) so diet compatibility can be computed.
-- `recipes` gains `main_proteins` (e.g. beef, pork, poultry, fish, egg/dairy, plant).
-- All seeded recipes are tagged by a reviewed migration.
-- A function returns whether a recipe is compatible with a diet.
+- `recipes` gains `main_proteins`, a non-empty list from the diet ladder's proteins (`egg_dairy`, `plant`, `fish`, `poultry`, `pork`, `beef`, `other_meat`). The meat or fish is tagged; `egg_dairy` or `plant` only when there is none.
+- All seeded recipes are tagged by a reviewed migration, grouped by protein with judgment calls commented.
+- A function returns whether a recipe is compatible with a diet (`isRecipeCompatible()` in `shared/utils/diet.ts`): every main protein must be allowed.
 
 ### D2. Generate protein swaps with AI (L, Phase 4)
 As the system I need alternative proteins for recipes that do not fit a diet.
