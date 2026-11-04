@@ -306,7 +306,16 @@
     "preferences": {
       "pageTitle": "Maisto nuostatos",
       "title": "Maisto nuostatos",
-      "summary": "Mityba: {diet}"
+      "summary": "Mityba: {diet}",
+      "ratings": {
+        "title": "Mano receptų vertinimai",
+        "tabs": "Vertinimas",
+        "list": "Įvertinti receptai",
+        "empty": "Čia dar nėra receptų.",
+        "none": "Dar neįvertinote nė vieno recepto. Vertinkite juos receptų sąraše arba recepto puslapyje.",
+        "browse": "Peržiūrėti receptus",
+        "loadFailed": "Nepavyko įkelti jūsų vertinimų. Perkraukite puslapį ir bandykite dar kartą."
+      }
     },
     "diet": {
       "title": "Mano mityba",

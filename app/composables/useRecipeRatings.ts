@@ -94,5 +94,5 @@ export function useRecipeRatings() {
     latestTap.clear();
   };
 
-  return { isLoaded, loadFailed: readonly(loadFailed), load, ratingOf, rate, clear };
+  return { ratings: readonly(ratings), isLoaded, loadFailed: readonly(loadFailed), load, ratingOf, rate, clear };
 }
