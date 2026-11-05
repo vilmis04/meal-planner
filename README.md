@@ -43,6 +43,7 @@ npm start          # serve .output/server/index.mjs on port 3000
    - `NUXT_PUBLIC_SUPABASE_URL`
    - `NUXT_PUBLIC_SUPABASE_ANON_KEY`
    - `NUXT_SUPABASE_SERVICE_ROLE_KEY` (mark as secret, never expose to the client)
+   - `NUXT_GEMINI_API_KEY` (mark as secret; protein swaps, see "Protein swaps") and optionally `NUXT_GEMINI_MODEL`
 4. Enable the Git webhook for automatic deploys.
 
 Place the Coolify server in the same region as the Supabase project to keep SSR auth/DB calls fast.
@@ -136,9 +137,21 @@ Supabase project settings this app expects:
 - `useRecipeRatings()` holds the user's ratings in one shared map, loaded with the recipe list in `pages/recipes.vue`, so the list and the open recipe stay in step. `rate()` changes the screen at once and puts the old value back, with a message, if saving fails. If loading fails the controls are hidden and a warning is shown, so "unrated" is never shown falsely. The map is cleared whenever the signed-in user changes (`app/plugins/profile.ts`).
 - "My meal ratings" (C4, `ProfileMealRatings.vue` on `/me/preferences`) joins that map with the cached recipe list in the browser (`groupRecipesByRating()` in `shared/utils/recipeRating.ts`), so it needs no query of its own. It has a tab per rating with its count; the tab is kept in the address (`?rating=hate`). A row's "⋯" button opens the same menu as the recipe list (`RecipeRatingMenu`, `trigger="more"`): picking another rating moves the row to that tab, Clear removes it. If either list fails to load a warning replaces the section, so "nothing rated" is never shown falsely.
 
+### Protein swaps
+
+A recipe a diet excludes gets an AI-proposed protein swap (D2): which ingredients to replace, with what, and how much. It is made **on demand** and stored, so each recipe and diet reaches the AI at most once.
+
+- `GET /api/recipes/<id>/swaps/<diet>` (signed in) returns `200 {status: "ready", swap}`, `202 {status: "pending"}` with `Retry-After` while another request is generating it, `503 {status: "unavailable", retryAfter}` after a failed generation, or `404 {status: "not-needed"}` when the recipe already fits. A user may cause at most 20 new generations an hour (`server/utils/swapMissLimiter.ts`); stored swaps are never limited. D3 shows the swap; E4 calls `getOrCreateSwap()` on the server.
+- `getOrCreateSwap()` (`server/utils/proteinSwapService.ts`) is the one entry point. A stored `ready` swap made from the recipe's current ingredients (a hash of them, plus the prompt version) is returned as is. Otherwise the request claims the pair with `claim_recipe_protein_swap()` (one winner; others get "pending"), asks Gemini (`server/utils/ai/gemini.ts`, JSON mode with a response schema), validates the answer and saves it with `save_recipe_protein_swap()` in one transaction.
+- The rules are pure in `shared/utils/proteinSwap.ts`: the prompt (recipe text only, never user data), the response schema, and `validateSwap()`. A swap must replace only ingredients at positions that exist in the recipe, label each with a protein the diet excludes, replace every excluded protein with one the diet allows, leave the recipe passing `isRecipeCompatible()`, give amount and unit together (at most 3x the original amount in the same unit), and not name an excluded meat or fish (plant-based imitations aside). An invalid answer is asked again with its errors; rate limits and server errors are retried with backoff; three attempts in all.
+- Nutrition is the AI's estimate for the swapped recipe and always `nutrition_approximate = true`; an estimate outside 0.5x to 1.5x of the original calories (or negative, or incomplete) is dropped and the swap kept.
+- `recipe_protein_swaps` (`supabase/migrations/20261105000000_create_recipe_protein_swaps.sql`) has one row per recipe, diet and locale (`lt` for now; X1c adds `en`) with `status` `pending`, `ready`, `failed` or `rejected`; `recipe_protein_swap_items` holds the replacements, each pointing at an ingredient of the same recipe. Signed-in users read `ready` rows only; only the service role writes. A failed pair is logged (one JSON line per generation) and retried by the next request after `retry_after` (5 minutes, then 1 hour, then daily). To throw a swap away, set its `status` to `rejected`: the next request regenerates it.
+- The Gemini key is private runtime config (`NUXT_GEMINI_API_KEY`); without it stored swaps still load and new ones are `unavailable`. `NUXT_GEMINI_MODEL` defaults to `gemini-flash-latest`.
+- Optional backfill, to spare the first viewers the wait: `npm run swaps:generate` asks for every conflicting pair through the same service (stored ones are skipped), writes `swap-review.md` to check by eye, and exits 1 if any pair is left without a swap. `-- --dry-run` lists the pairs and their status; `-- --recipe <id>` and `-- --diet <diet>` narrow it. It reads `.env`.
+
 ## Unit tests
 
-Pure modules in `shared/` (such as the diet ladder) have Vitest tests next to them:
+Pure modules in `shared/` (such as the diet ladder) and the server's swap service have Vitest tests next to them:
 
 ```bash
 npm test

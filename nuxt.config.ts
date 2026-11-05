@@ -7,6 +7,11 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     supabaseServiceRoleKey: "",
+    // Protein swaps (D2), server-only: NUXT_GEMINI_API_KEY, NUXT_GEMINI_MODEL, NUXT_GEMINI_BASE_URL.
+    // "gemini-flash-latest" follows Google's current Flash model; pin a version here if answers drift.
+    geminiApiKey: "",
+    geminiModel: "gemini-flash-latest",
+    geminiBaseUrl: "",
     public: {
       supabaseUrl: "",
       supabaseAnonKey: "",

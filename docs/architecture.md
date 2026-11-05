@@ -106,7 +106,7 @@ Rules:
 
 **Scheduled plan creation (H2).** Coolify scheduled task (or Supabase `pg_cron` with `pg_net`) calls `POST /api/cron/create-plans` daily with `NUXT_CRON_SECRET`. The endpoint finds schedules due today in each user's/household's timezone, creates plans idempotently (unique key on schedule + period start), generates them, and writes a notification row. Chosen default: Coolify scheduled task, because it keeps all deployment config in one place.
 
-**AI protein swaps (D2).** An admin/batch script (run locally or as a one-off Coolify command) calls the Gemini API per recipe and diet, validates the structured output (ingredient exists, replacement fits the diet), and stores it in `recipe_protein_swaps` per language. The UI only reads the table, so there is no AI call or cost at view time.
+**AI protein swaps (D2).** On demand: the first request for a recipe and diet (`GET /api/recipes/:id/swaps/:diet`, or E4 on the server) claims the pair in `recipe_protein_swaps`, calls the Gemini API once, validates the structured output (ingredient exists, replacement fits the diet) and stores it per language. Every later request reads the stored row, so each pair costs one AI call; concurrent first requests make one call between them, and failed pairs retry after a growing wait. An optional backfill script (`npm run swaps:generate`) fills all pairs ahead of time through the same service.
 
 **Translations (X1, X1b).** UI strings come from `locales/*.json` through the i18n module; recipe content is read from translation tables joined on the active locale with LT fallback.
 

@@ -10,7 +10,8 @@
     "start": "node .output/server/index.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest run"
+    "test": "vitest run",
+    "swaps:generate": "tsx scripts/generate-protein-swaps.ts"
   },
   "dependencies": {
     "@nuxtjs/i18n": "^10.6.0",
@@ -25,6 +26,7 @@
     "@nuxt/eslint": "^1.17.0",
     "@types/node": "^26.6.3",
     "eslint": "^10.13.0",
+    "tsx": "^4.21.0",
     "vitest": "^5.0.5",
     "vuetify": "^4.2.2",
     "vuetify-nuxt-module": "^1.0.0-rc.6"
