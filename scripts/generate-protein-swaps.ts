@@ -127,7 +127,8 @@ function reportSection(pair: Pair, result: GetSwapResult): string {
     "| --- | --- | --- | --- |",
     ...rows,
     "",
-    `Note: ${swap.note ?? "none"}. Nutrition (approximate): ${pair.recipe.calories_kcal ?? "?"} kcal -> ${kcal} kcal.`,
+    `- Note: ${swap.note ?? "none"}`,
+    `- Nutrition (approximate): ${pair.recipe.calories_kcal ?? "?"} kcal -> ${kcal} kcal`,
     "",
   ].join("\n");
 }
