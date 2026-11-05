@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { H3Event } from "h3";
 import { createGeminiClient } from "./ai/gemini";
 import { createProteinSwapService } from "./proteinSwapService";
-import type { ProteinSwapService } from "./proteinSwapService";
+import type { ProteinSwapService } from "./proteinSwapService.types";
 import { createSupabaseSwapStore } from "./proteinSwapStore";
 import { createSwapMissLimiter } from "./swapMissLimiter";
 

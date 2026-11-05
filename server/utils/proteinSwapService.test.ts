@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CLAIM_TTL_MS, PROMPT_VERSION } from "../../shared/utils/proteinSwap";
-import type { SwapRecipe } from "../../shared/utils/proteinSwap";
+import type { SwapRecipe } from "../../shared/utils/proteinSwap.types";
 import { AiError } from "./ai/gemini";
-import type { AiClient } from "./ai/gemini";
+import type { AiClient } from "./ai/gemini.types";
 import { createProteinSwapService, recipeSourceHash } from "./proteinSwapService";
-import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore";
+import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore.types";
 
 /*
  * An in-memory store with the same claim rules as claim_recipe_protein_swap(), so the service's cache

@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { ProteinSwapView } from "#shared/utils/proteinSwap";
+import type { ProteinSwapView } from "#shared/utils/proteinSwap.types";
 import type { recipeDetailRowSchema, recipeListRowsSchema } from "~/utils/recipe";
 
 export type RecipeSummary = z.output<typeof recipeListRowsSchema>[number];

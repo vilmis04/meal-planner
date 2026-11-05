@@ -3,12 +3,7 @@
  * Server-only: the key comes from private runtime config (or the backfill script's environment) and is sent
  * in a header, never in a URL or a response. Imports are explicit so the backfill script can run it too.
  */
-
-export interface AiClient {
-  readonly model: string;
-  // Returns the model's JSON answer, parsed. Throws AiError.
-  generateJson(request: { prompt: string; schema: unknown }): Promise<unknown>;
-}
+import type { AiClient, GeminiOptions, GeminiResponse } from "./gemini.types";
 
 export class AiError extends Error {
   constructor(
@@ -21,20 +16,8 @@ export class AiError extends Error {
   }
 }
 
-export interface GeminiOptions {
-  apiKey: string;
-  model: string;
-  baseUrl?: string;
-  timeoutMs?: number;
-  fetch?: typeof fetch;
-}
-
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const DEFAULT_TIMEOUT_MS = 30_000;
-
-interface GeminiResponse {
-  candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-}
 
 export function createGeminiClient(options: GeminiOptions): AiClient {
   if (!options.apiKey) {

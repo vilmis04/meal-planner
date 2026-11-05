@@ -5,16 +5,26 @@
  * Pure on purpose (no database, network or framework imports): the server's on-demand service, the backfill
  * script and the tests all use it. Imports are relative so the script can run outside Nuxt.
  */
-import { z } from "zod";
-import { DIETS, PROTEINS, allowedProteins, isProteinAllowed, isRecipeCompatible } from "./diet";
+import { DIETS, allowedProteins, isProteinAllowed, isRecipeCompatible } from "./diet";
 import type { Diet, Protein } from "./diet";
+import { swapResponseSchema } from "./proteinSwap.schema";
+import type {
+  StoredSwapState,
+  SwapCacheDecision,
+  SwapIngredient,
+  SwapLocale,
+  SwapNutrition,
+  SwapRecipe,
+  SwapResponse,
+  SwapValidation,
+  ValidatedSwapItem,
+} from "./proteinSwap.types";
 
 // Bump when the prompt or the rules change in a way that should regenerate stored swaps.
 export const PROMPT_VERSION = 1;
 
 // Swaps are written in the recipe content language; X1c adds English.
 export const SWAP_LOCALES = ["lt", "en"] as const;
-export type SwapLocale = (typeof SWAP_LOCALES)[number];
 export const DEFAULT_SWAP_LOCALE: SwapLocale = "lt";
 
 // A pending claim older than this belongs to a request that died; claim_recipe_protein_swap() uses the same.
@@ -27,48 +37,6 @@ const MAX_AMOUNT_FACTOR = 3; // a replacement may use at most 3x the original am
 const NUTRITION_MIN_FACTOR = 0.5;
 const NUTRITION_MAX_FACTOR = 1.5;
 const MAX_KCAL_WITHOUT_ORIGINAL = 2000;
-
-export interface SwapIngredient {
-  id: string;
-  position: number;
-  item: string;
-  amount: number | null;
-  unit: string | null;
-}
-
-export interface SwapNutrition {
-  caloriesKcal: number | null;
-  carbohydrates: number | null;
-  protein: number | null;
-  fat: number | null;
-}
-
-export interface SwapRecipe {
-  id: string;
-  name: string;
-  mainProteins: readonly Protein[];
-  ingredients: readonly SwapIngredient[];
-  nutrition: SwapNutrition;
-}
-
-export interface ValidatedSwapItem {
-  recipeIngredientId: string;
-  position: number;
-  originalProtein: Protein;
-  item: string;
-  amount: number | null;
-  unit: string | null;
-  replacementProtein: Protein;
-}
-
-export interface ValidatedSwap {
-  items: ValidatedSwapItem[];
-  note: string | null;
-  // Null when the estimate was missing or implausible; always approximate.
-  nutrition: SwapNutrition | null;
-}
-
-export type SwapValidation = { ok: true; swap: ValidatedSwap } | { ok: false; errors: string[] };
 
 // The diets a recipe does not fit, lowest first. Empty for recipes every diet allows.
 export function conflictingDiets(mainProteins: readonly Protein[]): Diet[] {
@@ -150,71 +118,6 @@ function formatNutrition(nutrition: SwapNutrition): string {
     nutrition.protein,
   )} g, fat ${value(nutrition.fat)} g`;
 }
-
-const proteinSchema = z.enum(PROTEINS);
-const nullableNumber = z.number().finite().nullable();
-
-// The answer as the model returns it (snake_case, like the JSON schema below).
-export const swapResponseSchema = z.object({
-  swaps: z
-    .array(
-      z.object({
-        position: z.number().int(),
-        original_protein: proteinSchema,
-        item: z.string(),
-        amount: nullableNumber,
-        unit: z.string().nullable(),
-        replacement_protein: proteinSchema,
-      }),
-    )
-    .min(1),
-  note: z.string().nullable(),
-  nutrition: z
-    .object({
-      calories_kcal: nullableNumber,
-      carbohydrates: nullableNumber,
-      protein: nullableNumber,
-      fat: nullableNumber,
-    })
-    .nullable(),
-});
-
-export type SwapResponse = z.infer<typeof swapResponseSchema>;
-
-// The same shape for the AI's structured output (OpenAPI subset, as Gemini's responseSchema takes it).
-export const SWAP_RESPONSE_JSON_SCHEMA = {
-  type: "OBJECT",
-  properties: {
-    swaps: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        properties: {
-          position: { type: "INTEGER" },
-          original_protein: { type: "STRING", enum: [...PROTEINS] },
-          item: { type: "STRING" },
-          amount: { type: "NUMBER", nullable: true },
-          unit: { type: "STRING", nullable: true },
-          replacement_protein: { type: "STRING", enum: [...PROTEINS] },
-        },
-        required: ["position", "original_protein", "item", "amount", "unit", "replacement_protein"],
-      },
-    },
-    note: { type: "STRING", nullable: true },
-    nutrition: {
-      type: "OBJECT",
-      nullable: true,
-      properties: {
-        calories_kcal: { type: "NUMBER", nullable: true },
-        carbohydrates: { type: "NUMBER", nullable: true },
-        protein: { type: "NUMBER", nullable: true },
-        fat: { type: "NUMBER", nullable: true },
-      },
-      required: ["calories_kcal", "carbohydrates", "protein", "fat"],
-    },
-  },
-  required: ["swaps", "note", "nutrition"],
-} as const;
 
 /*
  * Word stems that name a protein, in Lithuanian and English. A replacement whose name contains a stem of a
@@ -368,22 +271,6 @@ export function validateSwap(recipe: SwapRecipe, diet: Diet, raw: unknown): Swap
   };
 }
 
-export type SwapStatus = "pending" | "ready" | "failed" | "rejected";
-
-export interface StoredSwapState {
-  status: SwapStatus;
-  claimedAt: Date | null;
-  retryAfter: Date | null;
-  sourceHash: string | null;
-  promptVersion: number | null;
-}
-
-export type SwapCacheDecision =
-  | { action: "hit" }
-  | { action: "wait" }
-  | { action: "unavailable"; retryAfter: Date }
-  | { action: "generate" };
-
 /*
  * What a request does with the stored row for its pair. Mirrors claim_recipe_protein_swap(): "generate" means
  * try to claim; the claim decides atomically if two requests race.
@@ -419,23 +306,4 @@ const RETRY_DELAYS_MS = [5 * 60 * 1000, 60 * 60 * 1000, 24 * 60 * 60 * 1000];
 export function nextRetryAfter(attempts: number, now: Date): Date {
   const delay = RETRY_DELAYS_MS[Math.min(Math.max(attempts, 1), RETRY_DELAYS_MS.length) - 1]!;
   return new Date(now.getTime() + delay);
-}
-
-// What the API returns for a ready swap: each replaced ingredient next to its original.
-export interface ProteinSwapView {
-  recipeId: string;
-  diet: Diet;
-  locale: SwapLocale;
-  note: string | null;
-  nutrition: SwapNutrition | null;
-  nutritionApproximate: true;
-  generatedAt: string;
-  items: {
-    position: number;
-    original: { item: string; amount: number | null; unit: string | null };
-    item: string;
-    amount: number | null;
-    unit: string | null;
-    replacementProtein: Protein;
-  }[];
 }

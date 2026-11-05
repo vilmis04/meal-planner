@@ -15,30 +15,19 @@ import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import { DIETS, isProtein } from "../shared/utils/diet";
-import type { Diet, Protein } from "../shared/utils/diet";
+import type { Protein } from "../shared/utils/diet";
 import { fetchAllPages } from "../shared/utils/fetchAllPages";
 import { conflictingDiets } from "../shared/utils/proteinSwap";
-import type { ProteinSwapView } from "../shared/utils/proteinSwap";
+import type { ProteinSwapView } from "../shared/utils/proteinSwap.types";
 import { createGeminiClient } from "../server/utils/ai/gemini";
 import { createProteinSwapService } from "../server/utils/proteinSwapService";
-import type { GetSwapResult } from "../server/utils/proteinSwapService";
+import type { GetSwapResult } from "../server/utils/proteinSwapService.types";
 import { createSupabaseSwapStore } from "../server/utils/proteinSwapStore";
+import type { Pair, RecipeRow } from "./generate-protein-swaps.types";
 
 const CONCURRENCY = 2;
 const PAGE_SIZE = 1000;
 const REPORT_PATH = "swap-review.md";
-
-interface RecipeRow {
-  id: string;
-  name: string;
-  main_proteins: string[];
-  calories_kcal: number | null;
-}
-
-interface Pair {
-  recipe: RecipeRow;
-  diet: Diet;
-}
 
 // Variables already set in the environment win over .env; a missing .env is fine.
 try {

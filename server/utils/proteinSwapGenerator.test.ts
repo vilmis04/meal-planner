@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SwapRecipe } from "../../shared/utils/proteinSwap";
+import type { SwapRecipe } from "../../shared/utils/proteinSwap.types";
 import { AiError } from "./ai/gemini";
-import type { AiClient } from "./ai/gemini";
+import type { AiClient } from "./ai/gemini.types";
 import { generateSwap } from "./proteinSwapGenerator";
 
 const recipe: SwapRecipe = {

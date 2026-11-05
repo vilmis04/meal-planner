@@ -18,34 +18,12 @@ import {
   nextRetryAfter,
   swapCacheDecision,
 } from "../../shared/utils/proteinSwap";
-import type { ProteinSwapView, SwapLocale, SwapRecipe, ValidatedSwap } from "../../shared/utils/proteinSwap";
-import type { AiClient } from "./ai/gemini";
+import type { ProteinSwapView, SwapRecipe, ValidatedSwap } from "../../shared/utils/proteinSwap.types";
+import type { AiClient } from "./ai/gemini.types";
 import { generateSwap } from "./proteinSwapGenerator";
-import type { GenerateSwapOptions, GenerateSwapResult } from "./proteinSwapGenerator";
-import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore";
-
-export type GetSwapResult =
-  | { status: "ready"; swap: ProteinSwapView; generated: boolean }
-  | { status: "pending" }
-  | { status: "unavailable"; retryAfter: Date }
-  | { status: "limited" }
-  | { status: "not-needed" }
-  | { status: "not-found" };
-
-export interface GetSwapOptions {
-  locale?: SwapLocale;
-  // Asked just before a cache miss would call the AI; false stops it (the route's per-user limit).
-  allowGenerate?: () => boolean;
-}
-
-export interface ProteinSwapServiceDeps {
-  store: SwapStore;
-  // Created lazily so cache hits work even when no AI key is configured.
-  ai: () => AiClient;
-  now?: () => Date;
-  log?: (entry: Record<string, unknown>) => void;
-  generateOptions?: GenerateSwapOptions;
-}
+import type { GenerateSwapResult } from "./proteinSwapGenerator.types";
+import type { GetSwapOptions, GetSwapResult, ProteinSwapServiceDeps } from "./proteinSwapService.types";
+import type { StoredSwap, SwapKey } from "./proteinSwapStore.types";
 
 // Changes when the recipe's ingredients or main proteins change, which makes a stored swap stale.
 export function recipeSourceHash(recipe: SwapRecipe): string {
@@ -195,5 +173,3 @@ export function createProteinSwapService(deps: ProteinSwapServiceDeps) {
 
   return { getOrCreateSwap };
 }
-
-export type ProteinSwapService = ReturnType<typeof createProteinSwapService>;

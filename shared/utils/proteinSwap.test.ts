@@ -3,7 +3,6 @@ import type { Protein } from "./diet";
 import {
   CLAIM_TTL_MS,
   PROMPT_VERSION,
-  SWAP_RESPONSE_JSON_SCHEMA,
   buildSwapPrompt,
   conflictingDiets,
   excludedProteins,
@@ -12,7 +11,8 @@ import {
   swappedProteins,
   validateSwap,
 } from "./proteinSwap";
-import type { StoredSwapState, SwapRecipe } from "./proteinSwap";
+import { SWAP_RESPONSE_JSON_SCHEMA } from "./proteinSwap.schema";
+import type { StoredSwapState, SwapRecipe } from "./proteinSwap.types";
 
 function recipe(mainProteins: Protein[], overrides: Partial<SwapRecipe> = {}): SwapRecipe {
   return {
