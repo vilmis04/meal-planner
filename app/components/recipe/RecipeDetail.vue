@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import type { Recipe } from "~/types/recipe.types";
 
-defineProps<{ recipe: Recipe }>();
+const props = defineProps<{ recipe: Recipe }>();
 
 const { t } = useI18n();
 const { isLoaded: isRatingLoaded } = useRecipeRatings();
+const { diet, state: swapState, showOriginal } = useRecipeSwap(() => props.recipe);
+
+// The swapped ingredients while a swap is shown, the recipe's own after "Show original" or without a swap.
+const ingredients = computed(() =>
+  swapState.value.status === "ready" && !showOriginal.value
+    ? applySwap(props.recipe.ingredients, swapState.value.swap.items)
+    : props.recipe.ingredients,
+);
 </script>
 
 <template>
@@ -18,13 +26,15 @@ const { isLoaded: isRatingLoaded } = useRecipeRatings();
       <RecipeRatingToggle v-if="isRatingLoaded" :recipe-id="recipe.id" />
     </header>
 
+    <RecipeSwapCard v-if="diet && swapState.status !== 'none'" v-model:show-original="showOriginal" :diet="diet" :state="swapState" />
+
     <!-- The seed has one recipe with no ingredients and no instructions yet; its empty sections are left out. -->
     <section v-if="recipe.ingredients.length > 0" :class="$style.section">
       <div :class="$style.sectionHeading">
         <h3 :class="$style.sectionTitle">{{ t("recipes.detail.ingredients") }}</h3>
         <p :class="$style.hint">{{ t("recipes.detail.ingredientsHint") }}</p>
       </div>
-      <RecipeIngredientList :ingredients="recipe.ingredients" />
+      <RecipeIngredientList :ingredients="ingredients" />
     </section>
 
     <section v-if="recipe.instructions" :class="$style.section">

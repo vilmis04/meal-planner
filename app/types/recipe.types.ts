@@ -19,3 +19,10 @@ export type RecipeProteinSwapResponse =
   | { status: "pending" }
   | { status: "unavailable"; retryAfter: string }
   | { status: "not-needed" };
+
+// What recipe detail shows about a swap (D3): nothing, a "preparing" card, the swap, or a notice that it isn't ready.
+export type RecipeSwapState =
+  | { status: "none" }
+  | { status: "loading" }
+  | { status: "ready"; swap: RecipeProteinSwap }
+  | { status: "unavailable" };

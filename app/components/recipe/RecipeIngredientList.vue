@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { RecipeIngredient } from "~/types/recipe.types";
 
-defineProps<{ ingredients: readonly RecipeIngredient[] }>();
+// A line a protein swap (D3) replaced is marked swapped and highlighted.
+type IngredientRow = RecipeIngredient & { swapped?: boolean };
+
+defineProps<{ ingredients: readonly IngredientRow[] }>();
 
 const { t, locale } = useI18n();
 
 // Units are free text from the seed (g, ml, vnt., v.š.) and shown as stored; a missing amount means "to taste".
-function amountLabel(ingredient: RecipeIngredient): string {
+function amountLabel(ingredient: IngredientRow): string {
   const amount = formatAmount(ingredient.amount, locale.value);
   if (amount === null) {
     return t("recipes.detail.toTaste");
@@ -17,8 +20,16 @@ function amountLabel(ingredient: RecipeIngredient): string {
 
 <template>
   <ul :class="$style.list" data-testid="recipe-ingredients">
-    <li v-for="(ingredient, index) in ingredients" :key="index" :class="$style.row">
-      <span :class="$style.item">{{ ingredient.item }}</span>
+    <li
+      v-for="ingredient in ingredients"
+      :key="ingredient.position"
+      :class="[$style.row, ingredient.swapped && $style.swapped]"
+      :data-testid="ingredient.swapped ? 'recipe-ingredient-swapped' : undefined"
+    >
+      <span :class="$style.item">
+        {{ ingredient.item }}
+        <span v-if="ingredient.swapped" :class="$style.visuallyHidden">({{ t("recipes.swap.swappedLine") }})</span>
+      </span>
       <span :class="$style.amount">{{ amountLabel(ingredient) }}</span>
     </li>
   </ul>
@@ -50,6 +61,21 @@ function amountLabel(ingredient: RecipeIngredient): string {
   font-size: 15px;
 }
 
+/* A swapped line stands out as a soft primary band, as in the design. */
+.swapped {
+  padding-inline: var(--space-3);
+  margin-inline: calc(-1 * var(--space-2));
+  border-bottom-color: transparent;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.swapped .amount {
+  color: var(--color-primary);
+}
+
 .item {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -60,5 +86,14 @@ function amountLabel(ingredient: RecipeIngredient): string {
   max-width: 50%;
   color: var(--color-muted);
   text-align: right;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 </style>

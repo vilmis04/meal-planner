@@ -265,6 +265,15 @@
       "toTaste": "to taste",
       "instructions": "Instructions"
     },
+    "swap": {
+      "title": "Swapped for your diet ({diet})",
+      "showOriginal": "Show original",
+      "showSwap": "Show swap",
+      "sameAmount": "{item}, same amount",
+      "swappedLine": "swapped for your diet",
+      "preparing": "Preparing a swap for your diet ({diet})…",
+      "unavailable": "A swap for your diet ({diet}) isn't ready yet. Showing the original recipe."
+    },
     "rating": {
       "label": "Your rating",
       "rate": "Rate {name}",
