@@ -23,5 +23,8 @@ logs
 .env.*
 !.env.example
 
+# Protein swap backfill report (npm run swaps:generate)
+swap-review.md
+
 # Supabase CLI local state
 supabase/.temp
