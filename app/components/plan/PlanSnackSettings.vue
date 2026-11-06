@@ -26,8 +26,8 @@ const leaveOffList = computed({
           id="plan-include-snacks"
           v-model="includeSnacks"
           color="primary"
-          thumb-color="on-primary"
           inset
+          :class="$style.switch"
           hide-details
           density="compact"
           :disabled="disabled"
@@ -46,8 +46,8 @@ const leaveOffList = computed({
           id="plan-snacks-off-list"
           v-model="leaveOffList"
           color="primary"
-          thumb-color="on-primary"
           inset
+          :class="$style.switch"
           hide-details
           density="compact"
           :disabled="disabled || !includeSnacks"
@@ -59,6 +59,15 @@ const leaveOffList = computed({
 </template>
 
 <style module>
+/* Vuetify's inset thumb is a fixed lilac in the dark theme; follow the app's own colours instead. */
+.switch :global(.v-selection-control .v-switch__thumb) {
+  background-color: rgb(var(--v-theme-surface));
+}
+
+.switch :global(.v-selection-control--dirty .v-switch__thumb) {
+  background-color: rgb(var(--v-theme-on-primary));
+}
+
 .section {
   display: flex;
   flex-direction: column;

@@ -23,7 +23,9 @@ describe("formatPlanRange", () => {
     expect(formatPlanRange("2026-11-09", "2026-11-09", "en")).toBe("9 Nov");
   });
 
-  it("formats Lithuanian without odd spaces", () => {
+  it("formats Lithuanian with month names, not numbers, and without odd spaces", () => {
+    expect(formatPlanRange("2026-11-09", "2026-11-15", "lt")).toBe("lapkričio 9–15");
+    expect(formatPlanRange("2026-10-26", "2026-11-01", "lt")).toBe("spalio 26 – lapkričio 1");
     expect(hasOddSpaces(formatPlanRange("2026-11-09", "2026-11-15", "lt"))).toBe(false);
   });
 });
@@ -32,5 +34,9 @@ describe("formatPlanDay", () => {
   it("shows the stored day whatever the time zone", () => {
     expect(formatPlanDay("2026-11-09", "en", { weekday: "long" })).toBe("Monday");
     expect(formatPlanDay("2026-11-09", "en", { day: "numeric", month: "short" })).toBe("9 Nov");
+  });
+
+  it("spells the month out in Lithuanian", () => {
+    expect(formatPlanDay("2026-11-09", "lt", { day: "numeric", month: "short" })).toBe("lapkričio 9 d.");
   });
 });
