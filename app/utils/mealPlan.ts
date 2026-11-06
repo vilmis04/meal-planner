@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const MEAL_PLAN_COLUMNS = "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at";
-export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, meal_plan_slots(id, day_index, meal_type, recipe_id)`;
+export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, meal_plan_slots(id, day_index, meal_type, recipe_id), meal_plan_participants(user_id)`;
 
 // The plan list shows the newest plans first; E6 replaces it with the week view and history.
 export const MEAL_PLAN_LIST_LIMIT = 50;
@@ -42,9 +42,14 @@ const slotRowSchema = z.object({
 
 // Slots come back in no particular order: they are sorted by day, then in meal order.
 export const mealPlanDetailRowSchema = z
-  .object({ ...mealPlanRowShape, meal_plan_slots: z.array(slotRowSchema) })
+  .object({
+    ...mealPlanRowShape,
+    meal_plan_slots: z.array(slotRowSchema),
+    meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
+  })
   .transform((row) => ({
     ...toMealPlan(row),
+    participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
     slots: row.meal_plan_slots
       .map((slot) => ({
         id: slot.id,

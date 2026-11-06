@@ -14,6 +14,9 @@ const dayCount = ref(PLAN_DAY_COUNT_DEFAULT);
 const includeSnacks = ref(true);
 const snacksOnList = ref(true);
 const isSaving = ref(false);
+// Everyone takes part by default; the picker lets the user untick people for this plan.
+const allMemberIds = (): string[] => household.value?.members.map((member) => member.userId) ?? [];
+const participantIds = ref<string[]>(allMemberIds());
 const minDays = PLAN_DAY_COUNT_MIN;
 const maxDays = PLAN_DAY_COUNT_MAX;
 
@@ -23,8 +26,10 @@ onMounted(() => {
   }
 });
 
-// Someone who leaves their household while this screen is open is moved to "Just me".
+// Someone who leaves their household while this screen is open is moved to "Just me". When the household
+// is reloaded (someone joined or left), everyone in it is ticked again, so no one who left stays chosen.
 watch(household, (current) => {
+  participantIds.value = allMemberIds();
   if (!current && kind.value === "household") {
     kind.value = "individual";
   }
@@ -49,6 +54,7 @@ async function handleSubmit(event: SubmitEventPromise) {
     dayCount: dayCount.value,
     includeSnacks: includeSnacks.value,
     snacksOnList: snacksOnList.value,
+    participantIds: kind.value === "household" ? participantIds.value : undefined,
   });
 
   if (result.isCreated) {
@@ -59,8 +65,8 @@ async function handleSubmit(event: SubmitEventPromise) {
 
   isSaving.value = false;
   show(result.errorKey, "error");
-  // Removed from the household elsewhere: show what is really there.
-  if (result.errorKey === "plan.errors.notInHousehold") {
+  // The household changed elsewhere: show what is really there.
+  if (result.errorKey === "plan.errors.notInHousehold" || result.errorKey === "plan.errors.participantNotMember") {
     await loadHousehold({ isSilent: true });
   }
 }
@@ -139,6 +145,12 @@ async function handleSubmit(event: SubmitEventPromise) {
         />
       </div>
     </div>
+
+    <PlanParticipantPicker
+      v-if="kind === 'household' && household"
+      v-model="participantIds"
+      :members="household.members"
+    />
 
     <PlanSnackSettings v-model:include-snacks="includeSnacks" v-model:snacks-on-list="snacksOnList" />
 

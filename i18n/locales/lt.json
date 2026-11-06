@@ -123,6 +123,15 @@
       "offListNeedsSlots": "Įjunkite užkandžius, kad galėtumėte tai pasirinkti.",
       "saveFailed": "Nepavyko išsaugoti užkandžių nustatymo. Bandykite dar kartą."
     },
+    "participants": {
+      "title": "Dalyviai",
+      "servings": "Kiekiai skaičiuojami: {count} asm.",
+      "diet": "Mityba: {diet}",
+      "notInPlan": "Šiame plane nedalyvauja",
+      "lastOne": "Plane turi dalyvauti bent vienas žmogus.",
+      "empty": "Šiame plane nebeliko dalyvių. Pažymėkite, kas valgys pagal jį.",
+      "saveFailed": "Nepavyko išsaugoti dalyvių. Bandykite dar kartą."
+    },
     "detail": {
       "back": "Visi planai",
       "emptySlot": "Dar nesuplanuota",
@@ -135,6 +144,8 @@
       "invalidDayCount": "Planas gali būti nuo 1 iki 14 dienų.",
       "invalidStartDate": "Pasirinkite plano pradžios dieną.",
       "invalidKind": "Pasirinkite, kam skirtas planas.",
+      "noParticipants": "Pasirinkite bent vieną plano dalyvį.",
+      "participantNotMember": "Kažkuris pasirinktas žmogus nebe namų ūkyje. Sąrašas atnaujintas.",
       "listLoadFailed": "Nepavyko įkelti jūsų planų.",
       "notFound": "Šis planas nepasiekiamas. Jis galėjo būti pašalintas arba juo su jumis nesidalijama.",
       "loadFailed": "Nepavyko įkelti plano."

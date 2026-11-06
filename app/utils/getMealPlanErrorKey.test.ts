@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import en from "../../i18n/locales/en.json";
 import lt from "../../i18n/locales/lt.json";
-import { GENERIC_MEAL_PLAN_ERROR_KEY, MEAL_PLAN_ERROR_KEY_BY_MESSAGE, getMealPlanErrorKey } from "./getMealPlanErrorKey";
+import {
+  GENERIC_MEAL_PLAN_ERROR_KEY,
+  MEAL_PLAN_ERROR_KEY_BY_MESSAGE,
+  PARTICIPANTS_SAVE_FAILED_KEY,
+  getMealPlanErrorKey,
+  getParticipantsErrorKey,
+} from "./getMealPlanErrorKey";
 
 const lookUp = (messages: unknown, key: string): unknown =>
   key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], messages);
@@ -16,7 +22,13 @@ describe("getMealPlanErrorKey", () => {
     expect(getMealPlanErrorKey({ message: "" })).toBe(GENERIC_MEAL_PLAN_ERROR_KEY);
   });
 
-  it.each([...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE), GENERIC_MEAL_PLAN_ERROR_KEY])(
+  it("uses the same messages for saving participants, with its own fallback", () => {
+    expect(getParticipantsErrorKey({ message: "no_participants" })).toBe("plan.errors.noParticipants");
+    expect(getParticipantsErrorKey({ message: "participant_not_member" })).toBe("plan.errors.participantNotMember");
+    expect(getParticipantsErrorKey({ message: "plan_not_found" })).toBe(PARTICIPANTS_SAVE_FAILED_KEY);
+  });
+
+  it.each([...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE), GENERIC_MEAL_PLAN_ERROR_KEY, PARTICIPANTS_SAVE_FAILED_KEY])(
     "has %s in English and Lithuanian",
     (key) => {
       expect(typeof lookUp(en, key)).toBe("string");

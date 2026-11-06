@@ -4,9 +4,10 @@ import type {
   MealPlanLoadResult,
   NewMealPlan,
   SnackSettings,
+  UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1, E2). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -18,6 +19,7 @@ export function useMealPlans() {
       plan_day_count: plan.dayCount,
       plan_include_snacks: plan.includeSnacks,
       plan_snacks_on_list: plan.snacksOnList,
+      ...(plan.participantIds ? { plan_participant_ids: plan.participantIds } : {}),
     });
 
     if (error) {
@@ -91,5 +93,19 @@ export function useMealPlans() {
     return true;
   };
 
-  return { create, loadList, loadPlan, updateSnackSettings };
+  // Replaces a household plan's participants. The database keeps at least one and allows current members only.
+  const updateParticipants = async (id: string, participantIds: string[]): Promise<UpdateParticipantsResult> => {
+    const { error } = await supabase.rpc("set_meal_plan_participants", {
+      target_plan_id: id,
+      participant_ids: participantIds,
+    });
+
+    if (error) {
+      console.error("Saving the participants failed", error);
+      return { isSaved: false, errorKey: getParticipantsErrorKey(error) };
+    }
+    return { isSaved: true };
+  };
+
+  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants };
 }

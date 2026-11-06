@@ -12,11 +12,14 @@ export interface NewMealPlan {
   dayCount: number;
   includeSnacks: boolean;
   snacksOnList: boolean;
+  // Household plans only; the database fills in the owner of an individual plan.
+  participantIds?: string[];
 }
 
 export type SnackSettings = Pick<MealPlan, "includeSnacks" | "snacksOnList">;
 
 export type CreateMealPlanResult = { isCreated: true; id: string } | { isCreated: false; errorKey: string };
+export type UpdateParticipantsResult = { isSaved: true } | { isSaved: false; errorKey: string };
 
 // Kept apart so the page can tell "no such plan, or not yours" from "could not ask".
 export type MealPlanLoadResult = { status: "found"; plan: MealPlan } | { status: "not-found" } | { status: "failed" };

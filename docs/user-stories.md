@@ -111,6 +111,7 @@ As a household member I want to pick who participates in a plan.
 - Defaults to all current members; I can untick people for this plan.
 - At least one participant is required.
 - Changing participants on an existing plan updates the scaling (and shopping list, Epic G).
+- Built as `meal_plan_participants`, written only through `create_meal_plan()` and `set_meal_plan_participants()` (see README, "Meal plans"). Individual plans have their owner as the only participant; a member who leaves the household is taken off its plans.
 
 ### E3. Manual slot editing (M, Phase 2)
 As a user I want to pick a recipe for a slot myself.

@@ -5,11 +5,16 @@ defineOptions({ name: "PlanPage" });
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const { loadPlan, updateSnackSettings } = useMealPlans();
+const { loadPlan, updateSnackSettings, updateParticipants } = useMealPlans();
+const { household, load: loadHousehold } = useHousehold();
 const { show } = useAppSnackbar();
 
 const id = String(route.params.id);
-const { data: result } = await useAsyncData(`plan-${id}`, () => loadPlan(id));
+// The household gives the participant picker its members, with their names and diets.
+const [{ data: result, refresh: refreshPlan }] = await Promise.all([
+  useAsyncData(`plan-${id}`, () => loadPlan(id)),
+  callOnce("household", loadHousehold, { mode: "navigation" }),
+]);
 
 const plan = computed(() => (result.value?.status === "found" ? result.value.plan : null));
 const range = computed(() =>
@@ -47,6 +52,33 @@ const snacksOnList = computed({
   get: () => plan.value?.snacksOnList ?? true,
   set: (value: boolean) => saveSnacks({ snacksOnList: value }),
 });
+
+// Same pattern for the participants: the count follows the tap, and a refused save puts the old set back.
+async function saveParticipants(participantIds: string[]) {
+  const current = plan.value;
+  if (!current || isSaving.value) {
+    return;
+  }
+
+  result.value = { status: "found", plan: { ...current, participantIds } };
+  isSaving.value = true;
+  const saved = await updateParticipants(current.id, participantIds);
+  isSaving.value = false;
+
+  if (!saved.isSaved) {
+    result.value = { status: "found", plan: current };
+    show(saved.errorKey, "error");
+    // Someone left or was removed meanwhile, which also took them off this plan: show both as they are now.
+    if (saved.errorKey === "plan.errors.participantNotMember") {
+      await Promise.all([loadHousehold({ isSilent: true }), refreshPlan()]);
+    }
+  }
+}
+
+const participantIds = computed({
+  get: () => plan.value?.participantIds ?? [],
+  set: (value: string[]) => saveParticipants(value),
+});
 </script>
 
 <template>
@@ -62,12 +94,20 @@ const snacksOnList = computed({
       </header>
 
       <div :class="$style.layout">
-        <PlanSnackSettings
-          v-model:include-snacks="includeSnacks"
-          v-model:snacks-on-list="snacksOnList"
-          :disabled="isSaving"
-          :class="$style.settings"
-        />
+        <div :class="$style.settings">
+          <!-- Individual plans have one participant, their owner, so they show no picker. -->
+          <PlanParticipantPicker
+            v-if="plan.kind === 'household' && household"
+            v-model="participantIds"
+            :members="household.members"
+            :disabled="isSaving"
+          />
+          <PlanSnackSettings
+            v-model:include-snacks="includeSnacks"
+            v-model:snacks-on-list="snacksOnList"
+            :disabled="isSaving"
+          />
+        </div>
         <PlanDayList :plan="plan" :class="$style.days" />
       </div>
     </template>
@@ -112,6 +152,12 @@ const snacksOnList = computed({
 }
 
 .layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

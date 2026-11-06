@@ -79,6 +79,12 @@ export function getPlanEndDate(startDate: string, dayCount: number): string {
   return addDays(startDate, dayCount - 1);
 }
 
+// How many portions quantities scale to (E2): one per participant. The shopping list (G2) multiplies
+// per-person amounts by this; a plan whose last participant left the household scales to 0.
+export function getPlanServings(participantIds: readonly string[]): number {
+  return new Set(participantIds).size;
+}
+
 // The slots a plan shows: skipped snacks are kept in the database but not shown.
 export function getVisibleMealTypes(includeSnacks: boolean): MealType[] {
   return MEAL_TYPES.filter((mealType) => includeSnacks || mealType !== "snack");
