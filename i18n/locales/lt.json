@@ -265,6 +265,15 @@
       "toTaste": "pagal skonį",
       "instructions": "Gaminimas"
     },
+    "swap": {
+      "title": "Pritaikyta jūsų mitybai ({diet})",
+      "showOriginal": "Rodyti originalą",
+      "showSwap": "Rodyti pakeitimą",
+      "sameAmount": "{item}, tas pats kiekis",
+      "swappedLine": "pakeista pagal jūsų mitybą",
+      "preparing": "Ruošiamas pakeitimas jūsų mitybai ({diet})…",
+      "unavailable": "Pakeitimas jūsų mitybai ({diet}) dar neparuoštas. Rodomas originalus receptas."
+    },
     "rating": {
       "label": "Jūsų vertinimas",
       "rate": "Įvertinti: {name}",

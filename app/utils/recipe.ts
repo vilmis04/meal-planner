@@ -3,7 +3,7 @@ import { z } from "zod";
 // Nutrition columns (calories_kcal, carbohydrates, protein, fat) are left out on purpose: they stay hidden until F1.
 export const RECIPE_LIST_COLUMNS = "id, name, meal_type, portion_days";
 export const RECIPE_DETAIL_COLUMNS =
-  "id, name, meal_type, instructions, portion_days, recipe_ingredients(position, item, amount, unit)";
+  "id, name, meal_type, instructions, portion_days, main_proteins, recipe_ingredients(position, item, amount, unit)";
 
 // Rows asked for per request when reading the whole list. Supabase answers at most 1000 per request by default.
 export const RECIPE_PAGE_SIZE = 1000;
@@ -44,6 +44,8 @@ export const recipeDetailRowSchema = z
     meal_type: mealTypeSchema,
     instructions: z.string(),
     portion_days: z.number().int().min(1),
+    // PROTEINS is in shared/utils/diet.ts and matches the recipes_main_proteins_supported constraint (D1).
+    main_proteins: z.array(z.enum(PROTEINS)),
     recipe_ingredients: z.array(ingredientRowSchema),
   })
   .transform((row) => ({
@@ -52,10 +54,17 @@ export const recipeDetailRowSchema = z
     mealType: row.meal_type,
     instructions: row.instructions.trim(),
     portionDays: row.portion_days,
-    // The embedded rows come back in no promised order; position is the order the recipe lists them in.
+    mainProteins: row.main_proteins,
+    // The embedded rows come back in no promised order; position is the order the recipe lists them in, and
+    // what a protein swap (D3) names the ingredient it replaces by.
     ingredients: [...row.recipe_ingredients]
       .sort((a, b) => a.position - b.position)
-      .map((ingredient) => ({ item: ingredient.item, amount: ingredient.amount, unit: ingredient.unit })),
+      .map((ingredient) => ({
+        position: ingredient.position,
+        item: ingredient.item,
+        amount: ingredient.amount,
+        unit: ingredient.unit,
+      })),
   }));
 
 export const recipeIdSchema = z.guid();
