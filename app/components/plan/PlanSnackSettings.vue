@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// The two snack options of a plan (E1). Used on the New plan screen and on the plan page, where each change saves.
 defineProps<{ disabled?: boolean }>();
 
 const includeSnacks = defineModel<boolean>("includeSnacks", { required: true });
