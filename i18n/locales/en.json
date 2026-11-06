@@ -123,6 +123,15 @@
       "offListNeedsSlots": "Turn on snack slots to choose this.",
       "saveFailed": "The snack option could not be saved. Try again."
     },
+    "participants": {
+      "title": "Participants",
+      "servings": "Quantities scale to {count}",
+      "diet": "Diet: {diet}",
+      "notInPlan": "Not in this plan",
+      "lastOne": "At least one person takes part in a plan.",
+      "empty": "No one is in this plan any more. Tick who eats from it.",
+      "saveFailed": "The participants could not be saved. Try again."
+    },
     "detail": {
       "back": "All plans",
       "emptySlot": "Not planned yet",
@@ -135,6 +144,8 @@
       "invalidDayCount": "A plan is 1 to 14 days long.",
       "invalidStartDate": "Choose the day the plan starts.",
       "invalidKind": "Choose who the plan is for.",
+      "noParticipants": "Choose at least one person for the plan.",
+      "participantNotMember": "Someone you chose is no longer in the household. The list is up to date now.",
       "listLoadFailed": "Your plans could not be loaded.",
       "notFound": "This plan is not available. It may have been removed, or it is not shared with you.",
       "loadFailed": "The plan could not be loaded."

@@ -9,6 +9,7 @@ import {
   getDefaultStartDate,
   getPlanDays,
   getPlanEndDate,
+  getPlanServings,
   getVisibleMealTypes,
   isIsoDate,
   toLocalIsoDate,
@@ -113,5 +114,20 @@ describe("getVisibleMealTypes", () => {
 
   it("hides the snack and keeps the order when snacks are skipped", () => {
     expect(getVisibleMealTypes(false)).toEqual(["breakfast", "lunch", "dinner"]);
+  });
+});
+
+describe("getPlanServings", () => {
+  it("is one portion per participant", () => {
+    expect(getPlanServings(["ana", "monika", "petras"])).toBe(3);
+    expect(getPlanServings(["monika"])).toBe(1);
+  });
+
+  it("counts a participant once", () => {
+    expect(getPlanServings(["monika", "monika"])).toBe(1);
+  });
+
+  it("is 0 for a plan with no one in it", () => {
+    expect(getPlanServings([])).toBe(0);
   });
 });

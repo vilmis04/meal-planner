@@ -14,8 +14,9 @@ export const NOT_IN_HOUSEHOLD_ERROR = "not_in_household";
 export const HOUSEHOLD_ROLES = ["owner", "member"] as const;
 
 // One row per member of the user's household (RLS shows only their own), with the household and each member's profile embedded.
+// The diet is shown beside each member when choosing a plan's participants (E2).
 export const HOUSEHOLD_MEMBER_COLUMNS =
-  "household_id, user_id, role, joined_at, households(name), profiles(display_name)";
+  "household_id, user_id, role, joined_at, households(name), profiles(display_name, diet)";
 
 const householdMemberRowSchema = z.object({
   household_id: z.guid(),
@@ -23,7 +24,8 @@ const householdMemberRowSchema = z.object({
   role: z.enum(HOUSEHOLD_ROLES),
   joined_at: z.string(),
   households: z.object({ name: z.string() }),
-  profiles: z.object({ display_name: z.string() }),
+  // DIETS is the ladder in shared/utils/diet.ts; the profiles_diet_supported constraint matches it.
+  profiles: z.object({ display_name: z.string(), diet: z.enum(DIETS) }),
 });
 
 // No rows means the user has no household.
@@ -38,6 +40,7 @@ export const householdRowsSchema = z.array(householdMemberRowSchema).transform((
     members: rows.map((row) => ({
       userId: row.user_id,
       displayName: row.profiles.display_name,
+      diet: row.profiles.diet,
       role: row.role,
       joinedAt: row.joined_at,
     })),
