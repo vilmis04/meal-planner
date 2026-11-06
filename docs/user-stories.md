@@ -104,6 +104,7 @@ As a user I want to create an empty plan for a date range.
 - Creates four slots per day (breakfast, lunch, dinner, snack).
 - Option "exclude snacks from the shopping list" (default off) and option to skip snack slots entirely; both can be changed later.
 - Household plans require membership; individual plans are visible to me only.
+- Built as `meal_plans` + `meal_plan_slots`, created only through `create_meal_plan()` (see README, "Meal plans"). Skipped snack slots are kept and hidden; the start date defaults to next Monday.
 
 ### E2. Choose participants (S, Phase 2)
 As a household member I want to pick who participates in a plan.
