@@ -77,6 +77,69 @@
     "title": "Welcome back",
     "greeting": "Welcome back, {name}"
   },
+  "plan": {
+    "pageTitle": "Plans",
+    "title": "Plans",
+    "kind": {
+      "household": "Household plan",
+      "individual": "Just me"
+    },
+    "dayCount": "{count} day | {count} days",
+    "homeCard": {
+      "title": "Plan your week",
+      "hint": "Make a plan for the coming days and fill it meal by meal.",
+      "action": "New plan",
+      "openTitle": "Your plans",
+      "openHint": "Latest: {range}"
+    },
+    "list": {
+      "new": "New plan",
+      "empty": "No plans yet. Make one for the coming week.",
+      "label": "Your plans"
+    },
+    "new": {
+      "pageTitle": "New plan",
+      "title": "New plan",
+      "close": "Close",
+      "who": "Who is it for",
+      "household": "Household",
+      "individual": "Just me",
+      "noHousehold": "Household plans need a household.",
+      "noHouseholdAction": "Create or join one",
+      "starts": "Starts",
+      "days": "Days",
+      "fewerDays": "One day fewer",
+      "moreDays": "One day more",
+      "create": "Create plan",
+      "generate": "Generate plan",
+      "generateSoon": "Generating a plan is coming soon.",
+      "created": "Plan created"
+    },
+    "snacks": {
+      "title": "Snacks",
+      "include": "Include snack slots",
+      "offList": "Leave snacks off the shopping list",
+      "offListHint": "For snacks you buy ad hoc or already have",
+      "offListNeedsSlots": "Turn on snack slots to choose this.",
+      "saveFailed": "The snack option could not be saved. Try again."
+    },
+    "detail": {
+      "back": "All plans",
+      "emptySlot": "Not planned yet",
+      "notOnList": "not on list",
+      "range": "{start} – {end}"
+    },
+    "errors": {
+      "createFailed": "The plan could not be created. Try again.",
+      "notInHousehold": "You are not in a household any more, so this can only be your own plan.",
+      "invalidDayCount": "A plan is 1 to 14 days long.",
+      "invalidStartDate": "Choose the day the plan starts.",
+      "invalidKind": "Choose who the plan is for.",
+      "listLoadFailed": "Your plans could not be loaded.",
+      "notFound": "This plan is not available. It may have been removed, or it is not shared with you.",
+      "loadFailed": "The plan could not be loaded."
+    }
+  },
   "household": {
     "pageTitle": "Household",
     "title": "Household",

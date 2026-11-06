@@ -13,6 +13,7 @@ await callOnce("household", load, { mode: "navigation" });
     <h1 :class="$style.title">
       {{ profile ? t("home.greeting", { name: profile.displayName }) : t("home.title") }}
     </h1>
+    <PlanHomeCard />
     <HouseholdHomeCard />
   </div>
 </template>

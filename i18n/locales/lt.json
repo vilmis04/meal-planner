@@ -77,6 +77,69 @@
     "title": "Sveiki sugrįžę",
     "greeting": "Sveiki sugrįžę, {name}"
   },
+  "plan": {
+    "pageTitle": "Planai",
+    "title": "Planai",
+    "kind": {
+      "household": "Namų ūkio planas",
+      "individual": "Tik man"
+    },
+    "dayCount": "Dienų: {count} | Dienų: {count}",
+    "homeCard": {
+      "title": "Suplanuokite savaitę",
+      "hint": "Sukurkite planą ateinančioms dienoms ir užpildykite jį patiekalas po patiekalo.",
+      "action": "Naujas planas",
+      "openTitle": "Jūsų planai",
+      "openHint": "Naujausias: {range}"
+    },
+    "list": {
+      "new": "Naujas planas",
+      "empty": "Planų dar nėra. Sukurkite planą ateinančiai savaitei.",
+      "label": "Jūsų planai"
+    },
+    "new": {
+      "pageTitle": "Naujas planas",
+      "title": "Naujas planas",
+      "close": "Uždaryti",
+      "who": "Kam skirtas",
+      "household": "Namų ūkiui",
+      "individual": "Tik man",
+      "noHousehold": "Namų ūkio planui reikia namų ūkio.",
+      "noHouseholdAction": "Sukurkite arba prisijunkite",
+      "starts": "Pradžia",
+      "days": "Dienos",
+      "fewerDays": "Viena diena mažiau",
+      "moreDays": "Viena diena daugiau",
+      "create": "Sukurti planą",
+      "generate": "Sudaryti planą",
+      "generateSoon": "Plano sudarymas netrukus.",
+      "created": "Planas sukurtas"
+    },
+    "snacks": {
+      "title": "Užkandžiai",
+      "include": "Įtraukti užkandžius",
+      "offList": "Neįtraukti užkandžių į pirkinių sąrašą",
+      "offListHint": "Užkandžiams, kuriuos perkate pakeliui arba jau turite",
+      "offListNeedsSlots": "Įjunkite užkandžius, kad galėtumėte tai pasirinkti.",
+      "saveFailed": "Nepavyko išsaugoti užkandžių nustatymo. Bandykite dar kartą."
+    },
+    "detail": {
+      "back": "Visi planai",
+      "emptySlot": "Dar nesuplanuota",
+      "notOnList": "ne sąraše",
+      "range": "{start} – {end}"
+    },
+    "errors": {
+      "createFailed": "Nepavyko sukurti plano. Bandykite dar kartą.",
+      "notInHousehold": "Jūs nebe namų ūkyje, todėl planas gali būti tik jūsų.",
+      "invalidDayCount": "Planas gali būti nuo 1 iki 14 dienų.",
+      "invalidStartDate": "Pasirinkite plano pradžios dieną.",
+      "invalidKind": "Pasirinkite, kam skirtas planas.",
+      "listLoadFailed": "Nepavyko įkelti jūsų planų.",
+      "notFound": "Šis planas nepasiekiamas. Jis galėjo būti pašalintas arba juo su jumis nesidalijama.",
+      "loadFailed": "Nepavyko įkelti plano."
+    }
+  },
   "household": {
     "pageTitle": "Namų ūkis",
     "title": "Namų ūkis",
