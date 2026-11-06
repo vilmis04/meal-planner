@@ -26,6 +26,7 @@ const leaveOffList = computed({
           id="plan-include-snacks"
           v-model="includeSnacks"
           color="primary"
+          thumb-color="on-primary"
           inset
           hide-details
           density="compact"
@@ -45,6 +46,7 @@ const leaveOffList = computed({
           id="plan-snacks-off-list"
           v-model="leaveOffList"
           color="primary"
+          thumb-color="on-primary"
           inset
           hide-details
           density="compact"

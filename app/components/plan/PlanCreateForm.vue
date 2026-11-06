@@ -107,6 +107,8 @@ async function handleSubmit(event: SubmitEventPromise) {
       <v-text-field
         v-model="startDate"
         type="date"
+        variant="outlined"
+        hide-details="auto"
         :label="t('plan.new.starts')"
         :rules="startDateRules"
         prepend-inner-icon="mdi-calendar-outline"
