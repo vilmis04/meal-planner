@@ -73,6 +73,7 @@ const toggle = (userId: string, isTicked: boolean | null): void => {
             :model-value="isSelected(member)"
             :disabled="disabled || isLastSelected(member)"
             color="primary"
+            :class="$style.checkbox"
             :aria-describedby="isLastSelected(member) ? 'plan-participants-last' : undefined"
             data-testid="plan-participant-checkbox"
             @update:model-value="toggle(member.userId, $event)"
@@ -153,6 +154,11 @@ const toggle = (userId: string, isTicked: boolean | null): void => {
 .hint {
   font-size: 12px;
   color: var(--color-muted);
+}
+
+/* Vuetify's selection control grows to fill the row; keep the box at the row's end as in the design. */
+.checkbox {
+  flex: 0 0 auto;
 }
 
 .unselected .name {

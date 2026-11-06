@@ -11,7 +11,7 @@ const { show } = useAppSnackbar();
 
 const id = String(route.params.id);
 // The household gives the participant picker its members, with their names and diets.
-const [{ data: result }] = await Promise.all([
+const [{ data: result, refresh: refreshPlan }] = await Promise.all([
   useAsyncData(`plan-${id}`, () => loadPlan(id)),
   callOnce("household", loadHousehold, { mode: "navigation" }),
 ]);
@@ -68,9 +68,9 @@ async function saveParticipants(participantIds: string[]) {
   if (!saved.isSaved) {
     result.value = { status: "found", plan: current };
     show(saved.errorKey, "error");
-    // Someone left or was removed meanwhile: show the household as it is now.
+    // Someone left or was removed meanwhile, which also took them off this plan: show both as they are now.
     if (saved.errorKey === "plan.errors.participantNotMember") {
-      await loadHousehold({ isSilent: true });
+      await Promise.all([loadHousehold({ isSilent: true }), refreshPlan()]);
     }
   }
 }
