@@ -1,15 +1,25 @@
 <script setup lang="ts">
 const { t, locale } = useI18n();
-const { loadList } = useMealPlans();
+const { today, request } = useMealPlanOverview();
+const { data: result } = await request;
 
-const { data: result } = await useAsyncData("plans", loadList);
-
-// The list is newest first, so the first plan is the latest one.
-const latest = computed(() => (result.value?.status === "loaded" ? (result.value.plans[0] ?? null) : null));
+// The plan running today, else the next one, else the latest past one, with the matching hint.
+const featured = computed(() => {
+  if (result.value?.status !== "loaded") {
+    return null;
+  }
+  const [firstActive] = result.value.activePlans;
+  if (firstActive) {
+    const isCurrent = getPlanTimeline(firstActive.startDate, firstActive.endDate, today.value) === "current";
+    return { plan: firstActive, hintKey: isCurrent ? "plan.homeCard.currentHint" : "plan.homeCard.upcomingHint" };
+  }
+  const [latestPast] = result.value.pastPlans;
+  return latestPast ? { plan: latestPast, hintKey: "plan.homeCard.openHint" } : null;
+});
 </script>
 
 <template>
-  <v-card v-if="latest" to="/plans" variant="flat" border :class="$style.card" data-testid="home-plans">
+  <v-card v-if="featured" to="/plans" variant="flat" border :class="$style.card" data-testid="home-plans">
     <div :class="$style.row">
       <v-avatar color="primary" variant="tonal" rounded="lg">
         <v-icon icon="mdi-calendar-week" />
@@ -17,7 +27,7 @@ const latest = computed(() => (result.value?.status === "loaded" ? (result.value
       <div :class="$style.text">
         <span :class="$style.title">{{ t("plan.homeCard.openTitle") }}</span>
         <span :class="$style.hint">
-          {{ t("plan.homeCard.openHint", { range: formatPlanRange(latest.startDate, latest.endDate, locale) }) }}
+          {{ t(featured.hintKey, { range: formatPlanRange(featured.plan.startDate, featured.plan.endDate, locale) }) }}
         </span>
       </div>
       <v-icon icon="mdi-chevron-right" />

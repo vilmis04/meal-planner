@@ -90,12 +90,21 @@
       "hint": "Sukurkite planą ateinančioms dienoms ir užpildykite jį patiekalas po patiekalo.",
       "action": "Naujas planas",
       "openTitle": "Jūsų planai",
-      "openHint": "Naujausias: {range}"
+      "openHint": "Naujausias: {range}",
+      "currentHint": "Dabar: {range}",
+      "upcomingHint": "Kitas: {range}"
     },
     "list": {
       "new": "Naujas planas",
       "empty": "Planų dar nėra. Sukurkite planą ateinančiai savaitei.",
-      "label": "Jūsų planai"
+      "sections": {
+        "current": "Dabar",
+        "upcoming": "Būsimi",
+        "past": "Ankstesni"
+      },
+      "noneAhead": "Nei dabar, nei vėliau nieko nesuplanuota. Sukurkite planą ateinančiai savaitei.",
+      "progress": "{day} diena iš {count}",
+      "showOlder": "Rodyti senesnius planus"
     },
     "new": {
       "pageTitle": "Naujas planas",
@@ -136,7 +145,15 @@
       "emptySlot": "Dar nesuplanuota",
       "notOnList": "ne sąraše",
       "range": "{start} – {end}",
-      "workday": "Darbo diena"
+      "workday": "Darbo diena",
+      "people": "{count} žm. | {count} žm.",
+      "today": "Šiandien",
+      "cookTonight": "Vakare gaminti",
+      "pastNotice": "Šis planas pasibaigė. Ankstesni planai lieka tokie, kokie buvo, todėl jo keisti nebegalima.",
+      "weekStrip": "Plano dienos",
+      "goToDay": "Eiti į {day}",
+      "weekGrid": "Planas pagal dienas ir patiekalus",
+      "notOnListShort": "Ne sąraše"
     },
     "slot": {
       "open": "{meal}, {day}: {recipe}. Pasirinkti receptą",
@@ -186,7 +203,16 @@
         "mealTypeMismatch": "Šis receptas kitam valgiui. Pasirinkite tinkamą.",
         "beyondPlanEnd": "Planas baigiasi anksčiau nei partija. Naudokite tik šiai dienai.",
         "invalidFillDays": "Šis receptas negali užpildyti tiek dienų."
-      }
+      },
+      "filters": {
+        "label": "Filtrai",
+        "batch": "Kelioms dienoms",
+        "enjoyed": "Mėgstami",
+        "fits_all_diets": "Tinka visų mitybai",
+        "not_recent": "Neplanuoti neseniai"
+      },
+      "recent": "Planuota {date} · dar ilsisi",
+      "noFilterMatch": "Pagal šiuos filtrus receptų nėra."
     },
     "errors": {
       "createFailed": "Nepavyko sukurti plano. Bandykite dar kartą.",
@@ -200,7 +226,8 @@
       "notFound": "Šis planas nepasiekiamas. Jis galėjo būti pašalintas arba juo su jumis nesidalijama.",
       "loadFailed": "Nepavyko įkelti plano.",
       "invalidWorkdays": "Pasirinkite darbo dienas nuo pirmadienio iki sekmadienio.",
-      "invalidCooldownDays": "Pasirinkite, kiek laiko receptai ilsisi tarp planų."
+      "invalidCooldownDays": "Pasirinkite, kiek laiko receptai ilsisi tarp planų.",
+      "olderLoadFailed": "Nepavyko įkelti senesnių planų. Bandykite dar kartą."
     },
     "generation": {
       "workdays": "Darbo dienos · joms pirmiausia skiriami kelių dienų patiekalai",
@@ -253,7 +280,9 @@
     "batch": {
       "position": "{day} diena iš {count}",
       "covers": "užtenka iki {day}",
-      "cooked": "gaminta {day}"
+      "cooked": "gaminta {day}",
+      "cookCovers": "Gaminti · užtenka iki {day}",
+      "dayCooked": "{day} diena · gaminta {cooked}"
     },
     "fillNote": {
       "no_recipe_fits_diets": "Nė vienas receptas netinka visų mitybai",
@@ -261,6 +290,11 @@
       "recently_planned": "Neseniai planuotas: tinka mažai kitų receptų",
       "repeated_in_plan": "Kartojasi: šiam planui receptų per mažai",
       "no_batch_recipe": "Šiai darbo dienai neliko kelių dienų patiekalų"
+    },
+    "status": {
+      "current": "Vyksta",
+      "upcoming": "Būsimas",
+      "past": "Pasibaigęs"
     }
   },
   "household": {

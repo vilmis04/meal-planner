@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import type { RecipeSummary } from "~/types/recipe.types";
 
@@ -35,7 +36,7 @@ function changeFilter(next: MealFilter) {
   return router.replace({ query: next === DEFAULT_MEAL_FILTER ? {} : { meal: next } });
 }
 
-function recipeLocation(recipe: RecipeSummary): RouteLocationRaw {
+function recipeLocation(recipe: DeepReadonly<RecipeSummary>): RouteLocationRaw {
   return { path: `/recipes/${recipe.id}`, query: route.query };
 }
 </script>

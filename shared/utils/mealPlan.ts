@@ -109,6 +109,17 @@ export function getPlanEndDate(startDate: string, dayCount: number): string {
   return addDays(startDate, dayCount - 1);
 }
 
+// Where a plan stands on the viewer's calendar (E6): running today, starting later, or over. Plain "YYYY-MM-DD"
+// strings compare in date order. meal_plans.end_date is the same last day, for the plan list's queries.
+export type PlanTimeline = "current" | "upcoming" | "past";
+
+export function getPlanTimeline(startDate: string, endDate: string, today: string): PlanTimeline {
+  if (endDate < today) {
+    return "past";
+  }
+  return startDate > today ? "upcoming" : "current";
+}
+
 // How many portions quantities scale to (E2): one per participant. The shopping list (G2) multiplies
 // per-person amounts by this; a plan whose last participant left the household scales to 0.
 export function getPlanServings(participantIds: readonly string[]): number {

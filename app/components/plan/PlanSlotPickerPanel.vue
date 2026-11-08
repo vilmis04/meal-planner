@@ -2,7 +2,9 @@
 import type { DeepReadonly } from "vue";
 import type { HatedRecipes, MealPlanSlot } from "~/types/mealPlan.types";
 import type { RecipeSummary } from "~/types/recipe.types";
+import type { Diet } from "#shared/utils/diet";
 import type { PlanMemberRef } from "#shared/utils/slotPicker";
+import type { RecipeFilter } from "#shared/utils/slotPicker.types";
 
 const props = defineProps<{
   // The slot being chosen for. Not called "slot": that is a reserved attribute in Vue templates.
@@ -22,6 +24,11 @@ const props = defineProps<{
   disabled?: boolean;
   // A swap (E5) is on its way.
   isSwapping?: boolean;
+  // What the filters (E6) compare with. Null while unknown, which hides that filter.
+  enjoyedRecipeIds: ReadonlySet<string> | null;
+  participantDiets: readonly Diet[] | null;
+  // Recipe id → the day it was last planned shortly before this plan.
+  recentRecipes: ReadonlyMap<string, string> | null;
 }>();
 
 const emit = defineEmits<{
@@ -55,12 +62,48 @@ const formatList = (items: readonly string[]): string =>
   new Intl.ListFormat(locale.value, { style: "long", type: "conjunction" }).format(items);
 
 const total = computed(() => countSlotRecipes(props.recipes ?? [], props.target.mealType));
+
+// Filter chips (E6). A filter whose data is unknown is not offered, and stops filtering if it was on.
+const selectedFilters = ref<RecipeFilter[]>([]);
+const availableFilters = computed(() =>
+  RECIPE_FILTERS.filter((filter) => {
+    if (filter === "enjoyed") {
+      return props.enjoyedRecipeIds !== null;
+    }
+    if (filter === "fits_all_diets") {
+      return Boolean(props.participantDiets?.length);
+    }
+    if (filter === "not_recent") {
+      return props.recentRecipes !== null;
+    }
+    return true;
+  }),
+);
+const activeFilters = computed(() => selectedFilters.value.filter((filter) => availableFilters.value.includes(filter)));
+const filterContext = computed(() => ({
+  enjoyedRecipeIds: props.enjoyedRecipeIds ?? new Set<string>(),
+  participantDiets: props.participantDiets ?? [],
+  recentRecipeIds: new Set(props.recentRecipes?.keys() ?? []),
+}));
+
+// The current choice stays on top whatever the filters say, so the user always sees what the slot holds.
 const visibleRecipes = computed(() =>
   filterSlotRecipes(props.recipes ?? [], props.target.mealType, query.value, {
     currentRecipeId: props.target.recipeId,
     locale: locale.value,
-  }),
+  }).filter(
+    (recipe) =>
+      recipe.id === props.target.recipeId || matchesRecipeFilters(recipe, activeFilters.value, filterContext.value),
+  ),
 );
+
+// "Planned 2 Nov · cooldown" on a recipe resting after a recent plan.
+const getRecentLine = (recipeId: string): string | null => {
+  const plannedOn = props.recentRecipes?.get(recipeId);
+  return plannedOn
+    ? t("plan.slot.recent", { date: formatPlanDay(plannedOn, locale.value, { day: "numeric", month: "short" }) })
+    : null;
+};
 
 const batchTargetOf = (recipe: DeepReadonly<RecipeSummary>) => getBatchTarget(props.slots, props.target, recipe);
 
@@ -91,6 +134,13 @@ const hateLine = (recipeId: string): string | null => {
   ];
   return t("plan.slot.hate.line", { who: formatList(who) });
 };
+
+const emptyMessage = computed(() => {
+  if (query.value) {
+    return t("plan.slot.noMatch");
+  }
+  return activeFilters.value.length ? t("plan.slot.noFilterMatch") : t("plan.slot.noRecipes");
+});
 
 const pendingRecipe = computed(() => props.recipes?.find((recipe) => recipe.id === pendingRecipeId.value) ?? null);
 const pendingTarget = computed(() => (pendingRecipe.value ? batchTargetOf(pendingRecipe.value) : null));
@@ -138,6 +188,7 @@ watch(
   () => [props.target.id, props.target.recipeId],
   () => {
     query.value = "";
+    selectedFilters.value = [];
     pendingRecipeId.value = null;
     list.value?.scrollTo({ top: 0 });
   },
@@ -186,6 +237,27 @@ watch(
         />
       </div>
 
+      <v-chip-group
+        v-model="selectedFilters"
+        multiple
+        column
+        :aria-label="t('plan.slot.filters.label')"
+        :class="$style.filters"
+        data-testid="slot-picker-filters"
+      >
+        <v-chip
+          v-for="filter in availableFilters"
+          :key="filter"
+          :value="filter"
+          filter
+          variant="outlined"
+          size="small"
+          :data-testid="`slot-picker-filter-${filter}`"
+        >
+          {{ t(`plan.slot.filters.${filter}`) }}
+        </v-chip>
+      </v-chip-group>
+
       <p v-if="hatedFailed" :class="$style.hatedFailed" role="status" data-testid="slot-picker-hated-failed">
         <v-icon icon="mdi-information-outline" size="16" />
         {{ t("plan.slot.hate.loadFailed") }}
@@ -218,6 +290,10 @@ watch(
                 <v-icon icon="mdi-alert-outline" size="14" />
                 {{ hateLine(recipe.id) }}
               </span>
+              <span v-if="getRecentLine(recipe.id)" :class="$style.recent" data-testid="slot-picker-recent">
+                <v-icon icon="mdi-history" size="14" />
+                {{ getRecentLine(recipe.id) }}
+              </span>
               <span v-if="recipe.id === target.recipeId" :class="$style.currentLabel">{{ t("plan.slot.current") }}</span>
             </span>
             <v-icon
@@ -231,7 +307,7 @@ watch(
         </li>
       </ul>
       <p v-else-if="recipes" :class="$style.empty" data-testid="slot-picker-empty">
-        {{ query ? t("plan.slot.noMatch") : t("plan.slot.noRecipes") }}
+        {{ emptyMessage }}
       </p>
       <div v-else :class="$style.loading">
         <v-progress-circular indeterminate color="primary" size="28" />
@@ -355,6 +431,20 @@ watch(
 
 .search {
   padding: 0 var(--space-3) var(--space-2);
+}
+
+/* Kept whole above the scrolling list. */
+.filters {
+  flex: 0 0 auto;
+  padding: 0 var(--space-3) var(--space-1);
+}
+
+.recent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-muted);
 }
 
 .hatedFailed {

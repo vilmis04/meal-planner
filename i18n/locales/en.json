@@ -90,12 +90,21 @@
       "hint": "Make a plan for the coming days and fill it meal by meal.",
       "action": "New plan",
       "openTitle": "Your plans",
-      "openHint": "Latest: {range}"
+      "openHint": "Latest: {range}",
+      "currentHint": "Now: {range}",
+      "upcomingHint": "Next: {range}"
     },
     "list": {
       "new": "New plan",
       "empty": "No plans yet. Make one for the coming week.",
-      "label": "Your plans"
+      "sections": {
+        "current": "Current",
+        "upcoming": "Upcoming",
+        "past": "Past"
+      },
+      "noneAhead": "Nothing planned for now or later. Make a plan for the coming week.",
+      "progress": "day {day} of {count}",
+      "showOlder": "Show older plans"
     },
     "new": {
       "pageTitle": "New plan",
@@ -136,7 +145,15 @@
       "emptySlot": "Not planned yet",
       "notOnList": "not on list",
       "range": "{start} – {end}",
-      "workday": "Workday"
+      "workday": "Workday",
+      "people": "{count} person | {count} people",
+      "today": "Today",
+      "cookTonight": "Cook tonight",
+      "pastNotice": "This plan has ended. Past plans are kept as they were, so it can no longer be changed.",
+      "weekStrip": "Days of the plan",
+      "goToDay": "Go to {day}",
+      "weekGrid": "The plan by day and meal",
+      "notOnListShort": "Not on list"
     },
     "slot": {
       "open": "{meal} on {day}: {recipe}. Choose a recipe",
@@ -186,7 +203,16 @@
         "mealTypeMismatch": "This recipe is for another meal. Choose one for this slot.",
         "beyondPlanEnd": "The plan ends before the batch does. Use it for this day only.",
         "invalidFillDays": "This recipe cannot fill that many days."
-      }
+      },
+      "filters": {
+        "label": "Filters",
+        "batch": "2-day batch",
+        "enjoyed": "Enjoyed",
+        "fits_all_diets": "Fits all diets",
+        "not_recent": "Not recent"
+      },
+      "recent": "Planned {date} · cooldown",
+      "noFilterMatch": "No recipe matches these filters."
     },
     "errors": {
       "createFailed": "The plan could not be created. Try again.",
@@ -200,7 +226,8 @@
       "notFound": "This plan is not available. It may have been removed, or it is not shared with you.",
       "loadFailed": "The plan could not be loaded.",
       "invalidWorkdays": "Choose workdays from Monday to Sunday.",
-      "invalidCooldownDays": "Choose how long recipes rest between plans."
+      "invalidCooldownDays": "Choose how long recipes rest between plans.",
+      "olderLoadFailed": "Older plans could not be loaded. Try again."
     },
     "generation": {
       "workdays": "Workdays · batch meals go here first",
@@ -253,7 +280,9 @@
     "batch": {
       "position": "Day {day} of {count}",
       "covers": "covers {day}",
-      "cooked": "cooked {day}"
+      "cooked": "cooked {day}",
+      "cookCovers": "Cook · covers {day}",
+      "dayCooked": "Day {day} · cooked {cooked}"
     },
     "fillNote": {
       "no_recipe_fits_diets": "No recipe fits everyone's diet",
@@ -261,6 +290,11 @@
       "recently_planned": "Planned recently: few other recipes fit",
       "repeated_in_plan": "Repeated: too few recipes for this plan",
       "no_batch_recipe": "No batch recipe left for this workday"
+    },
+    "status": {
+      "current": "Current",
+      "upcoming": "Upcoming",
+      "past": "Past"
     }
   },
   "household": {

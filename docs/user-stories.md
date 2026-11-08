@@ -141,6 +141,7 @@ As a user I want to adjust a generated plan.
 As a user I want to view current, upcoming, and past plans.
 - Week view shows days by meal slot with batch spans visibly connected.
 - Household plans are visible to all members; individual plans only to their owner.
+- Built as `/plans` with Current, Upcoming and Past sections (past plans ten at a time, by the generated `meal_plans.end_date`), a week strip and day list on phones and a day-by-meal grid from 960 px where batch days are joined and tinted, "Cook tonight" on days a batch starts, and slot picker filters (2-day batch, enjoyed, fits all diets, not recent); see README, "Plan overview and history". Visibility is E1's row level security, covered by `supabase/tests/meal_plan_history.test.sql`. Past plans are read-only in the app. "Enjoyed" uses the viewer's own ratings only, as ratings are private; "not recent" reads only plans the viewer can see.
 
 ### E7. Individual plan alongside household plan (S, Phase 3)
 As a member I want my own plan for a week I do not join the household plan.

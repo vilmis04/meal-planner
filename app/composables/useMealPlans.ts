@@ -3,9 +3,12 @@ import type {
   CreateMealPlanResult,
   GeneratePlanResult,
   HatedRecipesResult,
+  MealPlan,
   MealPlanListResult,
   MealPlanLoadResult,
+  MealPlanOverviewResult,
   NewMealPlan,
+  PastMealPlansResult,
   SetSlotRecipeResult,
   SetSlotsLockedResult,
   SnackSettings,
@@ -13,7 +16,7 @@ import type {
   UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1 to E5). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1 to E6). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -43,20 +46,64 @@ export function useMealPlans() {
     return { isCreated: true, id: id.data };
   };
 
-  const loadList = async (): Promise<MealPlanListResult> => {
+  // The plan list (E6) on the viewer's date `today`: the plans running or starting later, soonest first, and the
+  // first page of past plans.
+  const loadOverview = async (today: string): Promise<MealPlanOverviewResult> => {
+    const [active, past] = await Promise.all([loadActivePlans(today), loadPastPlans(today, 0)]);
+    if (active.status === "failed" || past.status === "failed") {
+      return { status: "failed" };
+    }
+    return { status: "loaded", activePlans: active.plans, pastPlans: past.plans, hasMorePast: past.hasMore };
+  };
+
+  // Plans that ended before `today`, newest first, PAST_MEAL_PLAN_PAGE_SIZE from `offset`. One more row is asked
+  // for, so the list knows whether there are older ones.
+  const loadPastPlans = async (today: string, offset: number): Promise<PastMealPlansResult> => {
     const { data, error } = await supabase
       .from("meal_plans")
       .select(MEAL_PLAN_COLUMNS)
+      .lt("end_date", today)
       .order("start_date", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(MEAL_PLAN_LIST_LIMIT);
+      .range(offset, offset + PAST_MEAL_PLAN_PAGE_SIZE);
 
     const result = error ? null : mealPlanListRowsSchema.safeParse(data);
     if (!result?.success) {
-      console.error("Loading the plans failed", error ?? result?.error);
+      console.error("Loading the past plans failed", error ?? result?.error);
       return { status: "failed" };
     }
-    return { status: "loaded", plans: result.data };
+    return {
+      status: "loaded",
+      plans: result.data.slice(0, PAST_MEAL_PLAN_PAGE_SIZE),
+      hasMore: result.data.length > PAST_MEAL_PLAN_PAGE_SIZE,
+    };
+  };
+
+  // Recipes planned shortly before `plan` in the plans the viewer can see, for the slot picker's "Not recent"
+  // filter (E6): recipe id → the last day it was planned. Null when it could not be read; empty without a cooldown.
+  const loadRecentRecipes = async (plan: MealPlan): Promise<Map<string, string> | null> => {
+    if (plan.cooldownDays <= 0) {
+      return new Map();
+    }
+
+    const { data, error } = await supabase
+      .from("meal_plans")
+      .select(MEAL_PLAN_HISTORY_COLUMNS)
+      .neq("id", plan.id)
+      .lt("start_date", plan.startDate)
+      .gte("end_date", addDays(plan.startDate, -plan.cooldownDays));
+
+    const result = error ? null : mealPlanHistoryRowsSchema.safeParse(data);
+    if (!result?.success) {
+      console.error("Loading the recent plans failed", error ?? result?.error);
+      return null;
+    }
+    return getRecentlyPlannedRecipes(result.data, {
+      planId: plan.id,
+      startDate: plan.startDate,
+      cooldownDays: plan.cooldownDays,
+      participantIds: plan.participantIds,
+    });
   };
 
   // Someone else's individual plan and another household's plan are "not found": RLS returns no row for either.
@@ -202,9 +249,29 @@ export function useMealPlans() {
     return { isSaved: true };
   };
 
+  // Current and upcoming plans: those ending today or later, by start date.
+  const loadActivePlans = async (today: string): Promise<MealPlanListResult> => {
+    const { data, error } = await supabase
+      .from("meal_plans")
+      .select(MEAL_PLAN_COLUMNS)
+      .gte("end_date", today)
+      .order("start_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(ACTIVE_MEAL_PLAN_LIMIT);
+
+    const result = error ? null : mealPlanListRowsSchema.safeParse(data);
+    if (!result?.success) {
+      console.error("Loading the current plans failed", error ?? result?.error);
+      return { status: "failed" };
+    }
+    return { status: "loaded", plans: result.data };
+  };
+
   return {
     create,
-    loadList,
+    loadOverview,
+    loadPastPlans,
+    loadRecentRecipes,
     loadPlan,
     updateSnackSettings,
     updateParticipants,

@@ -15,11 +15,15 @@ const {
   generate,
   swapSlot,
   setSlotsLocked,
+  loadRecentRecipes,
 } = useMealPlans();
 const { household, load: loadHousehold } = useHousehold();
 const { recipes, loadFailed: recipesFailed, loadList: loadRecipes } = useRecipes();
+const { ratings, isLoaded: isRatingLoaded, load: loadRatings } = useRecipeRatings();
+const { profile } = useProfile();
 const { show } = useAppSnackbar();
 const user = useSupabaseUser();
+const today = useToday();
 
 const id = String(route.params.id);
 // The household gives the participant picker its members, with their names and diets. The recipe library gives
@@ -37,6 +41,20 @@ const range = computed(() =>
 );
 
 useHead({ title: () => range.value || t("plan.pageTitle") });
+
+// A past plan is kept as it was (E6): it is shown, not changed. Current and upcoming plans can be edited.
+const timeline = computed(() => (plan.value ? getPlanTimeline(plan.value.startDate, plan.value.endDate, today.value) : null));
+const isReadOnly = computed(() => timeline.value === "past");
+// "Household plan · 3 people", as in the week plan design; an individual plan is the owner's alone.
+const kindLabel = computed(() => {
+  if (!plan.value) {
+    return "";
+  }
+  const kind = t(`plan.kind.${plan.value.kind}`);
+  return plan.value.kind === "household"
+    ? `${kind} · ${t("plan.detail.people", getPlanServings(plan.value.participantIds))}`
+    : kind;
+});
 
 const isSaving = ref(false);
 
@@ -89,7 +107,8 @@ async function saveParticipants(participantIds: string[]) {
     }
     return;
   }
-  // The hate warnings follow who eats from the plan.
+  // The hate warnings and recent recipes follow who eats from the plan.
+  recentRecipes.value = null;
   await refreshHated();
 }
 
@@ -119,9 +138,41 @@ const pickerSlotId = ref<string | null>(null);
 const pickerSlot = computed(() => plan.value?.slots.find((slot) => slot.id === pickerSlotId.value) ?? null);
 const isPickerOpen = ref(false);
 
+// The picker's filters (E6). "Enjoyed" knows the viewer's own ratings only: everyone else's are private.
+const enjoyedRecipeIds = computed(() =>
+  ratings.value
+    ? new Set(Object.keys(ratings.value).filter((recipeId) => ratings.value?.[recipeId] === "enjoy"))
+    : null,
+);
+// "Fits all diets": each participant's diet, from the household (household plans) or the owner's profile.
+const participantDiets = computed(() => {
+  if (!plan.value) {
+    return null;
+  }
+  if (plan.value.kind === "individual") {
+    return profile.value ? [profile.value.diet] : null;
+  }
+  if (!household.value) {
+    return null;
+  }
+  const ids = new Set(plan.value.participantIds);
+  return household.value.members.filter((member) => ids.has(member.userId)).map((member) => member.diet);
+});
+// "Not recent": read when the picker first opens, and again after the participants change. Null hides the filter.
+const recentRecipes = shallowRef<Map<string, string> | null>(null);
+
 function openPicker(slot: MealPlanSlot) {
   pickerSlotId.value = slot.id;
   isPickerOpen.value = true;
+  const current = plan.value;
+  if (current && recentRecipes.value === null) {
+    loadRecentRecipes(current).then((recent) => {
+      recentRecipes.value = recent;
+    });
+  }
+  if (!isRatingLoaded.value) {
+    loadRatings();
+  }
 }
 
 // The slot (and, for a batch, the same meal on the following days) changes at once; a refused save puts the
@@ -213,7 +264,9 @@ const visibleSlots = computed(() => {
 });
 const hasEmptySlots = computed(() => visibleSlots.value.some((slot) => slot.recipeId === null));
 const isPlanEmpty = computed(() => visibleSlots.value.every((slot) => slot.recipeId === null));
-const canRegenerate = computed(() => visibleSlots.value.some((slot) => slot.recipeId !== null && !slot.isLocked));
+const canRegenerate = computed(
+  () => !isReadOnly.value && visibleSlots.value.some((slot) => slot.recipeId !== null && !slot.isLocked),
+);
 const generatingMode = ref<GenerationMode | null>(null);
 
 async function generatePlan(mode: GenerationMode) {
@@ -247,8 +300,21 @@ async function generatePlan(mode: GenerationMode) {
     <template v-if="plan">
       <header :class="$style.header">
         <div :class="$style.heading">
-          <span :class="$style.kind" data-testid="plan-kind-label">{{ t(`plan.kind.${plan.kind}`) }}</span>
-          <h1 :class="$style.title" data-testid="plan-range">{{ range }}</h1>
+          <span :class="$style.kind" data-testid="plan-kind-label">{{ kindLabel }}</span>
+          <h1 :class="$style.title">
+            <span data-testid="plan-range">{{ range }}</span>
+            <v-chip
+              v-if="timeline"
+              size="small"
+              label
+              variant="tonal"
+              :color="timeline === 'past' ? undefined : 'primary'"
+              :class="$style.status"
+              data-testid="plan-status"
+            >
+              {{ t(`plan.status.${timeline}`) }}
+            </v-chip>
+          </h1>
         </div>
         <!-- A floating button above the navigation on phones, beside the title from 960px. -->
         <v-btn
@@ -267,8 +333,12 @@ async function generatePlan(mode: GenerationMode) {
         </v-btn>
       </header>
 
+      <v-alert v-if="isReadOnly" type="info" variant="tonal" density="compact" data-testid="plan-past-notice">
+        {{ t("plan.detail.pastNotice") }}
+      </v-alert>
+
       <v-btn
-        v-if="hasEmptySlots"
+        v-if="hasEmptySlots && !isReadOnly"
         color="primary"
         size="large"
         prepend-icon="mdi-auto-fix"
@@ -288,21 +358,32 @@ async function generatePlan(mode: GenerationMode) {
             v-if="plan.kind === 'household' && household"
             v-model="participantIds"
             :members="household.members"
-            :disabled="isSaving"
+            :disabled="isSaving || isReadOnly"
           />
           <PlanSnackSettings
             v-model:include-snacks="includeSnacks"
             v-model:snacks-on-list="snacksOnList"
-            :disabled="isSaving"
+            :disabled="isSaving || isReadOnly"
           />
         </div>
+        <!-- The day list on phones, the week grid from 960px (E6). -->
         <PlanDayList
           :plan="plan"
           :recipes="recipes"
           :hated="hated"
-          :viewer-id="viewerId"
           :disabled="isSaving"
-          :class="$style.days"
+          :is-read-only="isReadOnly"
+          :class="$style.dayList"
+          @pick="openPicker"
+          @toggle-lock="toggleLock"
+        />
+        <PlanWeekGrid
+          :plan="plan"
+          :recipes="recipes"
+          :hated="hated"
+          :disabled="isSaving"
+          :is-read-only="isReadOnly"
+          :class="$style.weekGrid"
           @pick="openPicker"
           @toggle-lock="toggleLock"
         />
@@ -320,6 +401,9 @@ async function generatePlan(mode: GenerationMode) {
           :hated-failed="hatedFailed"
           :members="members"
           :viewer-id="viewerId"
+          :enjoyed-recipe-ids="enjoyedRecipeIds"
+          :participant-diets="participantDiets"
+          :recent-recipes="recentRecipes"
           :disabled="isSaving"
           :is-swapping="isSwapping"
           @choose="chooseRecipe"
@@ -386,9 +470,18 @@ async function generatePlan(mode: GenerationMode) {
 }
 
 .title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+}
+
+.status {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .generate {
@@ -396,9 +489,10 @@ async function generatePlan(mode: GenerationMode) {
   text-transform: none;
 }
 
+/* The week comes first, as in the week plan design; the plan's options follow it. */
 .layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: var(--space-4);
 }
 
@@ -408,7 +502,11 @@ async function generatePlan(mode: GenerationMode) {
   gap: var(--space-4);
 }
 
-/* 960px is --breakpoint-md: the options sit beside the week instead of above it. */
+.weekGrid {
+  display: none;
+}
+
+/* 960px is --breakpoint-md: the week becomes a grid, and the options sit side by side below it. */
 @media (min-width: 960px) {
   .withFab {
     padding-bottom: 0;
@@ -422,18 +520,18 @@ async function generatePlan(mode: GenerationMode) {
     flex: 0 0 auto;
   }
 
-  .layout {
-    flex-direction: row-reverse;
-    align-items: flex-start;
-  }
-
   .settings {
-    flex: 0 0 320px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    align-items: start;
   }
 
-  .days {
-    flex: 1 1 auto;
-    min-width: 0;
+  .dayList {
+    display: none;
+  }
+
+  .weekGrid {
+    display: flex;
   }
 }
 </style>

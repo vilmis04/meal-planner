@@ -1,10 +1,14 @@
 import { z } from "zod";
 
 export const MEAL_PLAN_COLUMNS = "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at";
-export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note, is_locked), meal_plan_participants(user_id)`;
+export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, cooldown_days, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note, is_locked), meal_plan_participants(user_id)`;
+// What the slot picker's "Not recent" filter (E6) reads of the plans before this one.
+export const MEAL_PLAN_HISTORY_COLUMNS =
+  "id, start_date, include_snacks, meal_plan_slots(day_index, meal_type, recipe_id), meal_plan_participants(user_id)";
 
-// The plan list shows the newest plans first; E6 replaces it with the week view and history.
-export const MEAL_PLAN_LIST_LIMIT = 50;
+// The plan list (E6): every current and upcoming plan, up to this many, and past plans a page at a time.
+export const ACTIVE_MEAL_PLAN_LIMIT = 50;
+export const PAST_MEAL_PLAN_PAGE_SIZE = 10;
 
 export const mealPlanIdSchema = z.guid();
 
@@ -53,12 +57,14 @@ export const mealPlanDetailRowSchema = z
   .object({
     ...mealPlanRowShape,
     workdays: z.array(z.number().int()),
+    cooldown_days: z.number().int().min(0).max(COOLDOWN_DAYS_MAX),
     meal_plan_slots: z.array(slotRowSchema),
     meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
   })
   .transform((row) => ({
     ...toMealPlan(row),
     workdays: normalizeWorkdays(row.workdays),
+    cooldownDays: row.cooldown_days,
     participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
     slots: row.meal_plan_slots
       .map((slot) => ({
@@ -74,6 +80,33 @@ export const mealPlanDetailRowSchema = z
         (a, b) => a.dayIndex - b.dayIndex || MEAL_TYPES.indexOf(a.mealType) - MEAL_TYPES.indexOf(b.mealType),
       ),
   }));
+
+// Plans before the one being edited, for getRecentlyPlannedRecipes() in shared/utils/slotPicker.ts.
+export const mealPlanHistoryRowsSchema = z
+  .array(
+    z.object({
+      id: z.guid(),
+      start_date: z.string().refine(isIsoDate),
+      include_snacks: z.boolean(),
+      meal_plan_slots: z.array(
+        z.object({ day_index: z.number().int().min(0), meal_type: z.enum(MEAL_TYPES), recipe_id: z.guid().nullable() }),
+      ),
+      meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
+    }),
+  )
+  .transform((rows) =>
+    rows.map((row) => ({
+      id: row.id,
+      startDate: row.start_date,
+      includeSnacks: row.include_snacks,
+      participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
+      slots: row.meal_plan_slots.map((slot) => ({
+        dayIndex: slot.day_index,
+        mealType: slot.meal_type,
+        recipeId: slot.recipe_id,
+      })),
+    })),
+  );
 
 const generationCountsShape = {
   filledCount: z.number().int().min(0),
