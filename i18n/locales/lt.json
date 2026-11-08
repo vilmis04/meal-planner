@@ -138,6 +138,56 @@
       "notOnList": "ne sąraše",
       "range": "{start} – {end}"
     },
+    "slot": {
+      "open": "{meal}, {day}: {recipe}. Pasirinkti receptą",
+      "headerFor": "{day} · {names}",
+      "title": {
+        "breakfast": "Pasirinkite pusryčius",
+        "lunch": "Pasirinkite pietus",
+        "dinner": "Pasirinkite vakarienę",
+        "snack": "Pasirinkite užkandį"
+      },
+      "search": {
+        "breakfast": "Ieškoti pusryčių ({count})",
+        "lunch": "Ieškoti pietų ({count})",
+        "dinner": "Ieškoti vakarienių ({count})",
+        "snack": "Ieškoti užkandžių ({count})"
+      },
+      "close": "Uždaryti",
+      "current": "Dabartinis pasirinkimas",
+      "batchFills": "{count} d. · ir {day}",
+      "noMatch": "Pagal paiešką receptų nerasta.",
+      "noRecipes": "Šiam valgiui receptų dar nėra.",
+      "recipesFailed": "Nepavyko įkelti receptų.",
+      "retry": "Bandyti dar kartą",
+      "unknownRecipe": "Receptas",
+      "clear": "Išvalyti",
+      "hate": {
+        "line": "Nemėgsta: {who}",
+        "you": "jūs",
+        "someone": "kažkas | {count} žm.",
+        "icon": "Dalyvis pažymėjo šį receptą kaip nemėgstamą",
+        "loadFailed": "Nepavyko patikrinti, kas ko nemėgsta, todėl įspėjimai nerodomi."
+      },
+      "offer": {
+        "title": "Gaminama kartą, {count} d.",
+        "text": "„{name}“ užtenka {count} d. Naudoti ir kitai dienai?",
+        "replaces": "Pakeis: {names}.",
+        "only": "Tik {day}",
+        "both": "{first} + {last}",
+        "range": "{first} – {last}"
+      },
+      "saved": "Receptas pridėtas",
+      "savedBatch": "Receptas pridėtas abiem dienoms",
+      "cleared": "Išvalyta",
+      "saveFailed": "Nepavyko išsaugoti recepto. Bandykite dar kartą.",
+      "errors": {
+        "recipeNotFound": "Šio recepto nebėra. Pasirinkite kitą.",
+        "mealTypeMismatch": "Šis receptas kitam valgiui. Pasirinkite tinkamą.",
+        "beyondPlanEnd": "Planas baigiasi anksčiau nei partija. Naudokite tik šiai dienai.",
+        "invalidFillDays": "Šis receptas negali užpildyti tiek dienų."
+      }
+    },
     "errors": {
       "createFailed": "Nepavyko sukurti plano. Bandykite dar kartą.",
       "notInHousehold": "Jūs nebe namų ūkyje, todėl planas gali būti tik jūsų.",

@@ -5,8 +5,11 @@ import {
   GENERIC_MEAL_PLAN_ERROR_KEY,
   MEAL_PLAN_ERROR_KEY_BY_MESSAGE,
   PARTICIPANTS_SAVE_FAILED_KEY,
+  SLOT_ERROR_KEY_BY_MESSAGE,
+  SLOT_SAVE_FAILED_KEY,
   getMealPlanErrorKey,
   getParticipantsErrorKey,
+  getSlotErrorKey,
 } from "./getMealPlanErrorKey";
 
 const lookUp = (messages: unknown, key: string): unknown =>
@@ -28,7 +31,21 @@ describe("getMealPlanErrorKey", () => {
     expect(getParticipantsErrorKey({ message: "plan_not_found" })).toBe(PARTICIPANTS_SAVE_FAILED_KEY);
   });
 
-  it.each([...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE), GENERIC_MEAL_PLAN_ERROR_KEY, PARTICIPANTS_SAVE_FAILED_KEY])(
+  it.each(Object.entries(SLOT_ERROR_KEY_BY_MESSAGE))("maps the slot message %s to %s", (message, key) => {
+    expect(getSlotErrorKey({ message })).toBe(key);
+  });
+
+  it("falls back to the slot save message for anything else", () => {
+    expect(getSlotErrorKey({ message: "connection reset" })).toBe(SLOT_SAVE_FAILED_KEY);
+  });
+
+  it.each([
+    ...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE),
+    ...Object.values(SLOT_ERROR_KEY_BY_MESSAGE),
+    GENERIC_MEAL_PLAN_ERROR_KEY,
+    PARTICIPANTS_SAVE_FAILED_KEY,
+    SLOT_SAVE_FAILED_KEY,
+  ])(
     "has %s in English and Lithuanian",
     (key) => {
       expect(typeof lookUp(en, key)).toBe("string");
