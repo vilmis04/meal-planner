@@ -18,6 +18,11 @@ export interface NewMealPlan {
 
 export type SnackSettings = Pick<MealPlan, "includeSnacks" | "snacksOnList">;
 
+// Recipe id → ids of the plan's participants who hate it (E3).
+export type HatedRecipes = Record<string, string[]>;
+export type HatedRecipesResult = { status: "loaded"; hated: HatedRecipes } | { status: "failed" };
+export type SetSlotRecipeResult = { isSaved: true } | { isSaved: false; errorKey: string };
+
 export type CreateMealPlanResult = { isCreated: true; id: string } | { isCreated: false; errorKey: string };
 export type UpdateParticipantsResult = { isSaved: true } | { isSaved: false; errorKey: string };
 

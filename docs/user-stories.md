@@ -118,6 +118,7 @@ As a user I want to pick a recipe for a slot myself.
 - Slot picker offers recipes of the matching meal type, with search.
 - Recipes marked "hate" by any participant show a warning.
 - A 2-day recipe placed in a slot offers to fill the next day's matching slot.
+- Built as `set_meal_plan_slot()` (one slot, or the slot and the next day in one save) and `meal_plan_hated_recipes()` (participants' `hate` ratings only, named in the warning), see README, "Meal plans". The picker can also clear a slot. Filters beyond meal type and search (enjoyed, fits all diets, not recent) come with E4/E5.
 
 ### E4. Generate plan (L, Phase 3)
 As a user I want a plan filled automatically.

@@ -1,13 +1,15 @@
 import type {
   CreateMealPlanResult,
+  HatedRecipesResult,
   MealPlanListResult,
   MealPlanLoadResult,
   NewMealPlan,
+  SetSlotRecipeResult,
   SnackSettings,
   UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1, E2). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1, E2, E3). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -107,5 +109,37 @@ export function useMealPlans() {
     return { isSaved: true };
   };
 
-  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants };
+  // Puts a recipe in a slot (null empties it). fillDays > 1 also fills the same meal on the following days,
+  // for a batch recipe; the database writes all of them or none (E3).
+  const setSlotRecipe = async (
+    slotId: string,
+    recipeId: string | null,
+    fillDays = 1,
+  ): Promise<SetSlotRecipeResult> => {
+    const { error } = await supabase.rpc("set_meal_plan_slot", {
+      target_slot_id: slotId,
+      new_recipe_id: recipeId,
+      fill_days: fillDays,
+    });
+
+    if (error) {
+      console.error("Saving the slot failed", error);
+      return { isSaved: false, errorKey: getSlotErrorKey(error) };
+    }
+    return { isSaved: true };
+  };
+
+  // The recipes the plan's participants hate, by recipe. Other ratings stay private (E3).
+  const loadHatedRecipes = async (planId: string): Promise<HatedRecipesResult> => {
+    const { data, error } = await supabase.rpc("meal_plan_hated_recipes", { target_plan_id: planId });
+
+    const result = error ? null : hatedRecipeRowsSchema.safeParse(data);
+    if (!result?.success) {
+      console.error("Loading the hated recipes failed", error ?? result?.error);
+      return { status: "failed" };
+    }
+    return { status: "loaded", hated: result.data };
+  };
+
+  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes };
 }

@@ -138,6 +138,56 @@
       "notOnList": "not on list",
       "range": "{start} – {end}"
     },
+    "slot": {
+      "open": "{meal} on {day}: {recipe}. Choose a recipe",
+      "headerFor": "{day} · for {names}",
+      "title": {
+        "breakfast": "Choose breakfast",
+        "lunch": "Choose lunch",
+        "dinner": "Choose dinner",
+        "snack": "Choose a snack"
+      },
+      "search": {
+        "breakfast": "Search {count} breakfast | Search {count} breakfasts",
+        "lunch": "Search {count} lunch | Search {count} lunches",
+        "dinner": "Search {count} dinner | Search {count} dinners",
+        "snack": "Search {count} snack | Search {count} snacks"
+      },
+      "close": "Close",
+      "current": "Current choice",
+      "batchFills": "{count} days · fills {day}",
+      "noMatch": "No recipe matches your search.",
+      "noRecipes": "There are no recipes for this meal yet.",
+      "recipesFailed": "Recipes could not be loaded.",
+      "retry": "Try again",
+      "unknownRecipe": "Recipe",
+      "clear": "Clear slot",
+      "hate": {
+        "line": "{who} marked this as hate",
+        "you": "You",
+        "someone": "someone | {count} people",
+        "icon": "A participant marked this recipe as hate",
+        "loadFailed": "Dislikes could not be checked, so no hate warnings are shown."
+      },
+      "offer": {
+        "title": "Cooked once for {count} days",
+        "text": "{name} covers {count} days. Use it for the next day too?",
+        "replaces": "Replaces {names}.",
+        "only": "Only {day}",
+        "both": "{first} + {last}",
+        "range": "{first} – {last}"
+      },
+      "saved": "Recipe added",
+      "savedBatch": "Recipe added to both days",
+      "cleared": "Slot cleared",
+      "saveFailed": "The recipe could not be saved. Try again.",
+      "errors": {
+        "recipeNotFound": "This recipe is no longer available. Choose another one.",
+        "mealTypeMismatch": "This recipe is for another meal. Choose one for this slot.",
+        "beyondPlanEnd": "The plan ends before the batch does. Use it for this day only.",
+        "invalidFillDays": "This recipe cannot fill that many days."
+      }
+    },
     "errors": {
       "createFailed": "The plan could not be created. Try again.",
       "notInHousehold": "You are not in a household any more, so this can only be your own plan.",

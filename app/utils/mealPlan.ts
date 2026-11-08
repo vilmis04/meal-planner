@@ -40,6 +40,11 @@ const slotRowSchema = z.object({
   recipe_id: z.guid().nullable(),
 });
 
+// meal_plan_hated_recipes() (E3): who hates which recipe, grouped by recipe id → user ids.
+export const hatedRecipeRowsSchema = z
+  .array(z.object({ recipe_id: z.guid(), user_id: z.guid() }))
+  .transform((rows) => groupHatedRecipes(rows.map((row) => ({ recipeId: row.recipe_id, userId: row.user_id }))));
+
 // Slots come back in no particular order: they are sorted by day, then in meal order.
 export const mealPlanDetailRowSchema = z
   .object({
