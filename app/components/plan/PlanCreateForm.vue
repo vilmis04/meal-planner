@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { SubmitEventPromise } from "vuetify";
 import type { PlanKind } from "#shared/utils/mealPlan";
 
 const { t } = useI18n();
 const { household, load: loadHousehold } = useHousehold();
-const { create } = useMealPlans();
+const { create, generate } = useMealPlans();
 const { show } = useAppSnackbar();
 
 const kind = ref<PlanKind>(household.value ? "household" : "individual");
@@ -13,7 +12,11 @@ const startDate = ref("");
 const dayCount = ref(PLAN_DAY_COUNT_DEFAULT);
 const includeSnacks = ref(true);
 const snacksOnList = ref(true);
-const isSaving = ref(false);
+const workdays = ref<number[]>([...DEFAULT_WORKDAYS]);
+const cooldownDays = ref(COOLDOWN_DAYS_DEFAULT);
+// Which button is at work: "Create empty" or "Generate plan" (E4).
+const savingAction = ref<"empty" | "generate" | null>(null);
+const form = useTemplateRef("form");
 // Everyone takes part by default; the picker lets the user untick people for this plan.
 const allMemberIds = (): string[] => household.value?.members.map((member) => member.userId) ?? [];
 const participantIds = ref<string[]>(allMemberIds());
@@ -41,13 +44,14 @@ const changeDayCount = (step: number): void => {
   dayCount.value = clampDayCount(dayCount.value + step);
 };
 
-async function handleSubmit(event: SubmitEventPromise) {
-  const { valid } = await event;
-  if (!valid || isSaving.value) {
+// "Generate plan" creates the plan and fills it at once; "Create empty" leaves it to be filled by hand.
+async function savePlan(shouldGenerate: boolean) {
+  const validation = await form.value?.validate();
+  if (!validation?.valid || savingAction.value) {
     return;
   }
 
-  isSaving.value = true;
+  savingAction.value = shouldGenerate ? "generate" : "empty";
   const result = await create({
     kind: kind.value,
     startDate: startDate.value,
@@ -55,15 +59,28 @@ async function handleSubmit(event: SubmitEventPromise) {
     includeSnacks: includeSnacks.value,
     snacksOnList: snacksOnList.value,
     participantIds: kind.value === "household" ? participantIds.value : undefined,
+    workdays: workdays.value,
+    cooldownDays: cooldownDays.value,
   });
 
+  if (result.isCreated && shouldGenerate) {
+    // The plan exists either way, so the user goes to it; a failed fill can be retried there.
+    const generated = await generate(result.id);
+    if (generated.isGenerated) {
+      show(getGenerationDoneKey(generated.summary), "success");
+    } else {
+      show("plan.generate.errors.createdNotFilled", "error");
+    }
+    await navigateTo(`/plans/${result.id}`);
+    return;
+  }
   if (result.isCreated) {
     show("plan.new.created", "success");
     await navigateTo(`/plans/${result.id}`);
     return;
   }
 
-  isSaving.value = false;
+  savingAction.value = null;
   show(result.errorKey, "error");
   // The household changed elsewhere: show what is really there.
   if (result.errorKey === "plan.errors.notInHousehold" || result.errorKey === "plan.errors.participantNotMember") {
@@ -73,7 +90,7 @@ async function handleSubmit(event: SubmitEventPromise) {
 </script>
 
 <template>
-  <v-form :class="$style.form" data-testid="plan-create-form" @submit.prevent="handleSubmit">
+  <v-form ref="form" :class="$style.form" data-testid="plan-create-form" @submit.prevent="savePlan(true)">
     <section :class="$style.section" aria-labelledby="plan-who-label">
       <h2 id="plan-who-label" :class="$style.label">{{ t("plan.new.who") }}</h2>
       <v-btn-toggle
@@ -154,30 +171,33 @@ async function handleSubmit(event: SubmitEventPromise) {
 
     <PlanSnackSettings v-model:include-snacks="includeSnacks" v-model:snacks-on-list="snacksOnList" />
 
+    <PlanGenerationSettings v-model:workdays="workdays" v-model:cooldown-days="cooldownDays" />
+
     <div :class="$style.actions">
       <v-btn
         variant="outlined"
         size="large"
-        prepend-icon="mdi-auto-fix"
-        disabled
-        :class="$style.action"
-        aria-describedby="plan-generate-soon"
-        data-testid="plan-generate"
+        :loading="savingAction === 'empty'"
+        :disabled="savingAction === 'generate'"
+        :class="[$style.action, $style.secondary]"
+        data-testid="plan-create"
+        @click="savePlan(false)"
       >
-        {{ t("plan.new.generate") }}
+        {{ t("plan.new.create") }}
       </v-btn>
       <v-btn
         type="submit"
         color="primary"
         size="large"
-        :loading="isSaving"
+        prepend-icon="mdi-auto-fix"
+        :loading="savingAction === 'generate'"
+        :disabled="savingAction === 'empty'"
         :class="$style.action"
-        data-testid="plan-create"
+        data-testid="plan-generate"
       >
-        {{ t("plan.new.create") }}
+        {{ t("plan.new.generate") }}
       </v-btn>
     </div>
-    <p id="plan-generate-soon" :class="$style.hint">{{ t("plan.new.generateSoon") }}</p>
   </v-form>
 </template>
 
@@ -269,8 +289,12 @@ async function handleSubmit(event: SubmitEventPromise) {
 }
 
 .action {
-  flex: 1 1 0;
+  flex: 1.4 1 0;
   min-width: 0;
   text-transform: none;
+}
+
+.secondary {
+  flex-grow: 1;
 }
 </style>

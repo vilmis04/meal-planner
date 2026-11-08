@@ -110,9 +110,8 @@
       "days": "Days",
       "fewerDays": "One day fewer",
       "moreDays": "One day more",
-      "create": "Create plan",
+      "create": "Create empty",
       "generate": "Generate plan",
-      "generateSoon": "Generating a plan is coming soon.",
       "created": "Plan created"
     },
     "snacks": {
@@ -136,7 +135,8 @@
       "back": "All plans",
       "emptySlot": "Not planned yet",
       "notOnList": "not on list",
-      "range": "{start} – {end}"
+      "range": "{start} – {end}",
+      "workday": "Workday"
     },
     "slot": {
       "open": "{meal} on {day}: {recipe}. Choose a recipe",
@@ -198,7 +198,41 @@
       "participantNotMember": "Someone you chose is no longer in the household. The list is up to date now.",
       "listLoadFailed": "Your plans could not be loaded.",
       "notFound": "This plan is not available. It may have been removed, or it is not shared with you.",
-      "loadFailed": "The plan could not be loaded."
+      "loadFailed": "The plan could not be loaded.",
+      "invalidWorkdays": "Choose workdays from Monday to Sunday.",
+      "invalidCooldownDays": "Choose how long recipes rest between plans."
+    },
+    "generation": {
+      "workdays": "Workdays · batch meals go here first",
+      "cooldown": "Rest planned recipes for",
+      "cooldownHint": "Recipes from recent plans, liked ones too, wait this long before they are generated again.",
+      "cooldownOff": "No rest",
+      "cooldownDays": "{count} day | {count} days"
+    },
+    "generate": {
+      "action": "Generate plan",
+      "fillEmpty": "Fill empty slots",
+      "done": "Plan generated",
+      "doneWithNotes": "Plan generated. Some slots have a note, so check them.",
+      "errors": {
+        "failed": "The plan could not be generated. Try again.",
+        "nothingToFill": "Every slot already has a recipe.",
+        "noParticipants": "No one is in this plan. Tick who eats from it first.",
+        "planChanged": "Someone changed the plan meanwhile. It is up to date now, so try again.",
+        "createdNotFilled": "The plan was created but could not be filled. Try again from the plan."
+      }
+    },
+    "batch": {
+      "position": "Day {day} of {count}",
+      "covers": "covers {day}",
+      "cooked": "cooked {day}"
+    },
+    "fillNote": {
+      "no_recipe_fits_diets": "No recipe fits everyone's diet",
+      "all_recipes_hated": "Every recipe that fits is marked as hate",
+      "recently_planned": "Planned recently: few other recipes fit",
+      "repeated_in_plan": "Repeated: too few recipes for this plan",
+      "no_batch_recipe": "No batch recipe left for this workday"
     }
   },
   "household": {
@@ -328,7 +362,7 @@
         "title": "You're already in {name}",
         "hint": "A user can belong to only one household. To join {invited}, you first leave {current}.",
         "lastMember": "You're the only member of {name}. If you leave, it is deleted.",
-      "ownerMustTransfer": "You own {name} and others are in it. Make someone else the owner or delete it from the household page first.",
+        "ownerMustTransfer": "You own {name} and others are in it. Make someone else the owner or delete it from the household page first.",
         "leave": "Leave {current} and join {invited}",
         "stay": "Stay in {name}"
       },

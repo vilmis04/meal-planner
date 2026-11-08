@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import en from "../../i18n/locales/en.json";
 import lt from "../../i18n/locales/lt.json";
 import {
+  GENERATION_ERROR_KEY_BY_STATUS,
+  GENERATION_FAILED_KEY,
   GENERIC_MEAL_PLAN_ERROR_KEY,
   MEAL_PLAN_ERROR_KEY_BY_MESSAGE,
   PARTICIPANTS_SAVE_FAILED_KEY,
   SLOT_ERROR_KEY_BY_MESSAGE,
   SLOT_SAVE_FAILED_KEY,
+  getGenerationErrorKey,
   getMealPlanErrorKey,
   getParticipantsErrorKey,
   getSlotErrorKey,
@@ -39,8 +42,21 @@ describe("getMealPlanErrorKey", () => {
     expect(getSlotErrorKey({ message: "connection reset" })).toBe(SLOT_SAVE_FAILED_KEY);
   });
 
+  it.each(Object.entries(GENERATION_ERROR_KEY_BY_STATUS))("maps the generation answer %s to %s", (status, key) => {
+    expect(getGenerationErrorKey(409, status)).toBe(key);
+  });
+
+  it("reads a generation 404 as a plan that is not available, and anything else as a failure", () => {
+    expect(getGenerationErrorKey(404, null)).toBe("plan.errors.notFound");
+    expect(getGenerationErrorKey(500, null)).toBe(GENERATION_FAILED_KEY);
+    expect(getGenerationErrorKey(null, null)).toBe(GENERATION_FAILED_KEY);
+    expect(getGenerationErrorKey(409, "something-new")).toBe(GENERATION_FAILED_KEY);
+  });
+
   it.each([
     ...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE),
+    ...Object.values(GENERATION_ERROR_KEY_BY_STATUS),
+    GENERATION_FAILED_KEY,
     ...Object.values(SLOT_ERROR_KEY_BY_MESSAGE),
     GENERIC_MEAL_PLAN_ERROR_KEY,
     PARTICIPANTS_SAVE_FAILED_KEY,

@@ -110,9 +110,8 @@
       "days": "Dienos",
       "fewerDays": "Viena diena mažiau",
       "moreDays": "Viena diena daugiau",
-      "create": "Sukurti planą",
+      "create": "Kurti tuščią",
       "generate": "Sudaryti planą",
-      "generateSoon": "Plano sudarymas netrukus.",
       "created": "Planas sukurtas"
     },
     "snacks": {
@@ -136,7 +135,8 @@
       "back": "Visi planai",
       "emptySlot": "Dar nesuplanuota",
       "notOnList": "ne sąraše",
-      "range": "{start} – {end}"
+      "range": "{start} – {end}",
+      "workday": "Darbo diena"
     },
     "slot": {
       "open": "{meal}, {day}: {recipe}. Pasirinkti receptą",
@@ -198,7 +198,41 @@
       "participantNotMember": "Kažkuris pasirinktas žmogus nebe namų ūkyje. Sąrašas atnaujintas.",
       "listLoadFailed": "Nepavyko įkelti jūsų planų.",
       "notFound": "Šis planas nepasiekiamas. Jis galėjo būti pašalintas arba juo su jumis nesidalijama.",
-      "loadFailed": "Nepavyko įkelti plano."
+      "loadFailed": "Nepavyko įkelti plano.",
+      "invalidWorkdays": "Pasirinkite darbo dienas nuo pirmadienio iki sekmadienio.",
+      "invalidCooldownDays": "Pasirinkite, kiek laiko receptai ilsisi tarp planų."
+    },
+    "generation": {
+      "workdays": "Darbo dienos · joms pirmiausia skiriami kelių dienų patiekalai",
+      "cooldown": "Neplanuoti tų pačių receptų",
+      "cooldownHint": "Neseniai planuoti receptai, net ir mėgstami, tiek laiko nebus siūlomi iš naujo.",
+      "cooldownOff": "Planuoti bet kada",
+      "cooldownDays": "{count} d. | {count} d."
+    },
+    "generate": {
+      "action": "Sudaryti planą",
+      "fillEmpty": "Užpildyti tuščius",
+      "done": "Planas sudarytas",
+      "doneWithNotes": "Planas sudarytas. Prie kai kurių patiekalų yra pastabų, peržiūrėkite jas.",
+      "errors": {
+        "failed": "Nepavyko sudaryti plano. Bandykite dar kartą.",
+        "nothingToFill": "Visi patiekalai jau parinkti.",
+        "noParticipants": "Šiame plane nėra dalyvių. Pirmiausia pažymėkite, kas valgys.",
+        "planChanged": "Kažkas tuo metu pakeitė planą. Jis jau atnaujintas, bandykite dar kartą.",
+        "createdNotFilled": "Planas sukurtas, bet jo nepavyko užpildyti. Bandykite dar kartą plano puslapyje."
+      }
+    },
+    "batch": {
+      "position": "{day} diena iš {count}",
+      "covers": "užtenka iki {day}",
+      "cooked": "gaminta {day}"
+    },
+    "fillNote": {
+      "no_recipe_fits_diets": "Nė vienas receptas netinka visų mitybai",
+      "all_recipes_hated": "Visus tinkamus receptus kažkas pažymėjo kaip nemėgstamus",
+      "recently_planned": "Neseniai planuotas: tinka mažai kitų receptų",
+      "repeated_in_plan": "Kartojasi: šiam planui receptų per mažai",
+      "no_batch_recipe": "Šiai darbo dienai neliko kelių dienų patiekalų"
     }
   },
   "household": {
@@ -328,7 +362,7 @@
         "title": "Jau esate namų ūkyje „{name}“",
         "hint": "Vartotojas gali būti tik viename namų ūkyje. Norėdami prisijungti prie „{invited}“, pirmiau turite palikti „{current}“.",
         "lastMember": "Esate vienintelis „{name}“ narys. Išėjus namų ūkis bus ištrintas.",
-      "ownerMustTransfer": "Esate „{name}“ savininkas, o jame yra kitų narių. Pirmiausia namų ūkio puslapyje padarykite savininku kitą narį arba ištrinkite namų ūkį.",
+        "ownerMustTransfer": "Esate „{name}“ savininkas, o jame yra kitų narių. Pirmiausia namų ūkio puslapyje padarykite savininku kitą narį arba ištrinkite namų ūkį.",
         "leave": "Palikti „{current}“ ir prisijungti prie „{invited}“",
         "stay": "Likti „{name}“"
       },

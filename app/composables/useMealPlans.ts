@@ -1,5 +1,6 @@
 import type {
   CreateMealPlanResult,
+  GeneratePlanResult,
   HatedRecipesResult,
   MealPlanListResult,
   MealPlanLoadResult,
@@ -9,7 +10,7 @@ import type {
   UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1, E2, E3). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1 to E4). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -22,6 +23,8 @@ export function useMealPlans() {
       plan_include_snacks: plan.includeSnacks,
       plan_snacks_on_list: plan.snacksOnList,
       ...(plan.participantIds ? { plan_participant_ids: plan.participantIds } : {}),
+      plan_workdays: plan.workdays,
+      plan_cooldown_days: plan.cooldownDays,
     });
 
     if (error) {
@@ -141,5 +144,25 @@ export function useMealPlans() {
     return { status: "loaded", hated: result.data };
   };
 
-  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes };
+  // Fills the plan's empty slots on the server (E4), which reads everyone's ratings and plan history there.
+  const generate = async (planId: string): Promise<GeneratePlanResult> => {
+    const response = await $fetch
+      .raw(`/api/plans/${planId}/generate`, { method: "POST", ignoreResponseError: true, retry: 0 })
+      .catch((error: unknown) => {
+        console.error("Generating the plan failed", error);
+        return null;
+      });
+
+    const body = generatePlanResponseSchema.safeParse(response?._data);
+    if (!body.success) {
+      console.error("Generating the plan failed", response?.status ?? "no response");
+      return { isGenerated: false, errorKey: getGenerationErrorKey(response?.status ?? null, null) };
+    }
+    if (body.data.status !== "generated") {
+      return { isGenerated: false, errorKey: getGenerationErrorKey(response?.status ?? null, body.data.status) };
+    }
+    return { isGenerated: true, summary: body.data };
+  };
+
+  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes, generate };
 }

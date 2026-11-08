@@ -18,6 +18,17 @@ export const PLAN_DAY_COUNT_MIN = 1;
 export const PLAN_DAY_COUNT_MAX = 14;
 export const PLAN_DAY_COUNT_DEFAULT = 7;
 
+// ISO weekdays, Monday = 1 to Sunday = 7, the numbers meal_plans.workdays stores (E4). The meal_plans_workdays_supported
+// check (supabase/migrations/20261109000000_add_meal_plan_generation.sql) allows these only.
+export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+export const DEFAULT_WORKDAYS: readonly number[] = [1, 2, 3, 4, 5];
+
+// How long a planned recipe rests before the generator offers it again (E4). Must match the
+// meal_plans_cooldown_days_range check; the New plan screen offers COOLDOWN_DAYS_OPTIONS.
+export const COOLDOWN_DAYS_DEFAULT = 14;
+export const COOLDOWN_DAYS_MAX = 60;
+export const COOLDOWN_DAYS_OPTIONS: readonly number[] = [0, 7, 14, 21, 28];
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -73,6 +84,21 @@ export function clampDayCount(value: number): number {
 // The date of every day of the plan, in order. Slot day_index n is the nth of these.
 export function getPlanDays(startDate: string, dayCount: number): string[] {
   return Array.from({ length: dayCount }, (_, index) => addDays(startDate, index));
+}
+
+// 1 for Monday to 7 for Sunday.
+export function getIsoWeekday(isoDate: string): number {
+  return new Date(toUtcTime(isoDate)).getUTCDay() || 7;
+}
+
+// Whole days from `earlierDate` to `laterDate`; negative when `earlierDate` is the later one.
+export function getDaysBetween(earlierDate: string, laterDate: string): number {
+  return Math.round((toUtcTime(laterDate) - toUtcTime(earlierDate)) / DAY_MS);
+}
+
+// The weekdays sorted, without repeats and without anything that is not a weekday.
+export function normalizeWorkdays(workdays: readonly number[]): number[] {
+  return WEEKDAYS.filter((weekday) => workdays.includes(weekday));
 }
 
 export function getPlanEndDate(startDate: string, dayCount: number): string {

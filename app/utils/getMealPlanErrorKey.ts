@@ -10,6 +10,8 @@ export const MEAL_PLAN_ERROR_KEY_BY_MESSAGE: Readonly<Record<string, string>> = 
   invalid_plan_kind: "plan.errors.invalidKind",
   no_participants: "plan.errors.noParticipants",
   participant_not_member: "plan.errors.participantNotMember",
+  invalid_workdays: "plan.errors.invalidWorkdays",
+  invalid_cooldown_days: "plan.errors.invalidCooldownDays",
 };
 
 export const SLOT_SAVE_FAILED_KEY = "plan.slot.saveFailed";
@@ -35,4 +37,21 @@ export function getParticipantsErrorKey({ message }: { message: string }): strin
 // Choosing or clearing a slot's recipe (E3).
 export function getSlotErrorKey({ message }: { message: string }): string {
   return SLOT_ERROR_KEY_BY_MESSAGE[message] ?? SLOT_SAVE_FAILED_KEY;
+}
+
+export const GENERATION_FAILED_KEY = "plan.generate.errors.failed";
+
+// The 409 answers of POST /api/plans/:id/generate (E4), by status.
+export const GENERATION_ERROR_KEY_BY_STATUS: Readonly<Record<string, string>> = {
+  "nothing-to-fill": "plan.generate.errors.nothingToFill",
+  "no-participants": "plan.generate.errors.noParticipants",
+  "plan-changed": "plan.generate.errors.planChanged",
+};
+
+// A 404 means the plan is gone or no longer shared with the user; anything else unexpected is a plain failure.
+export function getGenerationErrorKey(httpStatus: number | null, status: string | null): string {
+  if (status !== null && GENERATION_ERROR_KEY_BY_STATUS[status]) {
+    return GENERATION_ERROR_KEY_BY_STATUS[status];
+  }
+  return httpStatus === 404 ? "plan.errors.notFound" : GENERATION_FAILED_KEY;
 }

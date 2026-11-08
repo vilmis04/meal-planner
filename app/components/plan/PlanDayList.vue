@@ -16,16 +16,47 @@ const emit = defineEmits<{ pick: [slot: MealPlanSlot] }>();
 const { t, locale } = useI18n();
 
 const recipeNames = computed(() => new Map((props.recipes ?? []).map((recipe) => [recipe.id, recipe.name])));
+const planDays = computed(() => getPlanDays(props.plan.startDate, props.plan.dayCount));
+// Slot id → its place in a batch, for "Day 1 of 2 · covers Wed" (E4).
+const batchDays = computed(() => getBatchDays(props.plan.slots, props.recipes ?? []));
+const shortWeekday = (dayIndex: number): string => {
+  const date = planDays.value[dayIndex];
+  return date ? formatShortWeekday(date, locale.value) : "";
+};
+const batchLine = (slotId: string): string | null => {
+  const batchDay = batchDays.value.get(slotId);
+  if (!batchDay) {
+    return null;
+  }
+  const position = t("plan.batch.position", { day: batchDay.dayNumber, count: batchDay.dayCount });
+  const detail =
+    batchDay.dayNumber === 1
+      ? t("plan.batch.covers", { day: shortWeekday(batchDay.lastDayIndex) })
+      : t("plan.batch.cooked", { day: shortWeekday(batchDay.firstDayIndex) });
+  return `${position} · ${detail}`;
+};
 // A recipe deleted from the library empties its slots; one missing here only means the list did not load.
 const recipeName = (recipeId: string): string => recipeNames.value.get(recipeId) ?? t("plan.slot.unknownRecipe");
 // The same "hate" warning as the picker, as an icon on a filled slot.
 const isHated = (recipeId: string | null): boolean => Boolean(recipeId && props.hated?.[recipeId]?.length);
 
+// The button's name says everything the row shows: what it holds, its batch and the generator's note.
+const slotLabel = (slot: MealPlanSlot, weekday: string): string => {
+  const open = t("plan.slot.open", {
+    meal: t(`recipes.mealType.${slot.mealType}`),
+    day: weekday,
+    recipe: slot.recipeId ? recipeName(slot.recipeId) : t("plan.detail.emptySlot"),
+  });
+  const note = slot.fillNote ? t(`plan.fillNote.${slot.fillNote}`) : null;
+  return [open, batchLine(slot.id), note].filter((part) => part !== null).join(". ");
+};
+
 // One card per day with its slots in meal order. Skipped snack slots stay in the plan but are not shown.
 const days = computed(() => {
   const mealTypes = getVisibleMealTypes(props.plan.includeSnacks);
-  return getPlanDays(props.plan.startDate, props.plan.dayCount).map((date, dayIndex) => ({
+  return planDays.value.map((date, dayIndex) => ({
     date,
+    isWorkday: props.plan.workdays.includes(getIsoWeekday(date)),
     weekday: formatPlanDay(date, locale.value, { weekday: "long" }),
     day: formatPlanDay(date, locale.value, { day: "numeric", month: "short" }),
     slots: props.plan.slots.filter((slot) => slot.dayIndex === dayIndex && mealTypes.includes(slot.mealType)),
@@ -39,6 +70,7 @@ const days = computed(() => {
       <h2 :class="$style.dayTitle">
         <span>{{ day.weekday }}</span>
         <span :class="$style.date">{{ day.day }}</span>
+        <span v-if="day.isWorkday" :class="$style.workday" data-testid="plan-day-workday">{{ t("plan.detail.workday") }}</span>
       </h2>
       <v-card variant="flat" border :class="$style.card">
         <ul :class="$style.slots">
@@ -47,13 +79,7 @@ const days = computed(() => {
               type="button"
               :class="$style.slot"
               :disabled="disabled"
-              :aria-label="
-                t('plan.slot.open', {
-                  meal: t(`recipes.mealType.${slot.mealType}`),
-                  day: day.weekday,
-                  recipe: slot.recipeId ? recipeName(slot.recipeId) : t('plan.detail.emptySlot'),
-                })
-              "
+              :aria-label="slotLabel(slot, day.weekday)"
               data-testid="plan-slot-button"
               @click="emit('pick', slot)"
             >
@@ -68,6 +94,14 @@ const days = computed(() => {
                   {{ recipeName(slot.recipeId) }}
                 </span>
                 <span v-else :class="$style.empty">{{ t("plan.detail.emptySlot") }}</span>
+                <span v-if="batchLine(slot.id)" :class="$style.batch" data-testid="plan-slot-batch">
+                  <v-icon icon="mdi-link-variant" size="14" aria-hidden="true" />
+                  {{ batchLine(slot.id) }}
+                </span>
+                <span v-if="slot.fillNote" :class="$style.note" data-testid="plan-slot-note">
+                  <v-icon icon="mdi-information-outline" size="14" aria-hidden="true" />
+                  {{ t(`plan.fillNote.${slot.fillNote}`) }}
+                </span>
               </span>
               <v-icon
                 v-if="isHated(slot.recipeId)"
@@ -115,6 +149,15 @@ const days = computed(() => {
 .date {
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-muted);
+}
+
+.workday {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-muted);
 }
 
@@ -187,6 +230,24 @@ const days = computed(() => {
 
 .slots > li:last-child .slot {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.batch,
+.note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.batch {
+  color: var(--color-primary);
+}
+
+.note {
+  color: var(--color-warning);
 }
 
 .meal {
