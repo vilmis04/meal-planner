@@ -22,7 +22,20 @@ export type GeneratePlanResult =
   | { status: "not-found" }
   // No one eats from the plan, so there are no diets or preferences to plan for.
   | { status: "no-participants" }
-  // Every slot that can be filled already holds a recipe.
+  // "fill_empty": every slot that can be filled already holds a recipe.
   | { status: "nothing-to-fill" }
-  // Someone filled a slot while the plan was generated; nothing was written.
+  // "regenerate_unlocked": every slot the plan shows is locked.
+  | { status: "all-locked" }
+  // Someone changed or locked a slot while the plan was generated; nothing was written.
+  | { status: "plan-changed" };
+
+export type SwapSlotResult =
+  | ({ status: "swapped" } & GenerationSummary)
+  // No such plan or slot, or the user cannot open the plan.
+  | { status: "not-found" }
+  | { status: "no-participants" }
+  // A locked slot keeps its recipe; it is unlocked first.
+  | { status: "slot-locked" }
+  // No other recipe obeys the rules for this slot (a skipped snack slot has none either); nothing was written.
+  | { status: "no-alternative" }
   | { status: "plan-changed" };

@@ -37,3 +37,7 @@ export type MealPlanListResult = { status: "loaded"; plans: MealPlanSummary[] } 
 // Generating a plan (E4): the counts for the message, or the translation key of why nothing was filled.
 export type GenerationSummary = Extract<z.output<typeof generatePlanResponseSchema>, { status: "generated" }>;
 export type GeneratePlanResult = { isGenerated: true; summary: GenerationSummary } | { isGenerated: false; errorKey: string };
+
+// Swapping a slot (E5), or the translation key of why nothing changed.
+export type SwapSlotResult = { isSwapped: true } | { isSwapped: false; errorKey: string };
+export type SetSlotsLockedResult = { isSaved: true } | { isSaved: false; errorKey: string };

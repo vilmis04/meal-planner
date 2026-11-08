@@ -118,7 +118,7 @@ As a user I want to pick a recipe for a slot myself.
 - Slot picker offers recipes of the matching meal type, with search.
 - Recipes marked "hate" by any participant show a warning.
 - A 2-day recipe placed in a slot offers to fill the next day's matching slot.
-- Built as `set_meal_plan_slot()` (one slot, or the slot and the next day in one save) and `meal_plan_hated_recipes()` (participants' `hate` ratings only, named in the warning), see README, "Meal plans". The picker can also clear a slot. Filters beyond meal type and search (enjoyed, fits all diets, not recent) come with E4/E5.
+- Built as `set_meal_plan_slot()` (one slot, or the slot and the next day in one save) and `meal_plan_hated_recipes()` (participants' `hate` ratings only, named in the warning), see README, "Meal plans". The picker can also clear a slot. Filters beyond meal type and search (enjoyed, fits all diets, not recent) come with E6.
 
 ### E4. Generate plan (L, Phase 3)
 As a user I want a plan filled automatically.
@@ -129,12 +129,13 @@ As a user I want a plan filled automatically.
 - Liked recipes are weighted higher but are never guaranteed; the weighting is covered by unit tests with fixed seeds.
 - If constraints cannot be met, the plan is generated best-effort and shows why a slot is empty or compromised.
 - No external AI is called.
-- Built as the pure `generateMealPlan()` (`shared/utils/planGenerator.ts`, fixed-seed unit tests), run by `POST /api/plans/:id/generate` and written with `apply_meal_plan_generation()` (see README, "Plan generation"). Workdays (default Mon–Fri) and the cooldown (default 14 days, 0 to 28 offered) are chosen per plan on the New plan screen. E4 fills empty slots only: a recipe chosen by hand is kept as if locked; per-slot locks and regenerating filled slots come with E5. Diet and hate are never relaxed; the cooldown relaxes before a recipe repeats within a plan, and a batch relaxes the cooldown before giving up its batch. Each relaxed or empty slot shows why. Batches never span two plans.
+- Built as the pure `generateMealPlan()` (`shared/utils/planGenerator.ts`, fixed-seed unit tests), run by `POST /api/plans/:id/generate` and written with `apply_meal_plan_generation()` (see README, "Plan generation"). Workdays (default Mon–Fri) and the cooldown (default 14 days, 0 to 28 offered) are chosen per plan on the New plan screen. E4 filled empty slots only; E5 added per-slot locks and regenerating unlocked slots. Diet and hate are never relaxed; the cooldown relaxes before a recipe repeats within a plan, and a batch relaxes the cooldown before giving up its batch. Each relaxed or empty slot shows why. Batches never span two plans.
 
 ### E5. Lock, swap, regenerate (M, Phase 3)
 As a user I want to adjust a generated plan.
 - Lock a slot; "regenerate" only replaces unlocked slots.
 - "Swap" replaces one slot with another suggestion that obeys the same rules.
+- Built as `meal_plan_slots.is_locked` with `set_meal_plan_slots_locked()`, the `regenerate_unlocked` mode of `POST /api/plans/:id/generate` and `POST /api/plans/:id/slots/:slotId/swap`, which runs `generateMealPlan()` on that slot alone without its current recipe (see README, "Lock, swap, regenerate"). A recipe chosen by hand is locked; a generated one is not. The days of a batch lock and swap together. Swap lives in the slot picker ("Suggest another"); a locked slot is unlocked before it can be swapped. The picker filters (enjoyed, fits all diets, not recent) and the "Cook tonight" label move to E6.
 
 ### E6. Plan overview and history (M, Phase 2)
 As a user I want to view current, upcoming, and past plans.

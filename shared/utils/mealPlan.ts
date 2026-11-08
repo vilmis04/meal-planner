@@ -29,6 +29,10 @@ export const COOLDOWN_DAYS_DEFAULT = 14;
 export const COOLDOWN_DAYS_MAX = 60;
 export const COOLDOWN_DAYS_OPTIONS: readonly number[] = [0, 7, 14, 21, 28];
 
+// What POST /api/plans/:id/generate fills (E5): only the empty slots, or every slot that is not locked.
+export const GENERATION_MODES = ["fill_empty", "regenerate_unlocked"] as const;
+export type GenerationMode = (typeof GENERATION_MODES)[number];
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

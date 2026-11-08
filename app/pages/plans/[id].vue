@@ -1,11 +1,21 @@
 <script setup lang="ts">
+import type { GenerationMode } from "#shared/utils/mealPlan";
 import type { MealPlanSlot, SnackSettings } from "~/types/mealPlan.types";
 
 defineOptions({ name: "PlanPage" });
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const { loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes, generate } = useMealPlans();
+const {
+  loadPlan,
+  updateSnackSettings,
+  updateParticipants,
+  setSlotRecipe,
+  loadHatedRecipes,
+  generate,
+  swapSlot,
+  setSlotsLocked,
+} = useMealPlans();
 const { household, load: loadHousehold } = useHousehold();
 const { recipes, loadFailed: recipesFailed, loadList: loadRecipes } = useRecipes();
 const { show } = useAppSnackbar();
@@ -123,10 +133,11 @@ async function saveSlot(recipeId: string | null, fillDays: number) {
     return;
   }
 
+  // A recipe chosen by hand is locked; an emptied slot is not (E5).
   const lastDay = slot.dayIndex + fillDays - 1;
   const slots = current.slots.map((candidate) =>
     candidate.mealType === slot.mealType && candidate.dayIndex >= slot.dayIndex && candidate.dayIndex <= lastDay
-      ? { ...candidate, recipeId }
+      ? { ...candidate, recipeId, isLocked: recipeId !== null, fillNote: null }
       : candidate,
   );
   result.value = { status: "found", plan: { ...current, slots } };
@@ -147,31 +158,80 @@ async function saveSlot(recipeId: string | null, fillDays: number) {
 const chooseRecipe = (recipeId: string, fillDays: number) => saveSlot(recipeId, fillDays);
 const clearSlot = () => saveSlot(null, 1);
 
+// Swap (E5): another recipe the generator's rules allow, for the slot in the picker and its batch's other days. The
+// picker stays open on the new choice, so the user can swap again.
+const isSwapping = ref(false);
+
+async function swapPickerSlot() {
+  const current = plan.value;
+  const slot = pickerSlot.value;
+  if (!current || !slot || isSaving.value) {
+    return;
+  }
+
+  isSaving.value = true;
+  isSwapping.value = true;
+  const swapped = await swapSlot(current.id, slot.id);
+  await refreshPlan();
+  isSwapping.value = false;
+  isSaving.value = false;
+
+  if (swapped.isSwapped) {
+    show("plan.swap.done", "success");
+  } else {
+    show(swapped.errorKey, "error");
+  }
+}
+
+// Lock (E5): a locked slot keeps its recipe when the plan is regenerated. The days of a batch lock together. The
+// icon follows the tap at once; a refused save puts the previous plan back.
+async function toggleLock(slot: MealPlanSlot) {
+  const current = plan.value;
+  if (!current || isSaving.value) {
+    return;
+  }
+
+  const isLocked = !slot.isLocked;
+  const slotIds = new Set(getBatchSlots(current.slots, recipes.value ?? [], slot).map((batchSlot) => batchSlot.id));
+  const slots = current.slots.map((candidate) => (slotIds.has(candidate.id) ? { ...candidate, isLocked } : candidate));
+  result.value = { status: "found", plan: { ...current, slots } };
+  isSaving.value = true;
+  const saved = await setSlotsLocked([...slotIds], isLocked);
+  isSaving.value = false;
+
+  if (!saved.isSaved) {
+    result.value = { status: "found", plan: current };
+    show(saved.errorKey, "error");
+  }
+}
+
 // Generation (E4): fills the empty slots the plan shows; a recipe already chosen stays. Offered while any is empty.
+// "Regenerate unlocked" (E5) replaces every generated recipe that is not locked; offered while there is one.
 const visibleSlots = computed(() => {
   const mealTypes = getVisibleMealTypes(plan.value?.includeSnacks ?? true);
   return (plan.value?.slots ?? []).filter((slot) => mealTypes.includes(slot.mealType));
 });
 const hasEmptySlots = computed(() => visibleSlots.value.some((slot) => slot.recipeId === null));
 const isPlanEmpty = computed(() => visibleSlots.value.every((slot) => slot.recipeId === null));
-const isGenerating = ref(false);
+const canRegenerate = computed(() => visibleSlots.value.some((slot) => slot.recipeId !== null && !slot.isLocked));
+const generatingMode = ref<GenerationMode | null>(null);
 
-async function fillPlan() {
+async function generatePlan(mode: GenerationMode) {
   const current = plan.value;
   if (!current || isSaving.value) {
     return;
   }
 
   isSaving.value = true;
-  isGenerating.value = true;
-  const generated = await generate(current.id);
+  generatingMode.value = mode;
+  const generated = await generate(current.id, mode);
   // Also after "someone changed the plan meanwhile": the page shows what is there now.
   await refreshPlan();
-  isGenerating.value = false;
+  generatingMode.value = null;
   isSaving.value = false;
 
   if (generated.isGenerated) {
-    show(getGenerationDoneKey(generated.summary), "success");
+    show(getGenerationDoneKey(generated.summary, mode), "success");
   } else {
     show(generated.errorKey, "error");
   }
@@ -179,15 +239,32 @@ async function fillPlan() {
 </script>
 
 <template>
-  <div :class="$style.page">
+  <div :class="[$style.page, { [$style.withFab]: canRegenerate }]">
     <v-btn to="/plans" exact variant="text" prepend-icon="mdi-arrow-left" :class="$style.back" data-testid="plan-back">
       {{ t("plan.detail.back") }}
     </v-btn>
 
     <template v-if="plan">
       <header :class="$style.header">
-        <span :class="$style.kind" data-testid="plan-kind-label">{{ t(`plan.kind.${plan.kind}`) }}</span>
-        <h1 :class="$style.title" data-testid="plan-range">{{ range }}</h1>
+        <div :class="$style.heading">
+          <span :class="$style.kind" data-testid="plan-kind-label">{{ t(`plan.kind.${plan.kind}`) }}</span>
+          <h1 :class="$style.title" data-testid="plan-range">{{ range }}</h1>
+        </div>
+        <!-- A floating button above the navigation on phones, beside the title from 960px. -->
+        <v-btn
+          v-if="canRegenerate"
+          color="primary"
+          size="large"
+          rounded="pill"
+          prepend-icon="mdi-auto-fix"
+          :loading="generatingMode === 'regenerate_unlocked'"
+          :disabled="isSaving"
+          :class="$style.regenerate"
+          data-testid="plan-regenerate"
+          @click="generatePlan('regenerate_unlocked')"
+        >
+          {{ t("plan.regenerate.action") }}
+        </v-btn>
       </header>
 
       <v-btn
@@ -195,11 +272,11 @@ async function fillPlan() {
         color="primary"
         size="large"
         prepend-icon="mdi-auto-fix"
-        :loading="isGenerating"
+        :loading="generatingMode === 'fill_empty'"
         :disabled="isSaving"
         :class="$style.generate"
         data-testid="plan-fill"
-        @click="fillPlan"
+        @click="generatePlan('fill_empty')"
       >
         {{ isPlanEmpty ? t("plan.generate.action") : t("plan.generate.fillEmpty") }}
       </v-btn>
@@ -227,6 +304,7 @@ async function fillPlan() {
           :disabled="isSaving"
           :class="$style.days"
           @pick="openPicker"
+          @toggle-lock="toggleLock"
         />
       </div>
 
@@ -243,8 +321,10 @@ async function fillPlan() {
           :members="members"
           :viewer-id="viewerId"
           :disabled="isSaving"
+          :is-swapping="isSwapping"
           @choose="chooseRecipe"
           @clear="clearSlot"
+          @swap="swapPickerSlot"
           @close="isPickerOpen = false"
           @retry="loadRecipes"
         />
@@ -272,10 +352,31 @@ async function fillPlan() {
   margin-left: calc(-1 * var(--space-2));
 }
 
+.withFab {
+  /* Room below the last day for the floating "Regenerate unlocked" button. */
+  padding-bottom: 72px;
+}
+
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.heading {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+}
+
+.regenerate {
+  position: fixed;
+  right: var(--space-3);
+  bottom: calc(var(--nav-height) + var(--space-3) + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  text-transform: none;
 }
 
 .kind {
@@ -309,6 +410,18 @@ async function fillPlan() {
 
 /* 960px is --breakpoint-md: the options sit beside the week instead of above it. */
 @media (min-width: 960px) {
+  .withFab {
+    padding-bottom: 0;
+  }
+
+  /* Relative, as Vuetify's ripple makes a static button relative on press: the phone offsets must not apply. */
+  .regenerate {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    flex: 0 0 auto;
+  }
+
   .layout {
     flex-direction: row-reverse;
     align-items: flex-start;

@@ -3,11 +3,12 @@ import { SEED_LIMIT } from "#shared/utils/seededRandom";
 import { generateRequestBodySchema, generateRouteParamsSchema } from "../../../utils/planGeneration.schema";
 
 /*
- * POST /api/plans/:id/generate: fills the plan's empty slots by the generator's rules (E4). No AI is called.
- * Body (optional): { seed } to reproduce a logged generation.
+ * POST /api/plans/:id/generate: fills the plan by the generator's rules (E4). No AI is called.
+ * Body (optional): { mode, seed }. mode "fill_empty" (the default) fills the empty slots; "regenerate_unlocked" (E5)
+ * replaces every slot that is not locked. seed reproduces a logged generation.
  *
  *   200 { status: "generated", filledCount, emptyCount, compromisedCount, seed }
- *   409 { status: "nothing-to-fill" | "no-participants" | "plan-changed" }
+ *   409 { status: "nothing-to-fill" | "all-locked" | "no-participants" | "plan-changed" }
  *   404                                       no such plan, or the user cannot open it
  */
 export default defineEventHandler(async (event) => {
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
   });
   const result = await generatePlan(
     { store, createSeed: () => randomInt(SEED_LIMIT) },
-    { planId: params.data.id, seed: body.data.seed },
+    { planId: params.data.id, seed: body.data.seed, mode: body.data.mode },
   );
 
   switch (result.status) {

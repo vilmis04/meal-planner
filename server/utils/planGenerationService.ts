@@ -1,21 +1,26 @@
 /*
- * Generate a plan (E4): read what the pure generator needs, run it, and write the result. The one entry point for
- * POST /api/plans/:id/generate, and later for scheduled plans (H2).
+ * Generate a plan (E4) and adjust it (E5): read what the pure generator needs, run it, and write the result. The one
+ * entry point for POST /api/plans/:id/generate and POST /api/plans/:id/slots/:slotId/swap, and later for scheduled
+ * plans (H2).
  *
- * E4 fills the empty slots only: a slot that already holds a recipe (chosen by hand) is kept as if locked. E5 adds
- * real per-slot locks and "regenerate", which replaces every unlocked slot; isLocked below is where that plugs in.
+ * A locked slot is always kept (a recipe chosen by hand is locked). "fill_empty" also keeps every slot that holds a
+ * recipe; "regenerate_unlocked" replaces the generated ones. A swap runs the generator on one slot, or on the days
+ * of its batch, with everything else kept, and without the recipe it replaces.
  */
 import { generateMealPlan } from "../../shared/utils/planGenerator";
-import type { SlotAssignment } from "../../shared/utils/planGenerator.types";
+import type { GeneratorSlot, PlanGenerationInput, SlotAssignment } from "../../shared/utils/planGenerator.types";
 import { getVisibleMealTypes } from "../../shared/utils/mealPlan";
-import type { GeneratePlanResult, PlanGenerationDeps } from "./planGenerationService.types";
+import type { GenerationMode } from "../../shared/utils/mealPlan";
+import { getBatchSlots } from "../../shared/utils/slotPicker";
+import type { GeneratePlanResult, PlanGenerationDeps, SwapSlotResult } from "./planGenerationService.types";
+import type { PlanGenerationStore, StoredPlan, StoredSlot } from "./planGenerationStore.types";
 
 // The history covers the cooldown and the same number of days again, while a rested recipe's weight recovers.
 const HISTORY_COOLDOWN_MULTIPLE = 2;
 
 export async function generatePlan(
   { store, createSeed, log = defaultLog }: PlanGenerationDeps,
-  { planId, seed = createSeed() }: { planId: string; seed?: number },
+  { planId, seed = createSeed(), mode = "fill_empty" }: { planId: string; seed?: number; mode?: GenerationMode },
 ): Promise<GeneratePlanResult> {
   const plan = await store.loadPlan(planId);
   if (!plan) {
@@ -23,45 +28,113 @@ export async function generatePlan(
   }
 
   const mealTypes = getVisibleMealTypes(plan.includeSnacks);
-  const slots = plan.slots.map((slot) => ({ ...slot, isLocked: slot.recipeId !== null }));
+  const isKept = (slot: StoredSlot): boolean => isSlotLocked(slot) || (mode === "fill_empty" && slot.recipeId !== null);
+  const slots = plan.slots.map((slot): GeneratorSlot => ({ ...slot, isLocked: isKept(slot) }));
   if (!slots.some((slot) => !slot.isLocked && mealTypes.includes(slot.mealType))) {
-    return { status: "nothing-to-fill" };
+    return { status: mode === "fill_empty" ? "nothing-to-fill" : "all-locked" };
   }
 
-  const [participants, recipes, swapDiets, history] = await Promise.all([
-    store.loadParticipants(planId),
-    store.loadRecipes(),
-    store.loadSwapDiets(),
-    store.loadHistory(planId, plan.cooldownDays * HISTORY_COOLDOWN_MULTIPLE),
-  ]);
-  if (!participants.length) {
+  const inputs = await loadGeneratorInputs(store, plan);
+  if (!inputs.participants.length) {
     return { status: "no-participants" };
   }
 
+  const assignments = generateMealPlan({ ...inputs, slots, seed });
+  if ((await writeAssignments(store, plan, assignments)) === "plan-changed") {
+    return { status: "plan-changed" };
+  }
+
+  const summary = summarize(assignments, seed);
+  log({ event: "meal_plan_generated", planId, mode, ...summary });
+  return { status: "generated", ...summary };
+}
+
+export async function swapPlanSlot(
+  { store, createSeed, log = defaultLog }: PlanGenerationDeps,
+  { planId, slotId, seed = createSeed() }: { planId: string; slotId: string; seed?: number },
+): Promise<SwapSlotResult> {
+  const plan = await store.loadPlan(planId);
+  const target = plan?.slots.find((slot) => slot.id === slotId);
+  if (!plan || !target) {
+    return { status: "not-found" };
+  }
+  if (isSlotLocked(target)) {
+    return { status: "slot-locked" };
+  }
+
+  const inputs = await loadGeneratorInputs(store, plan);
+  if (!inputs.participants.length) {
+    return { status: "no-participants" };
+  }
+
+  // A batch is cooked once, so its days are swapped together; a day someone locked stays.
+  const swapped = getBatchSlots(plan.slots, inputs.recipes, target).filter((slot) => !isSlotLocked(slot));
+  const swappedIds = new Set(swapped.map((slot) => slot.id));
   const assignments = generateMealPlan({
+    ...inputs,
+    slots: plan.slots.map((slot): GeneratorSlot => ({ ...slot, isLocked: !swappedIds.has(slot.id) })),
+    excludedRecipeIds: swapped.flatMap((slot) => slot.recipeId ?? []),
+    seed,
+  });
+  if (!assignments.some((assignment) => assignment.recipeId !== null)) {
+    return { status: "no-alternative" };
+  }
+
+  if ((await writeAssignments(store, plan, assignments)) === "plan-changed") {
+    return { status: "plan-changed" };
+  }
+
+  const summary = summarize(assignments, seed);
+  log({ event: "meal_plan_slot_swapped", planId, slotId, ...summary });
+  return { status: "swapped", ...summary };
+}
+
+// A slot whose recipe was deleted from the library is open again, whatever its lock says.
+const isSlotLocked = (slot: StoredSlot): boolean => slot.isLocked && slot.recipeId !== null;
+
+const defaultLog = (entry: Record<string, unknown>): void => console.info(JSON.stringify(entry));
+
+// Everything the generator needs except the slots and the seed.
+const loadGeneratorInputs = async (
+  store: PlanGenerationStore,
+  plan: StoredPlan,
+): Promise<Omit<PlanGenerationInput, "slots" | "seed">> => {
+  const [participants, recipes, swapDiets, history] = await Promise.all([
+    store.loadParticipants(plan.id),
+    store.loadRecipes(),
+    store.loadSwapDiets(),
+    store.loadHistory(plan.id, plan.cooldownDays * HISTORY_COOLDOWN_MULTIPLE),
+  ]);
+  return {
     startDate: plan.startDate,
     dayCount: plan.dayCount,
-    mealTypes,
-    slots,
+    mealTypes: getVisibleMealTypes(plan.includeSnacks),
     workdays: plan.workdays,
     recipes,
     participants,
     swapDiets,
     history,
     cooldownDays: plan.cooldownDays,
-    seed,
-  });
+  };
+};
 
-  if ((await store.applyGeneration(planId, assignments)) === "plan-changed") {
-    return { status: "plan-changed" };
-  }
-
-  const summary = summarize(assignments, seed);
-  log({ event: "meal_plan_generated", planId, ...summary });
-  return { status: "generated", ...summary };
-}
-
-const defaultLog = (entry: Record<string, unknown>): void => console.info(JSON.stringify(entry));
+// Each assignment goes with the recipe its slot held when the plan was read, so a slot changed meanwhile refuses
+// the whole write.
+const writeAssignments = (
+  store: PlanGenerationStore,
+  plan: StoredPlan,
+  assignments: readonly SlotAssignment[],
+): Promise<"applied" | "plan-changed"> => {
+  const getSlotKey = ({ dayIndex, mealType }: { dayIndex: number; mealType: string }): string => `${dayIndex}:${mealType}`;
+  const previousRecipeIds = new Map(plan.slots.map((slot) => [getSlotKey(slot), slot.recipeId]));
+  return store.applyGeneration(
+    plan.id,
+    assignments.map((assignment) => ({
+      ...assignment,
+      previousRecipeId: previousRecipeIds.get(getSlotKey(assignment)) ?? null,
+    })),
+  );
+};
 
 const summarize = (assignments: readonly SlotAssignment[], seed: number) => ({
   filledCount: assignments.filter((assignment) => assignment.recipeId !== null).length,

@@ -319,8 +319,9 @@ function getCooldownRecovery(daysSince: number | undefined, cooldownDays: number
 }
 
 function getRecipePool(input: PlanGenerationInput, mealType: MealType): RecipePool {
+  const excludedRecipeIds = new Set(input.excludedRecipeIds);
   const fitting = input.recipes
-    .filter((recipe) => recipe.mealType === mealType)
+    .filter((recipe) => recipe.mealType === mealType && !excludedRecipeIds.has(recipe.id))
     .flatMap((recipe): Candidate[] => {
       const brokenDiets = input.participants
         .map((participant) => participant.diet)

@@ -20,11 +20,14 @@ const props = defineProps<{
   members: readonly PlanMemberRef[];
   viewerId: string | null;
   disabled?: boolean;
+  // A swap (E5) is on its way.
+  isSwapping?: boolean;
 }>();
 
 const emit = defineEmits<{
   choose: [recipeId: string, fillDays: number];
   clear: [];
+  swap: [];
   close: [];
   retry: [];
 }>();
@@ -127,12 +130,16 @@ function confirmPending(fillAll: boolean) {
   emit("choose", recipe.id, fillAll ? pendingTarget.value.fillDays : 1);
 }
 
-// A new slot starts with an empty search and no pending batch.
+const list = useTemplateRef<HTMLElement>("list");
+
+// A new slot starts with an empty search and no pending batch. So does a swapped one, scrolled to the top, where
+// its new recipe is shown as the current choice.
 watch(
-  () => props.target.id,
+  () => [props.target.id, props.target.recipeId],
   () => {
     query.value = "";
     pendingRecipeId.value = null;
+    list.value?.scrollTo({ top: 0 });
   },
 );
 </script>
@@ -184,7 +191,7 @@ watch(
         {{ t("plan.slot.hate.loadFailed") }}
       </p>
 
-      <ul v-if="visibleRecipes.length" :class="$style.list" data-testid="slot-picker-list">
+      <ul v-if="visibleRecipes.length" ref="list" :class="$style.list" data-testid="slot-picker-list">
         <li v-for="recipe in visibleRecipes" :key="recipe.id">
           <button
             type="button"
@@ -273,8 +280,9 @@ watch(
         </v-btn>
       </div>
     </footer>
-    <footer v-else-if="target.recipeId && !recipesFailed" :class="$style.footer">
+    <footer v-else-if="!recipesFailed" :class="$style.footer">
       <v-btn
+        v-if="target.recipeId"
         variant="text"
         color="error"
         prepend-icon="mdi-close-circle-outline"
@@ -283,6 +291,24 @@ watch(
         @click="emit('clear')"
       >
         {{ t("plan.slot.clear") }}
+      </v-btn>
+      <!-- A locked slot keeps its recipe; choosing one by hand above still works. -->
+      <p v-if="target.isLocked" :class="$style.lockedHint" data-testid="slot-picker-locked">
+        <v-icon icon="mdi-lock" size="16" aria-hidden="true" />
+        {{ t("plan.swap.lockedHint") }}
+      </p>
+      <v-btn
+        v-else
+        variant="tonal"
+        color="primary"
+        prepend-icon="mdi-shuffle-variant"
+        :disabled="disabled"
+        :loading="isSwapping"
+        :class="$style.swap"
+        data-testid="slot-picker-swap"
+        @click="emit('swap')"
+      >
+        {{ target.recipeId ? t("plan.swap.action") : t("plan.swap.suggest") }}
       </v-btn>
     </footer>
   </div>
@@ -463,9 +489,26 @@ watch(
 }
 
 .footer {
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   padding-top: var(--space-2);
   padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+}
+
+.swap {
+  margin-left: auto;
+  text-transform: none;
+}
+
+.lockedHint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0 0 0 auto;
+  font-size: 13px;
+  color: var(--color-muted);
 }
 
 .offerText {

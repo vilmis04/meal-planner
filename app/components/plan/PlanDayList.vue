@@ -11,7 +11,7 @@ const props = defineProps<{
   disabled?: boolean;
 }>();
 
-const emit = defineEmits<{ pick: [slot: MealPlanSlot] }>();
+const emit = defineEmits<{ pick: [slot: MealPlanSlot]; toggleLock: [slot: MealPlanSlot] }>();
 
 const { t, locale } = useI18n();
 
@@ -48,8 +48,13 @@ const slotLabel = (slot: MealPlanSlot, weekday: string): string => {
     recipe: slot.recipeId ? recipeName(slot.recipeId) : t("plan.detail.emptySlot"),
   });
   const note = slot.fillNote ? t(`plan.fillNote.${slot.fillNote}`) : null;
-  return [open, batchLine(slot.id), note].filter((part) => part !== null).join(". ");
+  const lock = slot.isLocked ? t("plan.lock.locked") : null;
+  return [open, batchLine(slot.id), note, lock].filter((part) => part !== null).join(". ");
 };
+
+// "Lock lunch on Monday" / "Unlock lunch on Monday" (E5). A batch locks with its other days.
+const lockLabel = (slot: MealPlanSlot, weekday: string): string =>
+  t(slot.isLocked ? "plan.lock.unlock" : "plan.lock.lock", { meal: t(`recipes.mealType.${slot.mealType}`), day: weekday });
 
 // One card per day with its slots in meal order. Skipped snack slots stay in the plan but are not shown.
 const days = computed(() => {
@@ -74,7 +79,7 @@ const days = computed(() => {
       </h2>
       <v-card variant="flat" border :class="$style.card">
         <ul :class="$style.slots">
-          <li v-for="slot in day.slots" :key="slot.id" data-testid="plan-slot">
+          <li v-for="slot in day.slots" :key="slot.id" :class="$style.row" data-testid="plan-slot">
             <button
               type="button"
               :class="$style.slot"
@@ -112,8 +117,21 @@ const days = computed(() => {
                 role="img"
                 data-testid="plan-slot-hate"
               />
-              <v-icon :icon="slot.recipeId ? 'mdi-pencil-outline' : 'mdi-plus'" size="20" :class="$style.action" aria-hidden="true" />
+              <v-icon v-if="!slot.recipeId" icon="mdi-plus" size="20" :class="$style.action" aria-hidden="true" />
             </button>
+            <!-- Beside the slot's button, not in it: a button cannot hold another. -->
+            <v-btn
+              v-if="slot.recipeId"
+              :icon="slot.isLocked ? 'mdi-lock' : 'mdi-lock-open-variant-outline'"
+              variant="text"
+              :color="slot.isLocked ? 'primary' : undefined"
+              :class="$style.lock"
+              :disabled="disabled"
+              :aria-label="lockLabel(slot, day.weekday)"
+              :aria-pressed="slot.isLocked"
+              data-testid="plan-slot-lock"
+              @click="emit('toggleLock', slot)"
+            />
           </li>
         </ul>
       </v-card>
@@ -175,11 +193,23 @@ const days = computed(() => {
   border-top: 1px solid var(--color-border);
 }
 
-.slot {
+.row {
   display: flex;
   align-items: center;
+}
+
+.lock {
+  flex: 0 0 auto;
+  margin-right: var(--space-1);
+  color: var(--color-muted);
+}
+
+.slot {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
   gap: var(--space-2);
-  width: 100%;
+  min-width: 0;
   min-height: 56px;
   padding: var(--space-2) var(--space-3);
   border: 0;
@@ -223,13 +253,21 @@ const days = computed(() => {
   color: var(--color-muted);
 }
 
-/* The first and last rows follow the card's rounded corners when hovered. */
+/* The first and last rows follow the card's rounded corners when hovered; a lock button takes the right ones. */
 .slots > li:first-child .slot {
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-top-left-radius: var(--radius-lg);
+}
+
+.slots > li:first-child .slot:last-child {
+  border-top-right-radius: var(--radius-lg);
 }
 
 .slots > li:last-child .slot {
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+}
+
+.slots > li:last-child .slot:last-child {
+  border-bottom-right-radius: var(--radius-lg);
 }
 
 .batch,
