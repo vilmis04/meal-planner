@@ -15,7 +15,8 @@ const { mdAndUp } = useDisplay();
       <slot />
     </v-card>
   </v-dialog>
-  <v-bottom-sheet v-else v-model="isOpen" :persistent="props.busy">
+  <!-- A fixed height, so the sheet does not jump while the search narrows the list. -->
+  <v-bottom-sheet v-else v-model="isOpen" height="88dvh" :persistent="props.busy">
     <v-card :class="[$style.card, $style.sheet]">
       <span :class="$style.handle" aria-hidden="true" />
       <slot />
@@ -31,9 +32,7 @@ const { mdAndUp } = useDisplay();
   overflow: hidden;
 }
 
-/* The sheet keeps one height while the search narrows the list, so it does not jump. */
 .sheet {
-  height: 88vh;
   border-radius: 24px 24px 0 0 !important;
 }
 

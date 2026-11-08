@@ -139,6 +139,8 @@ const days = computed(() => {
   width: 100%;
   min-height: 56px;
   padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
