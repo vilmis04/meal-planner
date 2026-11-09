@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-export const MEAL_PLAN_COLUMNS = "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at";
-export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, cooldown_days, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note, is_locked), meal_plan_participants(user_id)`;
+// Who eats from a plan comes with it everywhere: the list and the home card tell a household plan the viewer left for
+// the week from their own plan beside it (E7).
+export const MEAL_PLAN_COLUMNS =
+  "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at, meal_plan_participants(user_id)";
+export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, cooldown_days, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note, is_locked)`;
 // What the slot picker's "Not recent" filter (E6) reads of the plans before this one.
 export const MEAL_PLAN_HISTORY_COLUMNS =
   "id, start_date, include_snacks, meal_plan_slots(day_index, meal_type, recipe_id), meal_plan_participants(user_id)";
@@ -20,6 +23,7 @@ const mealPlanRowShape = {
   include_snacks: z.boolean(),
   snacks_on_list: z.boolean(),
   created_at: z.string(),
+  meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
 };
 
 type MealPlanRow = z.output<z.ZodObject<typeof mealPlanRowShape>>;
@@ -33,6 +37,7 @@ const toMealPlan = (row: MealPlanRow) => ({
   includeSnacks: row.include_snacks,
   snacksOnList: row.snacks_on_list,
   createdAt: row.created_at,
+  participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
 });
 
 export const mealPlanListRowsSchema = z.array(z.object(mealPlanRowShape)).transform((rows) => rows.map(toMealPlan));
@@ -59,13 +64,11 @@ export const mealPlanDetailRowSchema = z
     workdays: z.array(z.number().int()),
     cooldown_days: z.number().int().min(0).max(COOLDOWN_DAYS_MAX),
     meal_plan_slots: z.array(slotRowSchema),
-    meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
   })
   .transform((row) => ({
     ...toMealPlan(row),
     workdays: normalizeWorkdays(row.workdays),
     cooldownDays: row.cooldown_days,
-    participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
     slots: row.meal_plan_slots
       .map((slot) => ({
         id: slot.id,

@@ -2,7 +2,10 @@
 defineOptions({ name: "NewPlanPage" });
 
 const { t } = useI18n();
+const route = useRoute();
 const { load } = useHousehold();
+// "Create my own plan" on a household plan opens this screen with that plan's days filled in (E7).
+const prefill = parseNewPlanQuery(route.query);
 
 useHead({ title: () => t("plan.new.pageTitle") });
 
@@ -16,7 +19,7 @@ await callOnce("household", load, { mode: "navigation" });
       <v-btn icon="mdi-close" variant="text" to="/plans" :aria-label="t('plan.new.close')" data-testid="plan-new-close" />
       <h1 :class="$style.title">{{ t("plan.new.title") }}</h1>
     </header>
-    <PlanCreateForm />
+    <PlanCreateForm :prefill="prefill" />
   </div>
 </template>
 

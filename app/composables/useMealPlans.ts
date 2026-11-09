@@ -16,7 +16,7 @@ import type {
   UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1 to E6). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1 to E7). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -104,6 +104,27 @@ export function useMealPlans() {
       cooldownDays: plan.cooldownDays,
       participantIds: plan.participantIds,
     });
+  };
+
+  // The other plans the viewer can see that share a day with `plan` (E7): their own individual plans and their
+  // household's plans. The plan page says what they mean for the viewer with getPlanAlongside().
+  const loadOverlappingPlans = async (plan: MealPlan): Promise<MealPlanListResult> => {
+    const { data, error } = await supabase
+      .from("meal_plans")
+      .select(MEAL_PLAN_COLUMNS)
+      .neq("id", plan.id)
+      .lte("start_date", plan.endDate)
+      .gte("end_date", plan.startDate)
+      .order("start_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(ACTIVE_MEAL_PLAN_LIMIT);
+
+    const result = error ? null : mealPlanListRowsSchema.safeParse(data);
+    if (!result?.success) {
+      console.error("Loading the plans for the same days failed", error ?? result?.error);
+      return { status: "failed" };
+    }
+    return { status: "loaded", plans: result.data };
   };
 
   // Someone else's individual plan and another household's plan are "not found": RLS returns no row for either.
@@ -272,6 +293,7 @@ export function useMealPlans() {
     loadOverview,
     loadPastPlans,
     loadRecentRecipes,
+    loadOverlappingPlans,
     loadPlan,
     updateSnackSettings,
     updateParticipants,

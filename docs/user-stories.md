@@ -147,6 +147,7 @@ As a user I want to view current, upcoming, and past plans.
 As a member I want my own plan for a week I do not join the household plan.
 - Participant editing in E2 can remove me; I can then create an individual plan for the same dates.
 - Both plans exist side by side and each has its own shopping list.
+- Built as plain plans for the same days: `create_meal_plan()` never refused overlaps, so there is no migration (`supabase/tests/meal_plan_alongside.test.sql`). A household plan the viewer does not eat from offers "Create my own plan", which opens New plan with its days (from today for a running plan); their own plan points back to the household plan, as a warning if they still eat from it; the list says "without you" and the home card prefers a plan the viewer eats from (`getPlanAlongside()`, `getFeaturedPlan()` in `shared/utils/planAlongside.ts`, see README, "Plans side by side"). Shopping lists do not exist yet: each plan keeps its own participants and servings, so G2 builds one list per plan.
 
 ---
 
