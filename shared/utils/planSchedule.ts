@@ -1,7 +1,7 @@
 /*
  * Automatic plan creation (H1): the schedule's defaults and when it runs. The settings screen previews the next run
- * with getScheduleRun(); the scheduled job (H2) is meant to call it with the date on the schedule's own time zone and
- * make the plan when the run date is that day. The rules are written out in
+ * with getScheduleRun(); the scheduled job (H2) calls it with the date on the schedule's own time zone
+ * (getDateInTimeZone()) and makes the plan when the run date is that day. The rules are written out in
  * supabase/migrations/20261118000000_create_plan_schedules.sql, whose defaults these match.
  */
 
@@ -27,6 +27,15 @@ export function getScheduleRun(
   const runDate = addDays(fromDate, getDaysUntilWeekday(getIsoWeekday(fromDate), createWeekday));
   const startDate = addDays(runDate, getDaysUntilWeekday(createWeekday, startWeekday) || 7);
   return { runDate, startDate, endDate: getPlanEndDate(startDate, dayCount) };
+}
+
+// The calendar date on a time zone's clock at `instant`, as "YYYY-MM-DD": the scheduled job (H2) asks for each
+// schedule's own "today". Throws a RangeError for a zone the runtime does not know.
+export function getDateInTimeZone(timeZone: string, instant: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(instant);
+  const getPart = (type: Intl.DateTimeFormatPartTypes): string => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
 }
 
 // What a household schedule stores for the members ticked: null while everyone is (so newcomers join too), otherwise

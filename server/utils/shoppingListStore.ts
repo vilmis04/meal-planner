@@ -2,6 +2,9 @@
  * Where a shopping list build reads its inputs and writes the list (G2). Everything goes through the signed-in user's
  * own client: row level security decides which plan they may open and whose diets they may read, and
  * apply_shopping_list_generation() checks access again before it writes.
+ *
+ * Scheduled plans (H2) have no signed-in user: createServiceRoleShoppingListStore() does the same as the service role
+ * and writes with write_shopping_list_generation(), for the plans the job's schedules made.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Diet } from "../../shared/utils/diet";
@@ -20,34 +23,51 @@ import {
   shoppingRecipeRowsSchema,
   shoppingSwapRowsSchema,
 } from "./shoppingList.schema";
+import { memoizeAsync } from "./memoizeAsync";
 import type { ShoppingListStore } from "./shoppingListStore.types";
 
 // Supabase answers at most 1000 rows per request (silently), so the aliases are read in pages.
 const PAGE_SIZE = 1000;
 
 export function createSupabaseShoppingListStore(userClient: SupabaseClient): ShoppingListStore {
+  return createShoppingListStore({ client: userClient, applyListFunction: "apply_shopping_list_generation" });
+}
+
+// One store serves a whole run of the job, so the ingredient aliases are read once for every schedule.
+export function createServiceRoleShoppingListStore(serviceClient: SupabaseClient): ShoppingListStore {
+  const store = createShoppingListStore({ client: serviceClient, applyListFunction: "write_shopping_list_generation" });
+  return { ...store, loadAliases: memoizeAsync(store.loadAliases) };
+}
+
+const createShoppingListStore = ({
+  client,
+  applyListFunction,
+}: {
+  client: SupabaseClient;
+  applyListFunction: "apply_shopping_list_generation" | "write_shopping_list_generation";
+}): ShoppingListStore => {
   return {
     async loadPlan(planId) {
-      const { data, error } = await userClient.from("meal_plans").select(SHOPPING_PLAN_COLUMNS).eq("id", planId).maybeSingle();
+      const { data, error } = await client.from("meal_plans").select(SHOPPING_PLAN_COLUMNS).eq("id", planId).maybeSingle();
       if (error) throw new Error(`Loading plan ${planId} for its shopping list failed: ${error.message}`);
       return data ? shoppingPlanRowSchema.parse(data) : null;
     },
 
     async loadDiets(userIds) {
-      const { data, error } = await userClient.from("profiles").select("id, diet").in("id", [...userIds]);
+      const { data, error } = await client.from("profiles").select("id, diet").in("id", [...userIds]);
       if (error) throw new Error(`Loading the participants' diets failed: ${error.message}`);
       return new Map(dietRowsSchema.parse(data).map((row) => [row.id, row.diet]));
     },
 
     async loadRecipes(recipeIds) {
-      const { data, error } = await userClient.from("recipes").select(SHOPPING_RECIPE_COLUMNS).in("id", [...recipeIds]);
+      const { data, error } = await client.from("recipes").select(SHOPPING_RECIPE_COLUMNS).in("id", [...recipeIds]);
       if (error) throw new Error(`Loading the plan's recipes failed: ${error.message}`);
       return new Map(shoppingRecipeRowsSchema.parse(data).map((recipe) => [recipe.id, recipe]));
     },
 
     async loadSwaps(recipeIds, diets) {
       // Row level security shows ready swaps only; the filter says so too.
-      const { data, error } = await userClient
+      const { data, error } = await client
         .from("recipe_protein_swaps")
         .select(SHOPPING_SWAP_COLUMNS)
         .eq("status", "ready")
@@ -75,7 +95,7 @@ export function createSupabaseShoppingListStore(userClient: SupabaseClient): Sho
 
     async loadAliases() {
       const fetchPage = async (from: number, to: number): Promise<Page<unknown>> => {
-        const { data, error, count } = await userClient
+        const { data, error, count } = await client
           .from("ingredient_aliases")
           .select(SHOPPING_ALIAS_COLUMNS, { count: "exact" })
           .order("item")
@@ -88,7 +108,7 @@ export function createSupabaseShoppingListStore(userClient: SupabaseClient): Sho
     },
 
     async applyList(planId, basedOnVersion, build) {
-      const { error } = await userClient.rpc("apply_shopping_list_generation", {
+      const { error } = await client.rpc(applyListFunction, {
         target_plan_id: planId,
         based_on_version: basedOnVersion,
         items: build.items.map((item) => ({
@@ -108,4 +128,4 @@ export function createSupabaseShoppingListStore(userClient: SupabaseClient): Sho
       return "applied";
     },
   };
-}
+};

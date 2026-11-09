@@ -85,6 +85,7 @@
       "individual": "Tik man"
     },
     "dayCount": "Dienų: {count} | Dienų: {count}",
+    "createdAutomatically": "Sukurtas automatiškai",
     "homeCard": {
       "title": "Suplanuokite savaitę",
       "hint": "Sukurkite planą ateinančioms dienoms ir užpildykite jį patiekalas po patiekalo.",

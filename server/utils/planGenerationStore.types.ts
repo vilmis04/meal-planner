@@ -8,7 +8,8 @@ import type {
   SlotAssignment,
 } from "../../shared/utils/planGenerator.types";
 
-// The plan as the signed-in user's own client reads it, so row level security decides whether they may open it.
+// The plan as the signed-in user's own client reads it, so row level security decides whether they may open it (the
+// service role reads the scheduled job's plans).
 export interface StoredPlan {
   id: string;
   kind: PlanKind;
@@ -47,7 +48,7 @@ export interface PlanGenerationStore {
   loadParticipants(planId: string): Promise<GeneratorParticipant[]>;
   // Service role: the participants' other plans within `lookbackDays` before this one starts.
   loadHistory(planId: string, lookbackDays: number): Promise<RecipeLastUse[]>;
-  // As the signed-in user. "plan-changed" when a slot no longer holds its previous recipe, or was locked meanwhile;
+  // As the signed-in user (the service role for a scheduled plan). "plan-changed" when a slot no longer holds its previous recipe, or was locked meanwhile;
   // nothing is written then.
   applyGeneration(planId: string, writes: readonly SlotWrite[]): Promise<"applied" | "plan-changed">;
 }

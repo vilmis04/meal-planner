@@ -1,7 +1,7 @@
 /*
  * Generate a plan (E4) and adjust it (E5): read what the pure generator needs, run it, and write the result. The one
- * entry point for POST /api/plans/:id/generate and POST /api/plans/:id/slots/:slotId/swap, and later for scheduled
- * plans (H2).
+ * entry point for POST /api/plans/:id/generate, POST /api/plans/:id/slots/:slotId/swap and scheduled plans (H2,
+ * scheduledPlanService.ts).
  *
  * A locked slot is always kept (a recipe chosen by hand is locked). "fill_empty" also keeps every slot that holds a
  * recipe; "regenerate_unlocked" replaces the generated ones. A swap runs the generator on one slot, or on the days
@@ -12,6 +12,7 @@ import type { GeneratorSlot, PlanGenerationInput, SlotAssignment } from "../../s
 import { getVisibleMealTypes } from "../../shared/utils/mealPlan";
 import type { GenerationMode } from "../../shared/utils/mealPlan";
 import { getBatchSlots } from "../../shared/utils/slotPicker";
+import { writeJsonLog } from "./jsonLog";
 import type { GeneratePlanResult, PlanGenerationDeps, SwapSlotResult } from "./planGenerationService.types";
 import type { PlanGenerationStore, StoredPlan, StoredSlot } from "./planGenerationStore.types";
 
@@ -19,7 +20,7 @@ import type { PlanGenerationStore, StoredPlan, StoredSlot } from "./planGenerati
 const HISTORY_COOLDOWN_MULTIPLE = 2;
 
 export async function generatePlan(
-  { store, createSeed, log = defaultLog }: PlanGenerationDeps,
+  { store, createSeed, log = writeJsonLog }: PlanGenerationDeps,
   { planId, seed = createSeed(), mode = "fill_empty" }: { planId: string; seed?: number; mode?: GenerationMode },
 ): Promise<GeneratePlanResult> {
   const plan = await store.loadPlan(planId);
@@ -50,7 +51,7 @@ export async function generatePlan(
 }
 
 export async function swapPlanSlot(
-  { store, createSeed, log = defaultLog }: PlanGenerationDeps,
+  { store, createSeed, log = writeJsonLog }: PlanGenerationDeps,
   { planId, slotId, seed = createSeed() }: { planId: string; slotId: string; seed?: number },
 ): Promise<SwapSlotResult> {
   const plan = await store.loadPlan(planId);
@@ -91,8 +92,6 @@ export async function swapPlanSlot(
 
 // A slot whose recipe was deleted from the library is open again, whatever its lock says.
 const isSlotLocked = (slot: StoredSlot): boolean => slot.isLocked && slot.recipeId !== null;
-
-const defaultLog = (entry: Record<string, unknown>): void => console.info(JSON.stringify(entry));
 
 // Everything the generator needs except the slots and the seed.
 const loadGeneratorInputs = async (

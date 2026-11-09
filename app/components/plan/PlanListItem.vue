@@ -3,7 +3,8 @@ import type { PlanTimeline } from "#shared/utils/mealPlan";
 import type { MealPlanSummary } from "~/types/mealPlan.types";
 
 // One plan in the plan list (E6): its dates, whose it is and how long it runs; a current plan says which day it is. A
-// household plan the viewer does not eat from says so, beside their own plan for those days (E7).
+// household plan the viewer does not eat from says so, beside their own plan for those days (E7), and a plan a schedule
+// made says that too (H2).
 const props = defineProps<{ plan: MealPlanSummary; timeline: PlanTimeline; today: string; viewerId: string | null }>();
 
 const { t, locale } = useI18n();
@@ -14,6 +15,9 @@ const hint = computed(() => {
     parts.push(t("plan.list.withoutYou"));
   }
   parts.push(t("plan.dayCount", props.plan.dayCount));
+  if (props.plan.isCreatedAutomatically) {
+    parts.push(t("plan.createdAutomatically"));
+  }
   if (props.timeline === "current") {
     parts.push(
       t("plan.list.progress", { day: getDaysBetween(props.plan.startDate, props.today) + 1, count: props.plan.dayCount }),

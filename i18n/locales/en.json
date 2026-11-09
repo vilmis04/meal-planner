@@ -85,6 +85,7 @@
       "individual": "Just me"
     },
     "dayCount": "{count} day | {count} days",
+    "createdAutomatically": "Created automatically",
     "homeCard": {
       "title": "Plan your week",
       "hint": "Make a plan for the coming days and fill it meal by meal.",

@@ -3,6 +3,9 @@
  * the plan written with the signed-in user's own client, so row level security and apply_meal_plan_generation()
  * decide what they may do. The participants' diets, ratings and other plans are read with the service role, through
  * functions only it may call, once loadPlan() has shown the user can open the plan.
+ *
+ * Scheduled plans (H2) have no signed-in user: createServiceRolePlanGenerationStore() does all of it as the service
+ * role and writes with write_meal_plan_generation(), for the plans the job's schedules made.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Diet } from "../../shared/utils/diet";
@@ -20,6 +23,7 @@ import {
   ratingRowsSchema,
   swapDietRowSchema,
 } from "./planGeneration.schema";
+import { memoizeAsync } from "./memoizeAsync";
 import type { PlanGenerationStore } from "./planGenerationStore.types";
 
 // Supabase answers at most 1000 rows per request (silently), so the recipe library and swaps are read in pages.
@@ -32,10 +36,37 @@ export function createSupabasePlanGenerationStore({
   userClient: SupabaseClient;
   serviceClient: SupabaseClient;
 }): PlanGenerationStore {
+  return createPlanGenerationStore({
+    planClient: userClient,
+    serviceClient,
+    applyGenerationFunction: "apply_meal_plan_generation",
+  });
+}
+
+// One store serves a whole run of the job, so the recipe library and its swaps are read once for every schedule.
+export function createServiceRolePlanGenerationStore(serviceClient: SupabaseClient): PlanGenerationStore {
+  const store = createPlanGenerationStore({
+    planClient: serviceClient,
+    serviceClient,
+    applyGenerationFunction: "write_meal_plan_generation",
+  });
+  return { ...store, loadRecipes: memoizeAsync(store.loadRecipes), loadSwapDiets: memoizeAsync(store.loadSwapDiets) };
+}
+
+// planClient reads the plan, recipes and swaps and writes the generation; serviceClient reads what people may not.
+const createPlanGenerationStore = ({
+  planClient,
+  serviceClient,
+  applyGenerationFunction,
+}: {
+  planClient: SupabaseClient;
+  serviceClient: SupabaseClient;
+  applyGenerationFunction: "apply_meal_plan_generation" | "write_meal_plan_generation";
+}): PlanGenerationStore => {
   const fetchTablePage =
     (table: string, columns: string, filter: Record<string, string> = {}) =>
     async (from: number, to: number): Promise<Page<unknown>> => {
-      const { data, error, count } = await userClient
+      const { data, error, count } = await planClient
         .from(table)
         .select(columns, { count: "exact" })
         .match(filter)
@@ -47,7 +78,7 @@ export function createSupabasePlanGenerationStore({
 
   return {
     async loadPlan(planId) {
-      const { data, error } = await userClient.from("meal_plans").select(GENERATION_PLAN_COLUMNS).eq("id", planId).maybeSingle();
+      const { data, error } = await planClient.from("meal_plans").select(GENERATION_PLAN_COLUMNS).eq("id", planId).maybeSingle();
       if (error) throw new Error(`Loading plan ${planId} failed: ${error.message}`);
       return data ? generationPlanRowSchema.parse(data) : null;
     },
@@ -103,7 +134,7 @@ export function createSupabasePlanGenerationStore({
     },
 
     async applyGeneration(planId, writes) {
-      const { error } = await userClient.rpc("apply_meal_plan_generation", {
+      const { error } = await planClient.rpc(applyGenerationFunction, {
         target_plan_id: planId,
         assignments: writes.map((write) => ({
           day_index: write.dayIndex,
@@ -118,4 +149,4 @@ export function createSupabasePlanGenerationStore({
       return "applied";
     },
   };
-}
+};

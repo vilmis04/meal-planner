@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PLAN_SCHEDULE, getScheduleParticipantIds, getScheduleRun } from "./planSchedule";
+import { DEFAULT_PLAN_SCHEDULE, getDateInTimeZone, getScheduleParticipantIds, getScheduleRun } from "./planSchedule";
 
 describe("DEFAULT_PLAN_SCHEDULE", () => {
   // Written out on purpose: these are the column defaults of plan_schedules.
@@ -84,5 +84,36 @@ describe("getScheduleParticipantIds", () => {
 
   it("ignores someone who is no longer a member", () => {
     expect(getScheduleParticipantIds(["monika", "ola"], memberIds)).toEqual(["monika"]);
+  });
+});
+
+describe("getDateInTimeZone", () => {
+  // 22:30 UTC on Friday 13 Nov 2026: already Saturday in Vilnius, still Friday in New York.
+  const lateFriday = new Date("2026-11-13T22:30:00Z");
+
+  it("gives the date on the zone's own clock", () => {
+    expect(getDateInTimeZone("Europe/Vilnius", lateFriday)).toBe("2026-11-14");
+    expect(getDateInTimeZone("America/New_York", lateFriday)).toBe("2026-11-13");
+    expect(getDateInTimeZone("UTC", lateFriday)).toBe("2026-11-13");
+  });
+
+  it("covers the zones furthest ahead and behind", () => {
+    const noonUtc = new Date("2026-11-13T12:00:00Z");
+    expect(getDateInTimeZone("Pacific/Kiritimati", noonUtc)).toBe("2026-11-14");
+    expect(getDateInTimeZone("Etc/GMT+12", noonUtc)).toBe("2026-11-13");
+  });
+
+  it("follows daylight saving time", () => {
+    // Vilnius is UTC+3 in summer and UTC+2 in winter.
+    expect(getDateInTimeZone("Europe/Vilnius", new Date("2026-07-03T21:30:00Z"))).toBe("2026-07-04");
+    expect(getDateInTimeZone("Europe/Vilnius", new Date("2026-12-04T21:30:00Z"))).toBe("2026-12-04");
+  });
+
+  it("pads months and days, and crosses into a new year", () => {
+    expect(getDateInTimeZone("Asia/Tokyo", new Date("2026-12-31T15:00:00Z"))).toBe("2027-01-01");
+  });
+
+  it("refuses a zone it does not know", () => {
+    expect(() => getDateInTimeZone("Mars/Olympus_Mons", lateFriday)).toThrow(RangeError);
   });
 });
