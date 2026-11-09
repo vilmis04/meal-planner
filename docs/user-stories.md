@@ -45,7 +45,7 @@ As a member I want to invite people to my household. Any member can invite, not 
 As an owner I want to see and remove members; as a member I want to leave.
 - Member list shows names and roles.
 - Owner can remove a member; a member can leave; the owner cannot leave without transferring ownership or deleting the household. A sole owner leaving deletes the household, as B2's household switch already does for a last member.
-- Removed members lose access to household plans and lists immediately: their membership row is deleted, and every household policy asks `is_household_member()`. Removing someone also revokes the invite links they created, so they cannot rejoin with a link they still hold. Their open page refreshes when they navigate or return to the tab; a live push waits for G6 (Realtime).
+- Removed members lose access to household plans and lists immediately: their membership row is deleted, and every household policy asks `is_household_member()`. Removing someone also revokes the invite links they created, so they cannot rejoin with a link they still hold. Their open page refreshes when they navigate or return to the tab; since G6 an open shopping list also stops receiving the household's changes at once (Realtime applies row level security) and shows "not found" when it next catches up.
 - Each household has exactly one owner: the creator, or for households that existed before B3 the member who joined first. The owner can hand ownership to another member.
 
 ---
@@ -204,6 +204,7 @@ As a household member I want to see the same list as others.
 - All members of the household can view and edit a household plan's list; others cannot.
 - Changes by one member appear for others without reload (Supabase Realtime).
 - Concurrent edits to different items do not overwrite each other.
+- Built on G2's read policies and G4's one-line functions, with `shopping_lists` and `shopping_items` added to the `supabase_realtime` publication (`supabase/migrations/20261116000000_add_shopping_list_realtime.sql`) and `useShoppingListLive()` on `/plans/:id/list` (see README, "Shopping lists"). Members' ticks, amounts, removals and added lines show on every open copy within a moment; a plan change by anyone rebuilds open lists; outsiders get nothing (Realtime applies row level security), and a member who leaves stops getting changes at once. A change this viewer has on the way is never overwritten by what arrives meanwhile. The page catches up when it (re)subscribes and when the tab comes back, and shows "Live" / "Reconnecting…" beside the title. `supabase/tests/shopping_list_live.test.sql` covers access and concurrent edits. Who else is looking at the list ("Monika is shopping", the avatar in the design) is deferred.
 
 ### G7. Record the shop (S, Phase 3)
 As a shopper I want to say where I bought an item.
