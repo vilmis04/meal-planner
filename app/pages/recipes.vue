@@ -13,13 +13,23 @@ const { recipes, loadFailed, loadList } = useRecipes();
 useHead({ title: () => t("recipes.pageTitle") });
 
 const { isLoaded: isRatingLoaded, loadFailed: ratingsLoadFailed, load: loadRatings } = useRecipeRatings();
+const { isNutritionShown } = useNutritionVisibility();
+const { nutritionByRecipe, load: loadNutrition } = useRecipeNutrition();
 
 // Loaded once and kept; a failed load leaves the list empty, so the next visit asks again. The user's own ratings
 // load beside it and fail on their own: the recipes still show, only without the rating controls.
 await Promise.all([
   recipes.value ? undefined : loadList(),
   isRatingLoaded.value ? undefined : loadRatings(),
+  // Calories and macros are read only for a user who asked to see them (F1).
+  isNutritionShown.value && !nutritionByRecipe.value ? loadNutrition() : undefined,
 ]);
+
+watch(isNutritionShown, (isShown) => {
+  if (isShown && !nutritionByRecipe.value) {
+    loadNutrition();
+  }
+});
 
 // The filter lives in the address (?meal=dinner), so reload and the back button keep it.
 const filter = computed(() => parseMealFilter(route.query.meal));

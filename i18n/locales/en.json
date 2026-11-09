@@ -595,5 +595,42 @@
       "title": "Household",
       "hint": "Create or open your household"
     }
+  },
+  "nutrition": {
+    "show": "Show nutrition",
+    "hide": "Hide nutrition",
+    "hideShort": "Hide",
+    "saveFailed": "Could not save the nutrition setting. Try again.",
+    "loadFailed": "Nutrition could not be loaded. Try again later.",
+    "kcal": "kcal",
+    "kcalValue": "{value} kcal",
+    "gramsValue": "{value} g",
+    "carbohydrates": "Carbs",
+    "protein": "Protein",
+    "fat": "Fat",
+    "macroLine": "C {carbohydrates} · P {protein} · F {fat}",
+    "macroLineLabel": "{kcal} kcal, carbs {carbohydrates} g, protein {protein} g, fat {fat} g",
+    "missingValue": "–",
+    "approximate": "approximate",
+    "withSwap": "with swap",
+    "noData": "No nutrition data",
+    "perPortion": "Values are per person's portion. Swapped recipes are recalculated and may be approximate.",
+    "plan": {
+      "showingFor": "Showing for",
+      "dailyAverage": "Daily average",
+      "averageOver": "over {count} day | over {count} days",
+      "noAverage": "Nothing with nutrition data is planned yet.",
+      "dayTotal": "Day total",
+      "dayTotalShort": "Total",
+      "excluded": "{count} meal has no nutrition data and is left out of the totals. | {count} meals have no nutrition data and are left out of the totals.",
+      "dayExcluded": "{count} meal not counted | {count} meals not counted",
+      "swapsFailed": "Swap estimates could not be loaded, so swapped meals use the original recipe's values."
+    },
+    "recipe": {
+      "title": "Nutrition per portion",
+      "incomplete": "Some values are missing for this recipe, so plan totals leave it out.",
+      "swapEstimate": "Estimated for your swap, so approximate.",
+      "swapWithoutEstimate": "For the original recipe: your swap has no estimate yet, so the values are approximate."
+    }
   }
 }

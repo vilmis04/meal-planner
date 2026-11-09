@@ -595,5 +595,42 @@
       "title": "Namų ūkis",
       "hint": "Sukurkite arba atidarykite savo namų ūkį"
     }
+  },
+  "nutrition": {
+    "show": "Rodyti maistinę vertę",
+    "hide": "Slėpti maistinę vertę",
+    "hideShort": "Slėpti",
+    "saveFailed": "Nepavyko išsaugoti maistinės vertės nustatymo. Bandykite dar kartą.",
+    "loadFailed": "Nepavyko įkelti maistinės vertės. Bandykite vėliau.",
+    "kcal": "kcal",
+    "kcalValue": "{value} kcal",
+    "gramsValue": "{value} g",
+    "carbohydrates": "Angliavandeniai",
+    "protein": "Baltymai",
+    "fat": "Riebalai",
+    "macroLine": "A {carbohydrates} · B {protein} · R {fat}",
+    "macroLineLabel": "{kcal} kcal, angliavandeniai {carbohydrates} g, baltymai {protein} g, riebalai {fat} g",
+    "missingValue": "–",
+    "approximate": "apytiksliai",
+    "withSwap": "su pakaitalu",
+    "noData": "Nėra maistinės vertės duomenų",
+    "perPortion": "Vertės nurodytos vieno žmogaus porcijai. Patiekalų su pakaitalais vertės perskaičiuotos ir gali būti apytikslės.",
+    "plan": {
+      "showingFor": "Rodoma",
+      "dailyAverage": "Dienos vidurkis",
+      "averageOver": "dienų: {count} | dienų: {count}",
+      "noAverage": "Kol kas nesuplanuota nieko su maistinės vertės duomenimis.",
+      "dayTotal": "Dienos suma",
+      "dayTotalShort": "Suma",
+      "excluded": "Patiekalų be maistinės vertės duomenų: {count}. Jie į sumas neįskaičiuoti. | Patiekalų be maistinės vertės duomenų: {count}. Jie į sumas neįskaičiuoti.",
+      "dayExcluded": "Neįskaičiuota patiekalų: {count} | Neįskaičiuota patiekalų: {count}",
+      "swapsFailed": "Nepavyko įkelti pakaitalų įverčių, todėl patiekalams su pakaitalais rodomos originalaus recepto vertės."
+    },
+    "recipe": {
+      "title": "Maistinė vertė porcijai",
+      "incomplete": "Šiam receptui trūksta kai kurių verčių, todėl jis į plano sumas neįskaičiuojamas.",
+      "swapEstimate": "Įvertinta jūsų pakaitalui, todėl apytiksliai.",
+      "swapWithoutEstimate": "Originalaus recepto vertės: jūsų pakaitalas dar neįvertintas, todėl vertės apytikslės."
+    }
   }
 }

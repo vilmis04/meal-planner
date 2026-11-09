@@ -6,6 +6,7 @@ const props = defineProps<{ recipe: Recipe }>();
 const { t } = useI18n();
 const { isLoaded: isRatingLoaded } = useRecipeRatings();
 const { diet, state: swapState, showOriginal } = useRecipeSwap(() => props.recipe);
+const { isNutritionShown } = useNutritionVisibility();
 
 // The swapped ingredients while a swap is shown, the recipe's own after "Show original" or without a swap.
 const ingredients = computed(() =>
@@ -24,7 +25,16 @@ const ingredients = computed(() =>
       </div>
       <h2 :class="$style.title">{{ recipe.name }}</h2>
       <RecipeRatingToggle v-if="isRatingLoaded" :recipe-id="recipe.id" />
+      <NutritionToggle :class="$style.nutritionToggle" />
     </header>
+
+    <RecipeNutrition
+      v-if="isNutritionShown"
+      :recipe="recipe"
+      :diet="diet"
+      :swap-state="swapState"
+      :show-original="showOriginal"
+    />
 
     <RecipeSwapCard v-if="diet && swapState.status !== 'none'" v-model:show-original="showOriginal" :diet="diet" :state="swapState" />
 
@@ -71,6 +81,10 @@ const ingredients = computed(() =>
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
+}
+
+.nutritionToggle {
+  align-self: flex-start;
 }
 
 .section {

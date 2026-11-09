@@ -31,6 +31,7 @@ export function useProfile() {
         locale: changes.locale,
         theme: changes.theme,
         diet: changes.diet,
+        show_nutrition: changes.showNutrition,
       })
       .eq("id", profile.value.id)
       .select(PROFILE_COLUMNS)
