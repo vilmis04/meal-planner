@@ -105,15 +105,23 @@ export type ShoppingListGroupKey = IngredientCategory | typeof EXTRAS_GROUP_KEY 
 interface ShoppingListGroup {
   key: ShoppingListGroupKey;
   items: ShoppingItem[];
-  // What the group's header counts: its lines (G5 narrows it to the ones still to buy, "3 of 7").
+  // The group's header reads "3 of 7": its bought lines of all its lines (G5). Lines at home are never bought.
   itemCount: number;
+  boughtCount: number;
+}
+
+export interface ShoppingListViewOptions {
+  // Bought lines go to the bottom of their group (the design's "Bought last", on by default).
+  isBoughtLast: boolean;
 }
 
 // What the list shows: its groups in list order (categories in the order of a walk through a shop, the extras, then
 // what is at home), empty groups left out.
 export interface ShoppingListView {
   groups: ShoppingListGroup[];
-  // Lines still to buy: shown and not at home.
-  toBuyCount: number;
+  // The progress, "12 of 31 bought" (G5): lines bought, of all lines to shop for (shown and not at home: still to buy
+  // or bought, extras and manual lines included).
+  boughtCount: number;
+  totalCount: number;
   atHomeCount: number;
 }

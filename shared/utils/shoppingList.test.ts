@@ -380,7 +380,8 @@ describe("getShoppingListView", () => {
       ["grains_and_bread", ["oats"], 1],
       [EXTRAS_GROUP_KEY, ["salt"], 1],
     ]);
-    expect(view.toBuyCount).toBe(5);
+    expect(view.totalCount).toBe(5);
+    expect(view.boughtCount).toBe(0);
     expect(view.atHomeCount).toBe(0);
   });
 
@@ -391,7 +392,7 @@ describe("getShoppingListView", () => {
   });
 
   it("has no groups for an empty list", () => {
-    expect(getShoppingListView([])).toEqual({ groups: [], toBuyCount: 0, atHomeCount: 0 });
+    expect(getShoppingListView([])).toEqual({ groups: [], boughtCount: 0, totalCount: 0, atHomeCount: 0 });
   });
 
   it("moves lines at home into their own group, last, and leaves them out of the to-buy count", () => {
@@ -409,8 +410,53 @@ describe("getShoppingListView", () => {
       ["pantry", ["coffee"], 1],
       [HAVE_AT_HOME_GROUP_KEY, ["oats", "salt"], 2],
     ]);
-    expect(view.toBuyCount).toBe(2);
+    expect(view.totalCount).toBe(2);
     expect(view.atHomeCount).toBe(2);
+  });
+
+  describe("bought lines (G5)", () => {
+    const groceries = [
+      storedItem({ id: "onion", name: "Svogūnai", category: "fruit_and_vegetables", state: "bought" }),
+      storedItem({ id: "carrots", name: "Morkos", category: "fruit_and_vegetables" }),
+      storedItem({ id: "beetroot", name: "Burokėliai", category: "fruit_and_vegetables", state: "bought" }),
+      storedItem({ id: "apples", name: "Obuoliai", category: "fruit_and_vegetables" }),
+      storedItem({ id: "salt", name: "Druska", category: "pantry", amount: null, unit: null, isExtra: true, state: "bought" }),
+      storedItem({ id: "coffee", name: "Kava", category: "pantry", source: "manual", amount: null, unit: null }),
+      storedItem({ id: "oats", name: "Avižiniai dribsniai", category: "grains_and_bread", state: "have_at_home" }),
+      storedItem({ id: "gone", name: "Menkė", category: "meat_and_fish", inPlan: false, state: "bought" }),
+      storedItem({ id: "removed", name: "Vištiena", category: "meat_and_fish", isRemoved: true, state: "bought" }),
+    ];
+
+    it("stay in their group, after the lines still to buy", () => {
+      const view = getShoppingListView(groceries);
+
+      expect(view.groups.map((group) => [group.key, group.items.map((item) => item.id)])).toEqual([
+        ["fruit_and_vegetables", ["carrots", "apples", "beetroot", "onion"]],
+        ["pantry", ["coffee"]],
+        [EXTRAS_GROUP_KEY, ["salt"]],
+        [HAVE_AT_HOME_GROUP_KEY, ["oats"]],
+      ]);
+    });
+
+    it("keep their name order when bought last is off", () => {
+      const view = getShoppingListView(groceries, { isBoughtLast: false });
+
+      expect(view.groups[0]?.items.map((item) => item.id)).toEqual(["beetroot", "carrots", "apples", "onion"]);
+    });
+
+    it("count bought of all lines to shop for, per group and for the list, leaving out what is at home", () => {
+      const view = getShoppingListView(groceries);
+
+      expect(view.groups.map((group) => [group.key, group.boughtCount, group.itemCount])).toEqual([
+        ["fruit_and_vegetables", 2, 4],
+        ["pantry", 0, 1],
+        [EXTRAS_GROUP_KEY, 1, 1],
+        [HAVE_AT_HOME_GROUP_KEY, 0, 1],
+      ]);
+      expect(view.boughtCount).toBe(3);
+      expect(view.totalCount).toBe(6);
+      expect(view.atHomeCount).toBe(1);
+    });
   });
 });
 

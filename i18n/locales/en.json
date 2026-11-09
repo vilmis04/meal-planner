@@ -639,7 +639,15 @@
     "open": "Shopping list",
     "back": "Back to plan",
     "itemCount": "no items | 1 item | {count} items",
-    "toBuyCount": "Nothing to buy | 1 to buy | {count} to buy",
+    "groupProgress": "{bought} of {count}",
+    "groupProgressDescription": "{bought} of {count} bought",
+    "progress": {
+      "summary": "{bought} of {total} bought",
+      "nothingToBuy": "Nothing to buy",
+      "label": "Shopping progress",
+      "valueText": "{bought} of {total} bought"
+    },
+    "boughtLast": "Bought last",
     "atHomeCount": "{count} at home",
     "category": {
       "fruit_and_vegetables": "Fruit & vegetables",

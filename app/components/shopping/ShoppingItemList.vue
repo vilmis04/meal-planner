@@ -8,8 +8,10 @@ const props = defineProps<{
   currentUserId: string | null;
 }>();
 
-// The line's actions (G4). Tapping the line itself is left for G5's "bought".
-defineEmits<{
+// Tapping a line ticks it bought or back (G5); the rest are in the line's actions menu (G4). Lines at home are not
+// ticked: they are not being bought.
+const emit = defineEmits<{
+  toggleBought: [item: ShoppingItem];
   toggleAtHome: [item: ShoppingItem];
   editAmount: [item: ShoppingItem];
   remove: [item: ShoppingItem];
@@ -43,6 +45,19 @@ const swapLabel = (item: ShoppingItem): string | null => {
   return names.length === 0 ? null : t("shoppingList.swapFor", { names: names.join(", ") });
 };
 
+// A line to buy is a checkbox the size of the line, so the whole line is the tap target and a screen reader hears
+// "checked" for a bought line, not only the strike-through.
+const getLineAttributes = (item: ShoppingItem) =>
+  item.state === "have_at_home"
+    ? {}
+    : { type: "button", role: "checkbox", "aria-checked": String(item.state === "bought"), "data-testid": "shopping-item-toggle" };
+
+const handleLineClick = (item: ShoppingItem): void => {
+  if (item.state !== "have_at_home") {
+    emit("toggleBought", item);
+  }
+};
+
 // "Added by Monika" on manual lines; nothing when that person is no longer known here.
 const addedByLabel = (item: ShoppingItem): string | null => {
   if (item.source !== "manual" || item.addedBy === null) {
@@ -64,18 +79,31 @@ const addedByLabel = (item: ShoppingItem): string | null => {
       :class="[$style.row, { [$style.atHome]: item.state === 'have_at_home' }]"
       data-testid="shopping-item"
       :data-item-id="item.id"
+      :data-state="item.state"
     >
-      <span :class="$style.text">
-        <span :class="$style.name" data-testid="shopping-item-name">{{ item.name }}</span>
-        <span v-if="swapLabel(item)" :class="$style.swap" data-testid="shopping-item-swap">{{ swapLabel(item) }}</span>
-        <span v-if="addedByLabel(item)" :class="$style.note" data-testid="shopping-item-added-by">
-          {{ addedByLabel(item) }}
+      <component
+        :is="item.state === 'have_at_home' ? 'div' : 'button'"
+        v-bind="getLineAttributes(item)"
+        :class="[$style.line, { [$style.bought]: item.state === 'bought' }]"
+        @click="handleLineClick(item)"
+      >
+        <span v-if="item.state !== 'have_at_home'" :class="$style.box" aria-hidden="true">
+          <v-icon v-if="item.state === 'bought'" icon="mdi-check-bold" size="18" />
         </span>
-        <span v-if="planAmountLabel(item)" :class="$style.note" data-testid="shopping-item-plan-amount">
-          {{ planAmountLabel(item) }}
+        <span :class="$style.text">
+          <span :class="$style.name" data-testid="shopping-item-name">{{ item.name }}</span>
+          <span v-if="swapLabel(item)" :class="$style.swap" data-testid="shopping-item-swap">{{ swapLabel(item) }}</span>
+          <span v-if="addedByLabel(item)" :class="$style.note" data-testid="shopping-item-added-by">
+            {{ addedByLabel(item) }}
+          </span>
+          <span v-if="planAmountLabel(item)" :class="$style.note" data-testid="shopping-item-plan-amount">
+            {{ planAmountLabel(item) }}
+          </span>
         </span>
-      </span>
-      <span v-if="amountLabel(item)" :class="$style.amount" data-testid="shopping-item-amount">{{ amountLabel(item) }}</span>
+        <span v-if="amountLabel(item)" :class="$style.amount" data-testid="shopping-item-amount">
+          {{ amountLabel(item) }}
+        </span>
+      </component>
       <v-menu location="bottom end">
         <template #activator="{ props: activatorProps }">
           <v-btn
@@ -134,14 +162,71 @@ const addedByLabel = (item: ShoppingItem): string | null => {
 .row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   min-height: 48px;
-  padding: 2px 4px 2px 14px;
+  padding: 2px 4px 2px 0;
   border-top: 1px solid var(--color-border);
 }
 
 .atHome {
   color: var(--color-muted);
+}
+
+/* The line itself: a checkbox button for lines to buy, at least 44 px tall and as wide as the line. */
+.line {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px 0 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.line {
+  cursor: pointer;
+}
+
+button.line:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* The tick box, as in the shopping list design: an outlined square, filled with a check once bought. */
+.box {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-muted);
+  border-radius: 6px;
+}
+
+.bought {
+  color: var(--color-muted);
+}
+
+.bought .box {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: rgb(var(--v-theme-on-primary));
+}
+
+.bought .name,
+.bought .amount {
+  text-decoration: line-through;
+}
+
+.bought .amount {
+  font-weight: 400;
 }
 
 .text {

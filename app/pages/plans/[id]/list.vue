@@ -34,7 +34,10 @@ const list = computed(() => (listResult.value?.result.status === "found" ? listR
 // them (G4). A reload (Try again) starts from what is stored.
 const items = ref<ShoppingItem[]>([]);
 watch(list, (current) => (items.value = current ? [...current.items] : []), { immediate: true });
-const view = computed(() => (list.value ? getShoppingListView(items.value) : null));
+const { isBoughtLast, setBoughtLast } = useShoppingListBoughtLast();
+const view = computed(() =>
+  list.value ? getShoppingListView(items.value, { isBoughtLast: isBoughtLast.value }) : null,
+);
 const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
 const { addItem, setAmount, setState, removeItem, restoreItem } = useShoppingItemEdits(items);
 
@@ -48,14 +51,27 @@ const getGroupHeading = (key: ShoppingListGroupKey) => {
   }
   return { title: t(`shoppingList.category.${key}`), hint: undefined, icon: undefined };
 };
+// Groups to shop from count "3 of 7" bought (G5); "Have at home" counts its lines, as nothing there is bought.
+const getGroupCount = (key: ShoppingListGroupKey, boughtCount: number, itemCount: number) => {
+  if (key === HAVE_AT_HOME_GROUP_KEY) {
+    return { countLabel: String(itemCount), countDescription: t("shoppingList.itemCount", itemCount) };
+  }
+  return {
+    countLabel: t("shoppingList.groupProgress", { bought: boughtCount, count: itemCount }),
+    countDescription: t("shoppingList.groupProgressDescription", { bought: boughtCount, count: itemCount }),
+  };
+};
 const groups = computed(() =>
   (view.value?.groups ?? []).map((group) => ({
     ...group,
     ...getGroupHeading(group.key),
-    countLabel: String(group.itemCount),
-    countDescription: t("shoppingList.itemCount", group.itemCount),
+    ...getGroupCount(group.key, group.boughtCount, group.itemCount),
     isExpanded: isGroupExpanded(group.key),
   })),
+);
+// "12 of 31 bought" and its bar, as in the shopping list design.
+const progressPercent = computed(() =>
+  view.value && view.value.totalCount > 0 ? Math.round((view.value.boughtCount / view.value.totalCount) * 100) : 0,
 );
 
 const isAddOpen = ref(false);
@@ -87,6 +103,12 @@ async function handleAdd(newItem: NewShoppingItem) {
     setGroupExpanded(newItem.category, true);
   }
   reportFailure(await addItem(listId, newItem));
+}
+
+// The one place a line is ticked bought or back (G5). Recording the shop (G7) is meant to follow a saved tick to
+// bought, here.
+async function handleToggleBought(item: ShoppingItem) {
+  reportFailure(await setState(item.id, item.state === "bought" ? "to_buy" : "bought"));
 }
 
 async function handleToggleAtHome(item: ShoppingItem) {
@@ -162,13 +184,42 @@ const participantNames = computed(() => {
       <header :class="$style.header">
         <span v-if="subtitle" :class="$style.subtitle" data-testid="shopping-list-plan">{{ subtitle }}</span>
         <h1 :class="$style.title">{{ t("shoppingList.title") }}</h1>
+      </header>
+
+      <div :class="$style.progress">
         <span :class="$style.counts">
-          <span data-testid="shopping-list-count">{{ t("shoppingList.toBuyCount", view.toBuyCount) }}</span>
+          <i18n-t
+            v-if="view.totalCount > 0"
+            keypath="shoppingList.progress.summary"
+            tag="span"
+            scope="global"
+            :class="$style.summary"
+            data-testid="shopping-list-progress"
+          >
+            <template #bought>
+              <b>{{ view.boughtCount }}</b>
+            </template>
+            <template #total>{{ view.totalCount }}</template>
+          </i18n-t>
+          <span v-else data-testid="shopping-list-progress">{{ t("shoppingList.progress.nothingToBuy") }}</span>
           <span v-if="view.atHomeCount > 0" data-testid="shopping-list-at-home-count">
             {{ t("shoppingList.atHomeCount", { count: view.atHomeCount }) }}
           </span>
         </span>
-      </header>
+        <div
+          v-if="view.totalCount > 0"
+          role="progressbar"
+          :aria-label="t('shoppingList.progress.label')"
+          aria-valuemin="0"
+          :aria-valuemax="view.totalCount"
+          :aria-valuenow="view.boughtCount"
+          :aria-valuetext="t('shoppingList.progress.valueText', { bought: view.boughtCount, total: view.totalCount })"
+          :class="$style.track"
+          data-testid="shopping-list-progress-bar"
+        >
+          <div :class="$style.bar" :style="{ width: `${progressPercent}%` }" />
+        </div>
+      </div>
 
       <v-alert v-if="isRefreshFailed" type="warning" variant="tonal" density="compact" data-testid="shopping-list-stale">
         {{ t("shoppingList.refreshFailed") }}
@@ -192,6 +243,19 @@ const participantNames = computed(() => {
         {{ t("shoppingList.empty") }}
       </p>
 
+      <div v-if="view.totalCount > 0" :class="$style.chips">
+        <button
+          type="button"
+          :class="$style.chip"
+          :aria-pressed="isBoughtLast"
+          data-testid="shopping-list-bought-last"
+          @click="setBoughtLast(!isBoughtLast)"
+        >
+          <v-icon :icon="isBoughtLast ? 'mdi-check' : 'mdi-sort'" size="16" aria-hidden="true" />
+          {{ t("shoppingList.boughtLast") }}
+        </button>
+      </div>
+
       <button type="button" :class="$style.addInline" data-testid="shopping-add-open" @click="isAddOpen = true">
         <v-icon icon="mdi-plus" size="20" aria-hidden="true" />
         {{ t("shoppingList.addItem.open") }}
@@ -214,6 +278,7 @@ const participantNames = computed(() => {
             :items="group.items"
             :participant-names="participantNames"
             :current-user-id="user?.id ?? null"
+            @toggle-bought="handleToggleBought"
             @toggle-at-home="handleToggleAtHome"
             @edit-amount="openAmount"
             @remove="handleRemove"
@@ -281,6 +346,12 @@ const participantNames = computed(() => {
   font-weight: 700;
 }
 
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .counts {
   display: flex;
   flex-wrap: wrap;
@@ -288,6 +359,63 @@ const participantNames = computed(() => {
   gap: var(--space-2);
   font-size: 14px;
   color: var(--color-muted);
+}
+
+.summary {
+  color: var(--color-on-background);
+}
+
+.track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-muted) 22%, transparent);
+}
+
+.bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-primary);
+  transition: width 0.2s ease;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* A pill as in the design, with a touch target of at least 44 px. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--color-muted) 55%, transparent);
+  border-radius: 22px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
 }
 
 /* "Add item" as a dashed row above the groups on wider screens, as in the plan screen's list; phones get the round

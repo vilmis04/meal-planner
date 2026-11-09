@@ -35,6 +35,7 @@ import type {
   ShoppingListRecipe,
   ShoppingListSwapItem,
   ShoppingListView,
+  ShoppingListViewOptions,
 } from "./shoppingList.types";
 
 // shopping_items.state and shopping_items.source; the shopping_items_state_supported and
@@ -113,21 +114,31 @@ export function buildShoppingList(input: ShoppingListInput): ShoppingListBuild {
 }
 
 // The lines the list shows (in the plan and not removed), by category in INGREDIENT_CATEGORIES order (a walk through a
-// shop), then the "to taste" extras, then the lines someone has at home (G4), without empty groups. Lines at home are
-// not counted as to buy. Names follow the recipes' language.
-export function getShoppingListView(items: readonly ShoppingItem[]): ShoppingListView {
-  const shownItems = items
-    .filter((item) => item.inPlan && !item.isRemoved)
-    .sort((first, second) => compareNames(first.name, second.name));
+// shop), then the "to taste" extras, then the lines someone has at home (G4), without empty groups. Within a group,
+// bought lines go last when isBoughtLast is on (G5), so what is left to find stays at the top; otherwise lines keep
+// their name order and a tick does not move them. Lines at home count neither as bought nor as to buy. Names follow
+// the recipes' language.
+export function getShoppingListView(
+  items: readonly ShoppingItem[],
+  { isBoughtLast }: ShoppingListViewOptions = { isBoughtLast: true },
+): ShoppingListView {
+  const compareLines = (first: ShoppingItem, second: ShoppingItem): number =>
+    (isBoughtLast ? Number(isBought(first)) - Number(isBought(second)) : 0) || compareNames(first.name, second.name);
+  const shownItems = items.filter((item) => item.inPlan && !item.isRemoved).sort(compareLines);
   const atHomeItems = shownItems.filter((item) => item.state === "have_at_home");
-  const toBuyItems = shownItems.filter((item) => item.state !== "have_at_home");
+  const shoppingItems = shownItems.filter((item) => item.state !== "have_at_home");
   const categoryGroups = INGREDIENT_CATEGORIES.map((category) =>
-    toGroup(category, toBuyItems.filter((item) => !item.isExtra && item.category === category)),
+    toGroup(category, shoppingItems.filter((item) => !item.isExtra && item.category === category)),
   );
-  const extrasGroup = toGroup(EXTRAS_GROUP_KEY, toBuyItems.filter((item) => item.isExtra));
+  const extrasGroup = toGroup(EXTRAS_GROUP_KEY, shoppingItems.filter((item) => item.isExtra));
   const atHomeGroup = toGroup(HAVE_AT_HOME_GROUP_KEY, atHomeItems);
   const groups = [...categoryGroups, extrasGroup, atHomeGroup].filter((group) => group.items.length > 0);
-  return { groups, toBuyCount: toBuyItems.length, atHomeCount: atHomeItems.length };
+  return {
+    groups,
+    boughtCount: shoppingItems.filter(isBought).length,
+    totalCount: shoppingItems.length,
+    atHomeCount: atHomeItems.length,
+  };
 }
 
 interface LineIdentity {
@@ -162,7 +173,10 @@ const toGroup = (key: ShoppingListGroupKey, groupItems: ShoppingItem[]) => ({
   key,
   items: groupItems,
   itemCount: groupItems.length,
+  boughtCount: groupItems.filter(isBought).length,
 });
+
+const isBought = (item: ShoppingItem): boolean => item.state === "bought";
 
 const getListedMealTypes = (includeSnacks: boolean, snacksOnList: boolean): Set<MealType> =>
   new Set(getVisibleMealTypes(includeSnacks && snacksOnList));
