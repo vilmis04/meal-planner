@@ -113,5 +113,8 @@ const GUARDED_FIELDS: readonly ShoppingItemGuardedField[] = [
   "amountOverride",
   "amount",
   "unit",
+  "shopId",
+  "boughtAmount",
+  "boughtUnit",
   "isPresent",
 ];

@@ -14,8 +14,17 @@ export type ShoppingListLoadResult = { status: "found"; list: ShoppingList } | {
 // List id → group key → whether this viewer opened (true) or closed (false) the group, as saved on this device (G3).
 export type StoredGroupExpansion = Record<string, Record<string, boolean>>;
 
-// The fields of a line people change (G4), as the page applies them before the database confirms.
-export type ShoppingItemPatch = Partial<Pick<ShoppingItem, "state" | "isRemoved" | "amountOverride" | "amount" | "unit">>;
+// The fields of a line people change (G4), and its purchase (G7), as the page applies them before the database
+// confirms.
+export type ShoppingItemPatch = Partial<
+  Pick<ShoppingItem, "state" | "isRemoved" | "amountOverride" | "amount" | "unit" | "shopId" | "boughtAmount" | "boughtUnit">
+>;
+
+// A line's purchase (G7), kept in purchases and read with the line; all null while the line is not bought.
+export type ShoppingItemPurchaseFields = Pick<ShoppingItem, "shopId" | "boughtAmount" | "boughtUnit">;
+
+// A line as a change to shopping_items reports it: without its purchase, which changes in purchases (G7).
+export type RemoteShoppingItem = Omit<ShoppingItem, keyof ShoppingItemPurchaseFields>;
 
 // What a change to a list resolves to; errorKey is the message to show when nothing was saved.
 export type ShoppingItemEditResult = { isSaved: true } | { isSaved: false; errorKey: string };
@@ -25,11 +34,14 @@ export type ShoppingItemEditResult = { isSaved: true } | { isSaved: false; error
 // adding or deleting.
 export type ShoppingItemGuardedField = keyof ShoppingItemPatch | "isPresent";
 
-// A change to a line made anywhere (another member, another tab, or this viewer's own echo), as Realtime reports it.
-// A deleted line comes as its id only.
+// A change to a line made anywhere (another member, another tab, or this viewer's own echo), as Realtime reports it:
+// the line itself, or its purchase (G7). A deleted line comes as its id only, and so does a deleted purchase (its key
+// is the line's id).
 export type RemoteShoppingItemChange =
-  | { kind: "upsert"; listId: string; item: ShoppingItem }
-  | { kind: "delete"; itemId: string };
+  | { kind: "upsert"; listId: string; item: RemoteShoppingItem }
+  | { kind: "delete"; itemId: string }
+  | { kind: "purchase_upsert"; listId: string; itemId: string; purchase: ShoppingItemPurchaseFields }
+  | { kind: "purchase_delete"; itemId: string };
 
 // The list row as Realtime reports it after the plan changed or the list was rebuilt.
 export interface RemoteShoppingListChange {

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { RemoteShoppingItemChange, RemoteShoppingListChange } from "~/types/shoppingList.types";
-import { shoppingItemColumnsSchema, toShoppingItem } from "./shoppingList";
+import {
+  purchaseColumnsSchema,
+  shoppingItemColumnsSchema,
+  toRemoteShoppingItem,
+  toShoppingItemPurchaseFields,
+} from "./shoppingList";
 
 // Realtime "postgres_changes" payloads for the list page (G6), as supabase-js hands them over (numbers and arrays
 // already converted). Anything else is refused, and the page then reads the list again instead of guessing.
@@ -13,7 +18,7 @@ const upsertedItemSchema = z
   .transform((payload): RemoteShoppingItemChange => ({
     kind: "upsert",
     listId: payload.new.list_id,
-    item: toShoppingItem(payload.new),
+    item: toRemoteShoppingItem(payload.new),
   }));
 
 // Under row level security a deleted row comes as its primary key only.
@@ -22,6 +27,25 @@ const deletedItemSchema = z
   .transform((payload): RemoteShoppingItemChange => ({ kind: "delete", itemId: payload.old.id }));
 
 export const remoteShoppingItemChangeSchema = z.union([upsertedItemSchema, deletedItemSchema]);
+
+const upsertedPurchaseSchema = z
+  .object({
+    eventType: z.enum(["INSERT", "UPDATE"]),
+    new: purchaseColumnsSchema.extend({ item_id: z.guid(), list_id: z.guid() }),
+  })
+  .transform((payload): RemoteShoppingItemChange => ({
+    kind: "purchase_upsert",
+    listId: payload.new.list_id,
+    itemId: payload.new.item_id,
+    purchase: toShoppingItemPurchaseFields(payload.new),
+  }));
+
+// A purchase's primary key is its line's id (G7).
+const deletedPurchaseSchema = z
+  .object({ eventType: z.literal("DELETE"), old: z.object({ item_id: z.guid() }) })
+  .transform((payload): RemoteShoppingItemChange => ({ kind: "purchase_delete", itemId: payload.old.item_id }));
+
+export const remotePurchaseChangeSchema = z.union([upsertedPurchaseSchema, deletedPurchaseSchema]);
 
 export const remoteShoppingListChangeSchema = z
   .object({

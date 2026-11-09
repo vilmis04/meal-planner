@@ -1,3 +1,5 @@
+import { z } from "zod";
+import type { Shop } from "#shared/utils/shop.types";
 import type { NewShoppingItem, ShoppingItemAmountChange } from "#shared/utils/shoppingItemEdit.types";
 import type { ShoppingItem, ShoppingItemState } from "#shared/utils/shoppingList.types";
 import type {
@@ -8,8 +10,12 @@ import type {
 } from "~/types/shoppingList.types";
 
 interface RpcResponse {
+  data?: unknown;
   error: { message: string } | null;
 }
+
+// What the shop functions return: the id of the shop stored on the purchase, or null for none (G7).
+const storedShopIdSchema = z.guid().nullable();
 
 // Changes to a shopping list (G4), one line and one field at a time through the list functions, so two people
 // changing different lines never overwrite each other. The page shows a change at once; when the database refuses
@@ -18,6 +24,8 @@ interface RpcResponse {
 // order, or it could end up bought while the page shows it unticked.
 // Other members' changes (G6) come in through applyRemoteChange() and fresh reads through applyStoredItems(); both
 // keep the fields this viewer has on the way (createShoppingItemFieldGuards()).
+// A line's purchase (G7) is applied the same way: ticking it bought records it at once (at the shop given, if any),
+// and the shop can be set or cleared afterwards; a line's calls, purchase or not, go out in the order they were made.
 export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
@@ -41,8 +49,10 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     }
     if (change.kind === "upsert") {
       guards.acknowledge(change.item.id, { ...change.item, isPresent: true });
-    } else {
+    } else if (change.kind === "delete") {
       guards.acknowledge(change.itemId, { isPresent: false });
+    } else if (change.kind === "purchase_upsert") {
+      guards.acknowledge(change.itemId, change.purchase);
     }
     items.value = applyRemoteShoppingItemChange(items.value, change, getGuardedFields);
   };
@@ -60,18 +70,25 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
 
   // The app picks the id, so the line keeps the id it is shown with and a retried call adds it once.
   const addItem = (listId: string, newItem: NewShoppingItem): Promise<ShoppingItemEditResult> =>
-    insertItem(listId, {
-      id: crypto.randomUUID(),
-      source: "manual",
-      ...newItem,
-      isExtra: false,
-      swappedFor: [],
-      inPlan: true,
-      state: "to_buy",
-      isRemoved: false,
-      amountOverride: null,
-      addedBy: user.value?.id ?? null,
-    });
+    insertItem(
+      listId,
+      {
+        id: crypto.randomUUID(),
+        source: "manual",
+        ...newItem,
+        isExtra: false,
+        swappedFor: [],
+        inPlan: true,
+        state: "to_buy",
+        isRemoved: false,
+        amountOverride: null,
+        addedBy: user.value?.id ?? null,
+        shopId: null,
+        boughtAmount: null,
+        boughtUnit: null,
+      },
+      null,
+    );
 
   // A generated line's change is an override of the plan's amount; the plan's amount itself clears it.
   const setAmount = (item: ShoppingItem, change: ShoppingItemAmountChange): Promise<ShoppingItemEditResult> => {
@@ -88,9 +105,42 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     );
   };
 
-  const setState = (itemId: string, state: ShoppingItemState): Promise<ShoppingItemEditResult> =>
+  // To buy or at home; the database deletes the purchase of a line that was bought. Ticking bought is markBought().
+  const setState = (itemId: string, state: Exclude<ShoppingItemState, "bought">): Promise<ShoppingItemEditResult> =>
     changeItem(itemId, { state }, () =>
       supabase.rpc("set_shopping_item_state", { target_item_id: itemId, new_state: state }),
+    );
+
+  // Ticks a line bought, with its purchase: at the shop given (a new one is added by its name), or at none. The
+  // purchase keeps the amount the line says to buy now, as the database does.
+  const markBought = (item: ShoppingItem, shop: Shop | null): Promise<ShoppingItemEditResult> => {
+    const purchase = { shopId: shop?.id ?? null, boughtAmount: getShoppingItemAmount(item), boughtUnit: item.unit };
+    return changeItem(
+      item.id,
+      { state: "bought", ...purchase },
+      () =>
+        supabase.rpc("set_shopping_item_state", {
+          target_item_id: item.id,
+          new_state: "bought",
+          new_shop_id: shop?.id ?? null,
+          new_shop_name: shop?.name ?? null,
+        }),
+      applyStoredShopId(item.id),
+    );
+  };
+
+  // Sets (or, with null, clears) the shop of a bought line.
+  const setShop = (itemId: string, shop: Shop | null): Promise<ShoppingItemEditResult> =>
+    changeItem(
+      itemId,
+      { shopId: shop?.id ?? null },
+      () =>
+        supabase.rpc("set_shopping_item_shop", {
+          target_item_id: itemId,
+          new_shop_id: shop?.id ?? null,
+          new_shop_name: shop?.name ?? null,
+        }),
+      applyStoredShopId(itemId),
     );
 
   // A generated line is only marked removed; a manual one is deleted, and taken off the page at once.
@@ -120,17 +170,18 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     return { isSaved: false, errorKey: getShoppingItemErrorKey(error) };
   };
 
-  // Undoes a removal: a generated line comes back, a manual one is added again as it was.
-  const restoreItem = (listId: string, item: ShoppingItem): Promise<ShoppingItemEditResult> => {
+  // Undoes a removal: a generated line comes back, a manual one is added again as it was (bought at its shop, if it
+  // was).
+  const restoreItem = (listId: string, item: ShoppingItem, shop: Shop | null): Promise<ShoppingItemEditResult> => {
     if (item.source === "generated") {
       return changeItem(item.id, { isRemoved: false }, () =>
         supabase.rpc("restore_shopping_item", { target_item_id: item.id }),
       );
     }
-    return insertItem(listId, item);
+    return insertItem(listId, item, shop);
   };
 
-  const insertItem = async (listId: string, item: ShoppingItem): Promise<ShoppingItemEditResult> => {
+  const insertItem = async (listId: string, item: ShoppingItem, shop: Shop | null): Promise<ShoppingItemEditResult> => {
     const changeId = guards.begin(item.id, { isPresent: true });
     items.value = [...items.value.filter((line) => line.id !== item.id), item];
     const { error } = await sendInOrder(item.id, () =>
@@ -154,18 +205,32 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     }
     guards.settle(item.id, changeId, true, performance.now());
     // A line added again by an undo keeps being at home, or bought, if it was.
-    if (item.state === "to_buy") {
-      return { isSaved: true };
+    if (item.state === "bought") {
+      return markBought(item, shop);
     }
-    return changeItem(item.id, { state: item.state }, () =>
-      supabase.rpc("set_shopping_item_state", { target_item_id: item.id, new_state: item.state }),
-    );
+    if (item.state === "have_at_home") {
+      return setState(item.id, item.state);
+    }
+    return { isSaved: true };
   };
+
+  // The shop functions return the shop actually stored: the app suggests an id for a new shop, and the database uses
+  // the household's shop of that name instead when someone added it first. The page shows that one from then on.
+  const applyStoredShopId =
+    (itemId: string) =>
+    (data: unknown): void => {
+      const result = storedShopIdSchema.safeParse(data);
+      const current = items.value.find((item) => item.id === itemId);
+      if (result.success && current !== undefined && current.shopId !== result.data) {
+        items.value = patchShoppingItem(items.value, itemId, { shopId: result.data });
+      }
+    };
 
   const changeItem = async (
     itemId: string,
     patch: ShoppingItemPatch,
     send: () => PromiseLike<RpcResponse>,
+    onSaved: ((data: unknown) => void) | null = null,
   ): Promise<ShoppingItemEditResult> => {
     const current = items.value.find((item) => item.id === itemId);
     if (current === undefined) {
@@ -176,9 +241,10 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     const changeId = guards.begin(itemId, patch);
     items.value = patchShoppingItem(items.value, itemId, patch);
 
-    const { error } = await sendInOrder(itemId, send);
+    const { data, error } = await sendInOrder(itemId, send);
     if (!error) {
       guards.settle(itemId, changeId, true, performance.now());
+      onSaved?.(data);
       return { isSaved: true };
     }
 
@@ -193,6 +259,8 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     addItem,
     setAmount,
     setState,
+    markBought,
+    setShop,
     removeItem,
     restoreItem,
     applyRemoteChange,

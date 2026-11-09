@@ -16,6 +16,9 @@ const item = (id: string, overrides: Partial<ShoppingItem> = {}): ShoppingItem =
   isRemoved: false,
   amountOverride: null,
   addedBy: null,
+  shopId: null,
+  boughtAmount: null,
+  boughtUnit: null,
   ...overrides,
 });
 

@@ -5,7 +5,8 @@ import type { ShoppingListLiveHandlers, ShoppingListLiveStatus } from "~/types/s
 // subscribers whose row level security lets them read the row, so household members hear each other's changes to a
 // household plan's list and nobody else hears them. The page listens to its own list's lines being added or changed,
 // to any line being deleted (a deleted row comes as its id only and cannot be filtered by list; ids it does not show
-// are ignored) and to its list row (the plan changed, or the list was rebuilt).
+// are ignored), to the purchases of its lines (G7: the shop of a bought line; deleted ones likewise come as the line's
+// id only) and to its list row (the plan changed, or the list was rebuilt).
 // Changes can be missed while the page is not subscribed (before the first subscription, while reconnecting, or while
 // a phone sleeps with the tab in the background), so the page catches up each time it subscribes and each time the tab
 // comes back. Only in the browser; the channel is removed when the page goes.
@@ -22,6 +23,19 @@ export function useShoppingListLive(listId: () => string | null, handlers: Shopp
       return;
     }
     if (result.data.kind === "upsert" && result.data.listId !== listId()) {
+      return;
+    }
+    handlers.onItemChange(result.data);
+  };
+
+  const handlePurchasePayload = (payload: unknown) => {
+    const result = remotePurchaseChangeSchema.safeParse(payload);
+    if (!result.success) {
+      console.error("Unexpected purchase change", result.error);
+      handlers.onCatchUp();
+      return;
+    }
+    if (result.data.kind === "purchase_upsert" && result.data.listId !== listId()) {
       return;
     }
     handlers.onItemChange(result.data);
@@ -61,6 +75,17 @@ export function useShoppingListLive(listId: () => string | null, handlers: Shopp
         handleItemPayload,
       )
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "shopping_items" }, handleItemPayload)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "purchases", filter: `list_id=eq.${currentListId}` },
+        handlePurchasePayload,
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "purchases", filter: `list_id=eq.${currentListId}` },
+        handlePurchasePayload,
+      )
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "purchases" }, handlePurchasePayload)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "shopping_lists", filter: `id=eq.${currentListId}` },

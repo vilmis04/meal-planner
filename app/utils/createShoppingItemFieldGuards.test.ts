@@ -72,4 +72,16 @@ describe("createShoppingItemFieldGuards", () => {
 
     expect(guards.getGuardedFields("a", 10).has("state")).toBe(true);
   });
+
+  it("guards a tick's purchase until its echo from purchases arrives", () => {
+    const guards = createShoppingItemFieldGuards();
+    const changeId = guards.begin("a", { state: "bought", shopId: "lidl", boughtAmount: 600, boughtUnit: "g" });
+    guards.settle("a", changeId, true, 100);
+
+    guards.acknowledge("a", { state: "bought" });
+    expect([...guards.getGuardedFields("a", 200)].sort()).toEqual(["boughtAmount", "boughtUnit", "shopId"]);
+
+    guards.acknowledge("a", { shopId: "lidl", boughtAmount: 600, boughtUnit: "g" });
+    expect(guards.getGuardedFields("a", 200).size).toBe(0);
+  });
 });
