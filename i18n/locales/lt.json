@@ -732,6 +732,12 @@
       "invalidUnit": "Pasirinkite vieną iš siūlomų vienetų.",
       "amountNotEditable": "Prieskoniai pagal skonį neturi kiekio, kurį būtų galima keisti.",
       "tooManyItems": "Šiame sąraše per daug jūsų pridėtų prekių. Pirma kai kurias pašalinkite."
+    },
+    "live": {
+      "on": "Tiesiogiai",
+      "onDescription": "Kitų namų ūkio narių pakeitimai matomi iš karto.",
+      "paused": "Jungiamasi…",
+      "pausedDescription": "Tiesioginiai atnaujinimai sustabdyti. Kitų pakeitimai bus matomi, kai ryšys atsikurs."
     }
   }
 }
