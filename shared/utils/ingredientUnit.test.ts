@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normaliseUnit, toBaseQuantity, toDisplayQuantity } from "./ingredientUnit";
+import { getUnitsWithBase, normaliseUnit, toBaseQuantity, toDisplayQuantity } from "./ingredientUnit";
 
 describe("normaliseUnit", () => {
   it.each([
@@ -68,5 +68,17 @@ describe("toDisplayQuantity", () => {
     [{ amount: 4, unit: "skiltelė" }, { amount: 4, unit: "skiltelė" }],
   ])("shows %j as %j", (quantity, expected) => {
     expect(toDisplayQuantity(quantity)).toEqual(expected);
+  });
+});
+
+describe("getUnitsWithBase", () => {
+  it("offers the larger unit next to grams and millilitres", () => {
+    expect(getUnitsWithBase("g")).toEqual(["g", "kg"]);
+    expect(getUnitsWithBase("ml")).toEqual(["ml", "l"]);
+  });
+
+  it("offers a unit counted on its own as itself", () => {
+    expect(getUnitsWithBase("vnt.")).toEqual(["vnt."]);
+    expect(getUnitsWithBase("skiltelė")).toEqual(["skiltelė"]);
   });
 });

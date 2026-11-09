@@ -161,7 +161,8 @@ select throws_ok(
     jsonb_build_array(pg_temp.line('bad', 1, null))),
   '23514', null, 'an amount needs a unit');
 
--- People's changes survive a rebuild (AC5). G4 and G5 will write these columns; here the owner does.
+-- People's changes survive a rebuild (AC5). Written by the owner here; shopping_item_edits.test.sql does it through G4's
+-- functions.
 reset role;
 update public.shopping_items set state = 'bought' where generated_key = 'ingredient:chicken|g';
 update public.shopping_items set amount_override = 6 where generated_key = 'ingredient:eggs|vnt.';
@@ -236,7 +237,7 @@ select throws_ok(
   '42501', null, 'items cannot be inserted directly');
 select throws_ok(
   $$ update public.shopping_items set state = 'bought' $$,
-  '42501', null, 'nor changed directly, until G4 and G5 allow their columns');
+  '42501', null, 'nor changed directly (G4''s functions change them, one field at a time)');
 select throws_ok($$ delete from public.shopping_items $$, '42501', null, 'nor deleted');
 select throws_ok(
   $$ update public.shopping_lists set generated_version = 99 $$,

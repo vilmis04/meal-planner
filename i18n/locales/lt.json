@@ -639,6 +639,8 @@
     "open": "Pirkinių sąrašas",
     "back": "Atgal į planą",
     "itemCount": "Prekių nėra | Prekių: {count} | Prekių: {count}",
+    "toBuyCount": "Pirkti nieko nereikia | Pirkti: {count} | Pirkti: {count}",
+    "atHomeCount": "Namie: {count}",
     "category": {
       "fruit_and_vegetables": "Vaisiai ir daržovės",
       "meat_and_fish": "Mėsa ir žuvis",
@@ -651,6 +653,9 @@
     "extras": {
       "title": "Priedai",
       "hint": "Pagal skonį: patikrinkite, ką turite namie"
+    },
+    "haveAtHome": {
+      "title": "Turiu namie"
     },
     "swapFor": "Pakaitalas: {names}",
     "empty": "Pirkti kol kas nieko. Įtraukite receptų į planą, ir jų ingredientai atsiras čia.",
@@ -665,6 +670,60 @@
       "title": "Plano dar nėra",
       "hint": "Kiekvienas planas turi pirkinių sąrašą. Sukurkite planą ir jį gausite.",
       "action": "Į planus"
+    },
+    "units": {
+      "pieces": "vnt.",
+      "pack": "pak."
+    },
+    "addItem": {
+      "open": "Pridėti prekę",
+      "title": "Pridėti prekę",
+      "name": "Pavadinimas",
+      "category": "Kategorija",
+      "amount": "Kiekis (nebūtina)",
+      "unit": "Vienetas",
+      "save": "Pridėti",
+      "cancel": "Atšaukti"
+    },
+    "item": {
+      "actions": "Veiksmai: {name}",
+      "haveAtHome": "Turiu namie",
+      "backToList": "Grąžinti į sąrašą",
+      "changeAmount": "Keisti kiekį",
+      "remove": "Pašalinti",
+      "addedBy": "Pridėjo {name}",
+      "addedByYou": "Pridėjote jūs",
+      "planAmount": "Plane: {amount}"
+    },
+    "amount": {
+      "title": "Keisti kiekį",
+      "label": "Kiekis",
+      "planHint": "Planui reikia {amount}. Jūsų kiekis lieka, kai planas keičiasi.",
+      "usePlan": "Naudoti plano kiekį",
+      "save": "Išsaugoti",
+      "cancel": "Atšaukti"
+    },
+    "validation": {
+      "nameRequired": "Įveskite pavadinimą",
+      "nameTooLong": "Ne daugiau kaip {max} simbolių",
+      "amountRequired": "Įveskite kiekį",
+      "notANumber": "Įveskite skaičių, pvz., 1,5",
+      "missingUnit": "Pasirinkite vienetą",
+      "outOfRange": "Įveskite kiekį, didesnį nei 0 ir ne didesnį nei 1000 kg"
+    },
+    "undo": {
+      "action": "Atšaukti",
+      "movedHome": "{name}: turiu namie",
+      "removed": "{name}: pašalinta"
+    },
+    "errors": {
+      "saveFailed": "Nepavyko išsaugoti pakeitimo. Bandykite dar kartą.",
+      "itemNotFound": "Šios prekės sąraše nebėra. Perkraukite puslapį, kad matytumėte naujausią sąrašą.",
+      "invalidName": "Įveskite iki 120 simbolių pavadinimą.",
+      "invalidAmount": "Įveskite kiekį, didesnį nei 0 ir ne didesnį nei 1000 kg.",
+      "invalidUnit": "Pasirinkite vieną iš siūlomų vienetų.",
+      "amountNotEditable": "Prieskoniai pagal skonį neturi kiekio, kurį būtų galima keisti.",
+      "tooManyItems": "Šiame sąraše per daug jūsų pridėtų prekių. Pirma kai kurias pašalinkite."
     }
   }
 }

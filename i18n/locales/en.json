@@ -639,6 +639,8 @@
     "open": "Shopping list",
     "back": "Back to plan",
     "itemCount": "no items | 1 item | {count} items",
+    "toBuyCount": "Nothing to buy | 1 to buy | {count} to buy",
+    "atHomeCount": "{count} at home",
     "category": {
       "fruit_and_vegetables": "Fruit & vegetables",
       "meat_and_fish": "Meat & fish",
@@ -651,6 +653,9 @@
     "extras": {
       "title": "Extras",
       "hint": "To taste: check what you have at home"
+    },
+    "haveAtHome": {
+      "title": "Have at home"
     },
     "swapFor": "Swap for {names}",
     "empty": "Nothing to buy yet. Add recipes to the plan and their ingredients appear here.",
@@ -665,6 +670,60 @@
       "title": "No plan yet",
       "hint": "A shopping list comes with every plan. Create a plan to get one.",
       "action": "Go to plans"
+    },
+    "units": {
+      "pieces": "pcs",
+      "pack": "pack"
+    },
+    "addItem": {
+      "open": "Add item",
+      "title": "Add item",
+      "name": "Name",
+      "category": "Category",
+      "amount": "Amount (optional)",
+      "unit": "Unit",
+      "save": "Add",
+      "cancel": "Cancel"
+    },
+    "item": {
+      "actions": "Actions for {name}",
+      "haveAtHome": "Have at home",
+      "backToList": "Back to the list",
+      "changeAmount": "Change amount",
+      "remove": "Remove",
+      "addedBy": "Added by {name}",
+      "addedByYou": "Added by you",
+      "planAmount": "Plan: {amount}"
+    },
+    "amount": {
+      "title": "Change amount",
+      "label": "Amount",
+      "planHint": "The plan needs {amount}. Your amount stays when the plan changes.",
+      "usePlan": "Use the plan's amount",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "nameRequired": "Enter a name",
+      "nameTooLong": "At most {max} characters",
+      "amountRequired": "Enter an amount",
+      "notANumber": "Enter a number, such as 1.5",
+      "missingUnit": "Choose a unit",
+      "outOfRange": "Enter an amount above 0, up to 1000 kg"
+    },
+    "undo": {
+      "action": "Undo",
+      "movedHome": "{name}: have at home",
+      "removed": "{name} removed"
+    },
+    "errors": {
+      "saveFailed": "The change could not be saved. Try again.",
+      "itemNotFound": "This item is no longer on the list. Reload the page to see the latest list.",
+      "invalidName": "Enter a name of up to 120 characters.",
+      "invalidAmount": "Enter an amount above 0, up to 1000 kg.",
+      "invalidUnit": "Choose one of the units offered.",
+      "amountNotEditable": "Items to taste have no amount to change.",
+      "tooManyItems": "This list has too many items of your own. Remove some first."
     }
   }
 }

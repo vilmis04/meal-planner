@@ -43,6 +43,8 @@ export const SHOPPING_ITEM_STATES = ["to_buy", "have_at_home", "bought"] as cons
 export const SHOPPING_ITEM_SOURCES = ["generated", "manual"] as const;
 // The group of "to taste" lines, after the categories.
 export const EXTRAS_GROUP_KEY = "extras";
+// The group of lines someone has at home (G4), last, and closed until the viewer opens it.
+export const HAVE_AT_HOME_GROUP_KEY = "have_at_home";
 
 // Where an item without an alias goes until it is mapped (G1's report lists it).
 const UNMAPPED_CATEGORY: IngredientCategory = "other";
@@ -111,17 +113,21 @@ export function buildShoppingList(input: ShoppingListInput): ShoppingListBuild {
 }
 
 // The lines the list shows (in the plan and not removed), by category in INGREDIENT_CATEGORIES order (a walk through a
-// shop), then the "to taste" extras, without empty groups. Names follow the recipes' language.
+// shop), then the "to taste" extras, then the lines someone has at home (G4), without empty groups. Lines at home are
+// not counted as to buy. Names follow the recipes' language.
 export function getShoppingListView(items: readonly ShoppingItem[]): ShoppingListView {
   const shownItems = items
     .filter((item) => item.inPlan && !item.isRemoved)
     .sort((first, second) => compareNames(first.name, second.name));
+  const atHomeItems = shownItems.filter((item) => item.state === "have_at_home");
+  const toBuyItems = shownItems.filter((item) => item.state !== "have_at_home");
   const categoryGroups = INGREDIENT_CATEGORIES.map((category) =>
-    toGroup(category, shownItems.filter((item) => !item.isExtra && item.category === category)),
+    toGroup(category, toBuyItems.filter((item) => !item.isExtra && item.category === category)),
   );
-  const extrasGroup = toGroup(EXTRAS_GROUP_KEY, shownItems.filter((item) => item.isExtra));
-  const groups = [...categoryGroups, extrasGroup].filter((group) => group.items.length > 0);
-  return { groups, itemCount: shownItems.length };
+  const extrasGroup = toGroup(EXTRAS_GROUP_KEY, toBuyItems.filter((item) => item.isExtra));
+  const atHomeGroup = toGroup(HAVE_AT_HOME_GROUP_KEY, atHomeItems);
+  const groups = [...categoryGroups, extrasGroup, atHomeGroup].filter((group) => group.items.length > 0);
+  return { groups, toBuyCount: toBuyItems.length, atHomeCount: atHomeItems.length };
 }
 
 interface LineIdentity {

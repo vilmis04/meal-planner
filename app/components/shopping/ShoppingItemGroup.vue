@@ -1,12 +1,13 @@
 <script setup lang="ts">
 // One collapsible group of the shopping list (G3): a header button with the group's name and count, and its lines.
 // The count is given as text, so G5 can show "3 of 7" in the same place; countDescription is what a screen reader
-// hears for it ("7 items").
+// hears for it ("7 items"). An icon goes before the title ("Have at home", G4).
 defineProps<{
   title: string;
   countLabel: string;
   countDescription: string;
   hint?: string;
+  icon?: string;
 }>();
 
 const isExpanded = defineModel<boolean>("expanded", { required: true });
@@ -25,6 +26,7 @@ const contentId = useId();
         data-testid="shopping-group-toggle"
         @click="isExpanded = !isExpanded"
       >
+        <v-icon v-if="icon" :icon="icon" size="20" :class="$style.icon" aria-hidden="true" />
         <span :class="$style.title">{{ title }}</span>
         <span :class="$style.count" aria-hidden="true" data-testid="shopping-group-count">{{ countLabel }}</span>
         <span :class="$style.visuallyHidden">{{ countDescription }}</span>
@@ -85,6 +87,11 @@ const contentId = useId();
   font-size: 14px;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--color-muted);
 }
 
 .count {

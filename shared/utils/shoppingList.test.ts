@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { INGREDIENT_CATEGORIES } from "./ingredient";
 import {
   EXTRAS_GROUP_KEY,
+  HAVE_AT_HOME_GROUP_KEY,
   SHOPPING_ITEM_SOURCES,
   SHOPPING_ITEM_STATES,
   buildShoppingList,
@@ -132,6 +133,7 @@ const storedItem = (overrides: Partial<ShoppingItem>): ShoppingItem => ({
   state: "to_buy",
   isRemoved: false,
   amountOverride: null,
+  addedBy: null,
   ...overrides,
 });
 
@@ -378,7 +380,8 @@ describe("getShoppingListView", () => {
       ["grains_and_bread", ["oats"], 1],
       [EXTRAS_GROUP_KEY, ["salt"], 1],
     ]);
-    expect(view.itemCount).toBe(5);
+    expect(view.toBuyCount).toBe(5);
+    expect(view.atHomeCount).toBe(0);
   });
 
   it("leaves the extras group out when there are no extras", () => {
@@ -388,7 +391,26 @@ describe("getShoppingListView", () => {
   });
 
   it("has no groups for an empty list", () => {
-    expect(getShoppingListView([])).toEqual({ groups: [], itemCount: 0 });
+    expect(getShoppingListView([])).toEqual({ groups: [], toBuyCount: 0, atHomeCount: 0 });
+  });
+
+  it("moves lines at home into their own group, last, and leaves them out of the to-buy count", () => {
+    const view = getShoppingListView([
+      storedItem({ id: "salt", name: "Druska", category: "pantry", amount: null, unit: null, isExtra: true, state: "have_at_home" }),
+      storedItem({ id: "oats", name: "Avižiniai dribsniai", category: "grains_and_bread", state: "have_at_home" }),
+      storedItem({ id: "eggs", name: "Kiaušiniai", category: "dairy_and_eggs" }),
+      storedItem({ id: "coffee", name: "Kava", category: "pantry", source: "manual", amount: null, unit: null }),
+      storedItem({ id: "gone", name: "Menkė", category: "meat_and_fish", inPlan: false, state: "have_at_home" }),
+      storedItem({ id: "removed", name: "Bananai", category: "fruit_and_vegetables", isRemoved: true, state: "have_at_home" }),
+    ]);
+
+    expect(view.groups.map((group) => [group.key, group.items.map((item) => item.id), group.itemCount])).toEqual([
+      ["dairy_and_eggs", ["eggs"], 1],
+      ["pantry", ["coffee"], 1],
+      [HAVE_AT_HOME_GROUP_KEY, ["oats", "salt"], 2],
+    ]);
+    expect(view.toBuyCount).toBe(2);
+    expect(view.atHomeCount).toBe(2);
   });
 });
 
