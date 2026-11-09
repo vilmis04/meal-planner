@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "swaps:generate": "tsx scripts/generate-protein-swaps.ts"
+    "swaps:generate": "tsx scripts/generate-protein-swaps.ts",
+    "ingredients:report": "psql \"${DATABASE_URL:?Set DATABASE_URL to the database connection string}\" -X -q -v ON_ERROR_STOP=1 -f supabase/reports/ingredient-mapping-report.sql -o docs/ingredient-mapping-report.md"
   },
   "dependencies": {
     "@nuxtjs/i18n": "^10.6.0",
