@@ -5,6 +5,7 @@ import {
   MANUAL_ITEM_UNITS,
   getAmountInput,
   getAmountUnitChoices,
+  getBoughtShortfall,
   getPlanAmount,
   getShoppingItemAmount,
   isAmountEditable,
@@ -36,6 +37,9 @@ const item = (overrides: Partial<ShoppingItem>): ShoppingItem => ({
   isRemoved: false,
   amountOverride: null,
   addedBy: null,
+  shopId: null,
+  boughtAmount: null,
+  boughtUnit: null,
   ...overrides,
 });
 
@@ -62,6 +66,28 @@ describe("amounts", () => {
     expect(isAmountEditable(item({}))).toBe(true);
     expect(isAmountEditable(item({ amount: null, unit: null, isExtra: true }))).toBe(false);
     expect(isAmountEditable(item({ source: "manual", amount: null, unit: null }))).toBe(true);
+  });
+});
+
+describe("getBoughtShortfall", () => {
+  const bought = { state: "bought" as const, boughtAmount: 600, boughtUnit: "g" };
+
+  it("is how much more the line says to buy than was bought", () => {
+    expect(getBoughtShortfall(item({ ...bought, amount: 900 }))).toBe(300);
+    expect(getBoughtShortfall(item({ ...bought, amountOverride: 750.5 }))).toBe(150.5);
+    expect(getBoughtShortfall(item({ ...bought, boughtAmount: 0.2, amount: 0.3 }))).toBe(0.1);
+  });
+
+  it("is null when enough was bought", () => {
+    expect(getBoughtShortfall(item(bought))).toBeNull();
+    expect(getBoughtShortfall(item({ ...bought, amount: 400 }))).toBeNull();
+  });
+
+  it("is null when the amounts cannot be compared, or the line is not bought", () => {
+    expect(getBoughtShortfall(item({ ...bought, amount: null, unit: null, isExtra: true }))).toBeNull();
+    expect(getBoughtShortfall(item({ ...bought, boughtAmount: null, boughtUnit: null, amount: 900 }))).toBeNull();
+    expect(getBoughtShortfall(item({ ...bought, boughtUnit: "vnt.", amount: 900 }))).toBeNull();
+    expect(getBoughtShortfall(item({ boughtAmount: 600, boughtUnit: "g", amount: 900 }))).toBeNull();
   });
 });
 

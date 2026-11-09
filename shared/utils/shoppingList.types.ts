@@ -97,6 +97,11 @@ export interface ShoppingItem {
   amountOverride: number | null;
   // Who added a manual line; null for generated lines (G4).
   addedBy: string | null;
+  // The line's purchase (G7), all null while it is not bought: the shop it was bought at (null when skipped), and the
+  // amount it said to buy when it was ticked, in the line's unit (null for a "to taste" line).
+  shopId: string | null;
+  boughtAmount: number | null;
+  boughtUnit: string | null;
 }
 
 // A group of the list: a category, the "to taste" extras, or what is at home (G4).

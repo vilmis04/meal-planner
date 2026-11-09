@@ -2,11 +2,12 @@ import { z } from "zod";
 import { INGREDIENT_CATEGORIES } from "#shared/utils/ingredient";
 import { SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES } from "#shared/utils/shoppingList";
 import type { ShoppingItem } from "#shared/utils/shoppingList.types";
+import type { RemoteShoppingItem, ShoppingItemPurchaseFields } from "~/types/shoppingList.types";
 
-// A plan's list and its lines (G2), as the list page reads them. Row level security shows lists of plans the viewer
-// can open only.
+// A plan's list and its lines (G2), with each bought line's purchase (G7), as the list page reads them. Row level
+// security shows lists of plans the viewer can open only.
 export const SHOPPING_LIST_COLUMNS =
-  "id, source_version, generated_version, missing_swap_count, shopping_items(id, source, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override, added_by)";
+  "id, source_version, generated_version, missing_swap_count, shopping_items(id, source, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override, added_by, purchases(shop_id, amount, unit))";
 
 // The columns of a line as both PostgREST and Realtime (G6) send them.
 export const shoppingItemColumnsSchema = z.object({
@@ -25,7 +26,7 @@ export const shoppingItemColumnsSchema = z.object({
   added_by: z.guid().nullable(),
 });
 
-export const toShoppingItem = (row: z.output<typeof shoppingItemColumnsSchema>): ShoppingItem => ({
+export const toRemoteShoppingItem = (row: z.output<typeof shoppingItemColumnsSchema>): RemoteShoppingItem => ({
   id: row.id,
   source: row.source,
   name: row.name,
@@ -41,7 +42,32 @@ export const toShoppingItem = (row: z.output<typeof shoppingItemColumnsSchema>):
   addedBy: row.added_by,
 });
 
-const shoppingItemRowSchema = shoppingItemColumnsSchema.transform(toShoppingItem);
+// The columns of a purchase (G7) as both PostgREST and Realtime send them.
+export const purchaseColumnsSchema = z.object({
+  shop_id: z.guid().nullable(),
+  amount: z.number().positive().nullable(),
+  unit: z.string().nullable(),
+});
+
+export const toShoppingItemPurchaseFields = (
+  row: z.output<typeof purchaseColumnsSchema> | null,
+): ShoppingItemPurchaseFields => ({
+  shopId: row?.shop_id ?? null,
+  boughtAmount: row?.amount ?? null,
+  boughtUnit: row?.unit ?? null,
+});
+
+// PostgREST embeds the purchase as one object (or null), since its key is the line's id; older versions send a list
+// of at most one.
+const embeddedPurchaseSchema = z
+  .union([purchaseColumnsSchema.nullable(), z.array(purchaseColumnsSchema).max(1)])
+  .transform((purchase) => (Array.isArray(purchase) ? (purchase[0] ?? null) : purchase));
+
+const shoppingItemRowSchema = shoppingItemColumnsSchema
+  .extend({ purchases: embeddedPurchaseSchema })
+  .transform(
+    (row): ShoppingItem => ({ ...toRemoteShoppingItem(row), ...toShoppingItemPurchaseFields(row.purchases) }),
+  );
 
 export const shoppingListRowSchema = z
   .object({
@@ -52,7 +78,7 @@ export const shoppingListRowSchema = z
     shopping_items: z.array(shoppingItemRowSchema),
   })
   .transform((row) => ({
-  id: row.id,
+    id: row.id,
     sourceVersion: row.source_version,
     generatedVersion: row.generated_version,
     missingSwapCount: row.missing_swap_count,

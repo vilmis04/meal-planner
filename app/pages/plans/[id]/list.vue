@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Shop } from "#shared/utils/shop.types";
 import type { NewShoppingItem, ShoppingItemAmountChange } from "#shared/utils/shoppingItemEdit.types";
 import type { ShoppingItem, ShoppingListGroupKey } from "#shared/utils/shoppingList.types";
 import type { ShoppingItemEditResult } from "~/types/shoppingList.types";
@@ -19,22 +20,45 @@ const id = String(route.params.id);
 // The lines as this page shows them: the loaded list, with this viewer's changes applied before the database confirms
 // them (G4) and other members' changes as they happen (G6).
 const items = ref<ShoppingItem[]>([]);
-const { addItem, setAmount, setState, removeItem, restoreItem, applyRemoteChange, countRemoteChanges, applyStoredItems } =
-  useShoppingItemEdits(items);
+const {
+  addItem,
+  setAmount,
+  setState,
+  markBought,
+  setShop,
+  removeItem,
+  restoreItem,
+  applyRemoteChange,
+  countRemoteChanges,
+  applyStoredItems,
+} = useShoppingItemEdits(items);
+const { shops, loadShops, reloadShops, addShop } = useShops();
+const { defaultShopName, setDefaultShopName } = useShoppingDefaultShop();
 
 // The list is brought up to date with the plan first (the server rebuilds it only when the plan changed), then read.
-// The plan gives the header; the household gives names for "Swap for Monika". How many live changes had arrived when
+// The plan gives the header; the household gives names for "Swap for Monika"; the shops name where lines were bought. How many live changes had arrived when
 // the read started is kept, so the ones that arrive while it runs are applied again on top of it (G6).
 const loadList = async () => {
   const remoteChangesBefore = countRemoteChanges();
   const isUpToDate = await refresh(id);
   return { isUpToDate, remoteChangesBefore, result: await load(id) };
 };
-const [{ data: planResult }, { data: listResult, refresh: reloadList, status: listStatus }] = await Promise.all([
-  useAsyncData(`plan-${id}`, () => loadPlan(id)),
-  useAsyncData(`shopping-list-${id}`, loadList),
-  callOnce("household", loadHousehold, { mode: "navigation" }),
-]);
+const [{ data: planResult }, { data: listResult, refresh: reloadList, status: listStatus }, , { data: shopsResult }] =
+  await Promise.all([
+    useAsyncData(`plan-${id}`, () => loadPlan(id)),
+    useAsyncData(`shopping-list-${id}`, loadList),
+    callOnce("household", loadHousehold, { mode: "navigation" }),
+    useAsyncData(`shops-${id}`, loadShops),
+  ]);
+watch(
+  shopsResult,
+  (loaded) => {
+    if (loaded) {
+      shops.value = loaded;
+    }
+  },
+  { immediate: true },
+);
 
 const plan = computed(() => (planResult.value?.status === "found" ? planResult.value.plan : null));
 const list = computed(() => (listResult.value?.result.status === "found" ? listResult.value.result.list : null));
@@ -80,6 +104,40 @@ const { status: liveStatus } = useShoppingListLive(() => list.value?.id ?? null,
   onCatchUp: catchUp,
 });
 
+// Shops (G7): their names for "Bought at Lidl", and the ones to pick from. A line can name a shop this page does not
+// know yet (another member just added it), so the shops are read again then, once per such shop.
+const shopNames = computed(() => new Map(shops.value.map((shop) => [shop.id, shop.name])));
+const shopChoices = computed(() => getShopChoices(shops.value, locale.value));
+const requestedShopIds = new Set<string>();
+watch(
+  () => items.value.flatMap((item) => (item.shopId !== null && !shopNames.value.has(item.shopId) ? [item.shopId] : [])),
+  (unknownShopIds) => {
+    const newShopIds = unknownShopIds.filter((shopId) => !requestedShopIds.has(shopId));
+    if (newShopIds.length > 0) {
+      newShopIds.forEach((shopId) => requestedShopIds.add(shopId));
+      reloadShops();
+    }
+  },
+);
+
+// The shop with this name: the household's, or a new one shown at once with an id suggested here (the database keeps
+// it, or the household's shop of that name if someone added one meanwhile; the shops are read again after the call).
+const toShop = (name: string): { shop: Shop; isNew: boolean } => {
+  const known = findShopByName(shops.value, name);
+  if (known !== null) {
+    return { shop: known, isNew: false };
+  }
+  const shop = { id: crypto.randomUUID(), name: normaliseItemName(name) };
+  addShop(shop);
+  return { shop, isNew: true };
+};
+
+// The shop a bought line was bought at, so an undo that buys it again keeps it.
+const getItemShop = (item: ShoppingItem): Shop | null => {
+  const shopName = item.shopId === null ? undefined : shopNames.value.get(item.shopId);
+  return item.shopId === null || shopName === undefined ? null : { id: item.shopId, name: shopName };
+};
+
 // The groups as their headers show them. Extras and "Have at home" are titled apart from the categories.
 const getGroupHeading = (key: ShoppingListGroupKey) => {
   if (key === EXTRAS_GROUP_KEY) {
@@ -119,6 +177,12 @@ const isAmountOpen = ref(false);
 // The last change that can be undone, offered in the snackbar until it closes.
 const undoOffer = ref<{ text: string; undo: () => Promise<ShoppingItemEditResult> } | null>(null);
 const isUndoOpen = ref(false);
+// "Onion bought · Add shop" (G7): the line just ticked without a shop. One message shows at a time.
+const shopPromptItem = ref<ShoppingItem | null>(null);
+const isShopPromptOpen = ref(false);
+// What the shop dialog sets: the shop the viewer is shopping at, or a bought line's shop.
+const shopDialogTarget = ref<{ kind: "default" } | { kind: "item"; itemId: string } | null>(null);
+const isShopDialogOpen = ref(false);
 
 const reportFailure = (result: ShoppingItemEditResult): void => {
   if (!result.isSaved) {
@@ -128,8 +192,15 @@ const reportFailure = (result: ShoppingItemEditResult): void => {
 };
 
 const offerUndo = (text: string, undo: () => Promise<ShoppingItemEditResult>): void => {
+  isShopPromptOpen.value = false;
   undoOffer.value = { text, undo };
   isUndoOpen.value = true;
+};
+
+const offerShop = (item: ShoppingItem): void => {
+  isUndoOpen.value = false;
+  shopPromptItem.value = item;
+  isShopPromptOpen.value = true;
 };
 
 async function handleAdd(newItem: NewShoppingItem) {
@@ -144,29 +215,116 @@ async function handleAdd(newItem: NewShoppingItem) {
   reportFailure(await addItem(listId, newItem));
 }
 
-// The one place a line is ticked bought or back (G5). Recording the shop (G7) is meant to follow a saved tick to
-// bought, here.
+// The one place a line is ticked bought or back (G5). With a shop the viewer is shopping at, the tick records it there
+// in the same call (G7); without one, a saved tick offers to add a shop, which may be ignored. Unticking deletes the
+// purchase with it.
 async function handleToggleBought(item: ShoppingItem) {
-  reportFailure(await setState(item.id, item.state === "bought" ? "to_buy" : "bought"));
+  if (item.state === "bought") {
+    reportFailure(await setState(item.id, "to_buy"));
+    return;
+  }
+  const defaultShop = defaultShopName.value === null ? null : toShop(defaultShopName.value);
+  const result = await markBought(item, defaultShop?.shop ?? null);
+  if (defaultShop?.isNew) {
+    reloadShops();
+  }
+  if (result.isSaved && defaultShop === null) {
+    offerShop(item);
+  }
+  reportFailure(result);
 }
 
 async function handleToggleAtHome(item: ShoppingItem) {
   const isGoingHome = item.state !== "have_at_home";
-  const previousState = item.state;
+  const previousShop = getItemShop(item);
+  const undo = () => (item.state === "bought" ? markBought(item, previousShop) : setState(item.id, "to_buy"));
   const result = await setState(item.id, isGoingHome ? "have_at_home" : "to_buy");
   if (result.isSaved && isGoingHome) {
-    offerUndo(t("shoppingList.undo.movedHome", { name: item.name }), () => setState(item.id, previousState));
+    offerUndo(t("shoppingList.undo.movedHome", { name: item.name }), undo);
   }
   reportFailure(result);
 }
 
 async function handleRemove(item: ShoppingItem) {
   const listId = list.value?.id;
+  const shop = getItemShop(item);
   const result = await removeItem(item);
   if (result.isSaved && listId !== undefined) {
-    offerUndo(t("shoppingList.undo.removed", { name: item.name }), () => restoreItem(listId, item));
+    offerUndo(t("shoppingList.undo.removed", { name: item.name }), () => restoreItem(listId, item, shop));
   }
   reportFailure(result);
+}
+
+function openDefaultShop() {
+  shopDialogTarget.value = { kind: "default" };
+  isShopDialogOpen.value = true;
+}
+
+function openItemShop(item: ShoppingItem) {
+  shopDialogTarget.value = { kind: "item", itemId: item.id };
+  isShopDialogOpen.value = true;
+}
+
+function handleShopPromptChoose() {
+  if (shopPromptItem.value !== null) {
+    openItemShop(shopPromptItem.value);
+  }
+}
+
+// The dialog's title and choices for what it sets; the line as it is now, which may have changed since it opened.
+const shopDialogItem = computed(() => {
+  const target = shopDialogTarget.value;
+  return target?.kind === "item" ? (items.value.find((item) => item.id === target.itemId) ?? null) : null;
+});
+const shopDialog = computed(() => {
+  const item = shopDialogItem.value;
+  if (item === null) {
+    return {
+      title: t("shoppingList.shop.defaultTitle"),
+      hint: t("shoppingList.shop.defaultHint"),
+      currentName: defaultShopName.value,
+      clearLabel: t("shoppingList.shop.clearDefault"),
+      isRememberOffered: false,
+    };
+  }
+  return {
+    title: t("shoppingList.shop.itemTitle", { name: item.name }),
+    hint: null,
+    currentName: getItemShop(item)?.name ?? null,
+    clearLabel: t("shoppingList.shop.clearItem"),
+    isRememberOffered: true,
+  };
+});
+
+// A picked or typed shop: the one the viewer is shopping at from now on, or the line's (and, unless turned off, the
+// one for the next lines too).
+async function handleShopSave(name: string, isRemembered: boolean) {
+  const target = shopDialogTarget.value;
+  if (target?.kind === "default") {
+    setDefaultShopName(findShopByName(shops.value, name)?.name ?? name);
+    return;
+  }
+  if (target?.kind !== "item") {
+    return;
+  }
+  const { shop, isNew } = toShop(name);
+  if (isRemembered) {
+    setDefaultShopName(shop.name);
+  }
+  const result = await setShop(target.itemId, shop);
+  if (isNew) {
+    reloadShops();
+  }
+  reportFailure(result);
+}
+
+async function handleShopClear() {
+  const target = shopDialogTarget.value;
+  if (target?.kind === "default") {
+    setDefaultShopName(null);
+  } else if (target?.kind === "item") {
+    reportFailure(await setShop(target.itemId, null));
+  }
 }
 
 function openAmount(item: ShoppingItem) {
@@ -288,6 +446,19 @@ const participantNames = computed(() => {
       <div v-if="view.totalCount > 0" :class="$style.chips">
         <button
           type="button"
+          :class="[$style.chip, $style.shopChip]"
+          aria-haspopup="dialog"
+          data-testid="shopping-list-shop"
+          @click="openDefaultShop"
+        >
+          <v-icon icon="mdi-storefront-outline" size="16" aria-hidden="true" />
+          <span :class="$style.chipText">
+            {{ defaultShopName === null ? t("shoppingList.shop.chipNone") : t("shoppingList.shop.chip", { shop: defaultShopName }) }}
+          </span>
+          <v-icon icon="mdi-menu-down" size="16" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           :class="$style.chip"
           :aria-pressed="isBoughtLast"
           data-testid="shopping-list-bought-last"
@@ -320,9 +491,11 @@ const participantNames = computed(() => {
             :items="group.items"
             :participant-names="participantNames"
             :current-user-id="user?.id ?? null"
+            :shop-names="shopNames"
             @toggle-bought="handleToggleBought"
             @toggle-at-home="handleToggleAtHome"
             @edit-amount="openAmount"
+            @choose-shop="openItemShop"
             @remove="handleRemove"
           />
         </ShoppingItemGroup>
@@ -341,6 +514,22 @@ const participantNames = computed(() => {
       <ShoppingAddItemDialog v-model="isAddOpen" @save="handleAdd" />
       <ShoppingAmountDialog v-model="isAmountOpen" :item="amountItem" @save="handleAmount" />
       <ShoppingUndoSnackbar v-model="isUndoOpen" :text="undoOffer?.text ?? ''" @undo="handleUndo" />
+      <ShoppingShopPrompt
+        v-model="isShopPromptOpen"
+        :text="shopPromptItem ? t('shoppingList.shop.prompt', { name: shopPromptItem.name }) : ''"
+        @choose="handleShopPromptChoose"
+      />
+      <ShoppingShopDialog
+        v-model="isShopDialogOpen"
+        :title="shopDialog.title"
+        :hint="shopDialog.hint"
+        :shops="shopChoices"
+        :current-name="shopDialog.currentName"
+        :clear-label="shopDialog.clearLabel"
+        :is-remember-offered="shopDialog.isRememberOffered"
+        @save="handleShopSave"
+        @clear="handleShopClear"
+      />
     </template>
     <v-alert
       v-else-if="listResult?.result.status === 'not-found' || planResult?.status === 'not-found'"
@@ -449,6 +638,18 @@ const participantNames = computed(() => {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+/* The design's "Shopping at Lidl": bold, and a long shop name is cut short rather than pushing the row wider. */
+.shopChip {
+  max-width: 100%;
+  font-weight: 600;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip[aria-pressed="true"] {

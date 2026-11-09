@@ -717,7 +717,8 @@
       "amountRequired": "Enter an amount",
       "notANumber": "Enter a number, such as 1.5",
       "missingUnit": "Choose a unit",
-      "outOfRange": "Enter an amount above 0, up to 1000 kg"
+      "outOfRange": "Enter an amount above 0, up to 1000 kg",
+      "shopNameRequired": "Enter a shop name"
     },
     "undo": {
       "action": "Undo",
@@ -731,13 +732,38 @@
       "invalidAmount": "Enter an amount above 0, up to 1000 kg.",
       "invalidUnit": "Choose one of the units offered.",
       "amountNotEditable": "Items to taste have no amount to change.",
-      "tooManyItems": "This list has too many items of your own. Remove some first."
+      "tooManyItems": "This list has too many items of your own. Remove some first.",
+      "itemNotBought": "This item is no longer marked bought, so it has no shop to record.",
+      "invalidShopName": "Enter a shop name of up to 60 characters.",
+      "tooManyShops": "Your household has too many shops saved."
     },
     "live": {
       "on": "Live",
       "onDescription": "Changes by others in your household show here as they happen.",
       "paused": "Reconnecting…",
       "pausedDescription": "Live updates are paused. Others' changes will show once the connection is back."
+    },
+    "shop": {
+      "chip": "Shopping at {shop}",
+      "chipNone": "Choose shop",
+      "defaultTitle": "Where are you shopping?",
+      "defaultHint": "Items you tick are recorded at this shop until you close this tab.",
+      "itemTitle": "Where did you buy {name}?",
+      "choices": "Your shops",
+      "name": "Shop",
+      "otherName": "Another shop",
+      "remember": "Use it for the next items I tick",
+      "clearItem": "No shop",
+      "clearDefault": "No default shop",
+      "skip": "Skip",
+      "cancel": "Cancel",
+      "save": "Save",
+      "prompt": "{name} bought",
+      "promptAction": "Add shop",
+      "add": "Add shop",
+      "change": "Change shop",
+      "boughtAt": "Bought at {shop}",
+      "shortfall": "Needs {amount} more"
     }
   }
 }

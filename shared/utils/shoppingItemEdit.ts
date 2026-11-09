@@ -36,6 +36,17 @@ export function getShoppingItemAmount(item: ShoppingItem): number | null {
   return item.amountOverride ?? item.amount;
 }
 
+// How much more a bought line now says to buy than was bought (G7): the plan (or someone) raised its amount after the
+// tick. Null when nothing more is needed, or the amounts cannot be compared (no amount, or another unit).
+export function getBoughtShortfall(item: ShoppingItem): number | null {
+  const neededAmount = getShoppingItemAmount(item);
+  if (item.state !== "bought" || neededAmount === null || item.boughtAmount === null || item.boughtUnit !== item.unit) {
+    return null;
+  }
+  const shortfall = roundToStoredAmount(neededAmount - item.boughtAmount);
+  return shortfall > 0 ? shortfall : null;
+}
+
 // The plan's amount of a generated line whose amount someone changed; null when nothing was changed.
 export function getPlanAmount(item: ShoppingItem): number | null {
   if (item.source !== "generated" || item.amountOverride === null) {
@@ -101,13 +112,18 @@ export function readAmountInput(input: AmountInput, unitChoices: readonly string
 // The amount as stored, in its base unit; null when it is out of range (zero once rounded, or above the limit).
 export function toStoredAmount(amount: number, unit: string): ShoppingItemAmountChange | null {
   const quantity = toBaseQuantity({ amount, unit });
-  const scale = 10 ** AMOUNT_FRACTION_DIGITS;
-  const storedAmount = Math.round(quantity.amount * scale) / scale;
+  const storedAmount = roundToStoredAmount(quantity.amount);
   if (storedAmount <= 0 || storedAmount > MAX_ITEM_AMOUNT) {
     return null;
   }
   return { amount: storedAmount, unit: quantity.unit };
 }
+
+// Two decimals, as numeric(12, 2) stores, so 0.1 + 0.2 compares as 0.3.
+const roundToStoredAmount = (amount: number): number => {
+  const scale = 10 ** AMOUNT_FRACTION_DIGITS;
+  return Math.round(amount * scale) / scale;
+};
 
 // 1.5 in English, 1,5 in Lithuanian, without grouping, so what is shown can be typed back.
 const formatAmountInput = (amount: number, locale: string): string =>

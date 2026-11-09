@@ -6,6 +6,8 @@ const props = defineProps<{
   // User id → name, for "Swap for Monika" and "Added by Monika".
   participantNames: ReadonlyMap<string, string>;
   currentUserId: string | null;
+  // Shop id → name, for "Bought at Lidl" (G7).
+  shopNames: ReadonlyMap<string, string>;
 }>();
 
 // Tapping a line ticks it bought or back (G5); the rest are in the line's actions menu (G4). Lines at home are not
@@ -14,6 +16,7 @@ const emit = defineEmits<{
   toggleBought: [item: ShoppingItem];
   toggleAtHome: [item: ShoppingItem];
   editAmount: [item: ShoppingItem];
+  chooseShop: [item: ShoppingItem];
   remove: [item: ShoppingItem];
 }>();
 
@@ -58,6 +61,21 @@ const handleLineClick = (item: ShoppingItem): void => {
   }
 };
 
+// "Bought at Lidl" on a bought line (G7); nothing when no shop was recorded or its name is not known here.
+const shopLabel = (item: ShoppingItem): string | null => {
+  const shopName = item.state === "bought" && item.shopId !== null ? props.shopNames.get(item.shopId) : undefined;
+  return shopName === undefined ? null : t("shoppingList.shop.boughtAt", { shop: shopName });
+};
+
+// "Needs 200 g more" on a bought line whose amount went up after it was ticked (G7).
+const shortfallLabel = (item: ShoppingItem): string | null => {
+  const shortfall = getBoughtShortfall(item);
+  if (shortfall === null || item.unit === null) {
+    return null;
+  }
+  return t("shoppingList.shop.shortfall", { amount: formatQuantity(shortfall, item.unit) });
+};
+
 // "Added by Monika" on manual lines; nothing when that person is no longer known here.
 const addedByLabel = (item: ShoppingItem): string | null => {
   if (item.source !== "manual" || item.addedBy === null) {
@@ -99,6 +117,14 @@ const addedByLabel = (item: ShoppingItem): string | null => {
           <span v-if="planAmountLabel(item)" :class="$style.note" data-testid="shopping-item-plan-amount">
             {{ planAmountLabel(item) }}
           </span>
+          <span v-if="shopLabel(item)" :class="$style.note" data-testid="shopping-item-shop">
+            <v-icon icon="mdi-storefront-outline" size="14" aria-hidden="true" />
+            {{ shopLabel(item) }}
+          </span>
+          <span v-if="shortfallLabel(item)" :class="$style.shortfall" data-testid="shopping-item-shortfall">
+            <v-icon icon="mdi-alert-circle-outline" size="14" aria-hidden="true" />
+            {{ shortfallLabel(item) }}
+          </span>
         </span>
         <span v-if="amountLabel(item)" :class="$style.amount" data-testid="shopping-item-amount">
           {{ amountLabel(item) }}
@@ -131,6 +157,13 @@ const addedByLabel = (item: ShoppingItem): string | null => {
             :title="t('shoppingList.item.haveAtHome')"
             data-testid="shopping-item-have-at-home"
             @click="$emit('toggleAtHome', item)"
+          />
+          <v-list-item
+            v-if="item.state === 'bought'"
+            prepend-icon="mdi-storefront-outline"
+            :title="item.shopId === null ? t('shoppingList.shop.add') : t('shoppingList.shop.change')"
+            data-testid="shopping-item-choose-shop"
+            @click="$emit('chooseShop', item)"
           />
           <v-list-item
             v-if="isAmountEditable(item)"
@@ -246,6 +279,13 @@ button.line:focus-visible {
 .note {
   font-size: 13px;
   color: var(--color-muted);
+}
+
+/* Not struck through or muted like the rest of a bought line: it says what is still to buy. */
+.shortfall {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-warning);
 }
 
 .amount {

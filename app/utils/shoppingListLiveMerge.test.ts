@@ -21,6 +21,9 @@ const item = (id: string, overrides: Partial<ShoppingItem> = {}): ShoppingItem =
   isRemoved: false,
   amountOverride: null,
   addedBy: null,
+  shopId: null,
+  boughtAmount: null,
+  boughtUnit: null,
   ...overrides,
 });
 
@@ -89,6 +92,58 @@ describe("applyRemoteShoppingItemChange", () => {
     );
 
     expect(changed.map((line) => line.id)).toEqual(["a"]);
+  });
+});
+
+describe("applyRemoteShoppingItemChange with purchases", () => {
+  const SHOP_ID = "00000000-0000-4000-8000-0000000000a1";
+  const purchase = { shopId: SHOP_ID, boughtAmount: 100, boughtUnit: "g" };
+
+  it("shows another member's purchase on its line", () => {
+    const changed = applyRemoteShoppingItemChange(
+      [item("a", { state: "bought" }), item("b")],
+      { kind: "purchase_upsert", listId: "list", itemId: "a", purchase },
+      guarding({}),
+    );
+
+    expect(changed[0]).toMatchObject({ state: "bought", ...purchase });
+    expect(changed[1]).toMatchObject({ shopId: null });
+  });
+
+  it("clears the purchase when it is deleted", () => {
+    const changed = applyRemoteShoppingItemChange(
+      [item("a", { state: "bought", ...purchase })],
+      { kind: "purchase_delete", itemId: "a" },
+      guarding({}),
+    );
+
+    expect(changed[0]).toMatchObject({ shopId: null, boughtAmount: null, boughtUnit: null });
+  });
+
+  it("keeps the shop this viewer is setting", () => {
+    const changed = applyRemoteShoppingItemChange(
+      [item("a", { state: "bought", ...purchase })],
+      { kind: "purchase_upsert", listId: "list", itemId: "a", purchase: { ...purchase, shopId: null, boughtAmount: 90 } },
+      guarding({ a: ["shopId"] }),
+    );
+
+    expect(changed[0]).toMatchObject({ shopId: SHOP_ID, boughtAmount: 90 });
+  });
+
+  it("keeps the purchase when the line itself changes", () => {
+    const changed = applyRemoteShoppingItemChange(
+      [item("a", { state: "bought", ...purchase })],
+      { kind: "upsert", listId: "list", item: item("a", { state: "bought", amount: 300 }) },
+      guarding({}),
+    );
+
+    expect(changed[0]).toMatchObject({ amount: 300, ...purchase });
+  });
+
+  it("ignores purchases of lines it does not show", () => {
+    const items = [item("a")];
+
+    expect(applyRemoteShoppingItemChange(items, { kind: "purchase_delete", itemId: "x" }, guarding({}))).toEqual(items);
   });
 });
 
