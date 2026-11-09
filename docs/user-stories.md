@@ -184,6 +184,7 @@ As a user I want a list created from my plan.
 ### G3. Categorised list view (S, Phase 2)
 As a user I want items grouped by category, in a sensible order.
 - Collapsible groups with item counts; empty groups hidden.
+- Built as `ShoppingItemGroup.vue` (header button with `aria-expanded`, count and chevron, as in the shopping list design) on `/plans/:id/list`, with groups and counts from `getShoppingListView()` (see README, "Shopping lists"). Order: the categories as `INGREDIENT_CATEGORIES` lists them (a walk through a typical shop: fruit and vegetables, meat and fish, dairy and eggs, grains and bread, pantry, frozen, other), then the extras. Every group starts open; what the viewer opens or closes is remembered per list in this browser only (`localStorage`, newest ten lists). The count is every line shown in the group for now; G4 and G5 narrow it to what is still to buy ("3 of 7").
 
 ### G4. Add, edit, remove items (M, Phase 2)
 As a user I want to adjust the list to what I need.

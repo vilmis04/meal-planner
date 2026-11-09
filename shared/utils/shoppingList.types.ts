@@ -1,7 +1,7 @@
 import type { Diet, Protein } from "./diet";
 import type { INGREDIENT_CATEGORIES } from "./ingredient";
 import type { MealType } from "./mealFilter";
-import type { SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES } from "./shoppingList";
+import type { EXTRAS_GROUP_KEY, SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES } from "./shoppingList";
 
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];
 type ShoppingItemState = (typeof SHOPPING_ITEM_STATES)[number];
@@ -97,14 +97,19 @@ export interface ShoppingItem {
   amountOverride: number | null;
 }
 
-interface ShoppingItemGroup {
-  category: IngredientCategory;
+// A group of the list: a category, or the "to taste" extras. G4 adds "have at home".
+export type ShoppingListGroupKey = IngredientCategory | typeof EXTRAS_GROUP_KEY;
+
+interface ShoppingListGroup {
+  key: ShoppingListGroupKey;
   items: ShoppingItem[];
+  // What the group's header counts: every line shown in it for now; G4 and G5 narrow it to the lines still to buy.
+  itemCount: number;
 }
 
-// What the list shows: the lines by category in list order (empty categories left out) and the "to taste" extras.
+// What the list shows: its groups in list order (categories in the order of a walk through a shop, then the extras),
+// empty groups left out.
 export interface ShoppingListView {
-  groups: ShoppingItemGroup[];
-  extras: ShoppingItem[];
+  groups: ShoppingListGroup[];
   itemCount: number;
 }

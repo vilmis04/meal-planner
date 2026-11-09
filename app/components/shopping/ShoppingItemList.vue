@@ -53,12 +53,8 @@ const swapLabel = (item: ShoppingItem): string | null => {
   justify-content: space-between;
   gap: var(--space-3);
   min-height: 48px;
-  padding: 10px var(--space-1);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.row:last-child {
-  border-bottom: none;
+  padding: 8px 14px;
+  border-top: 1px solid var(--color-border);
 }
 
 .text {
