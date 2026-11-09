@@ -458,6 +458,30 @@ describe("generateMealPlan", () => {
       expect(isBatchRecipe(wed) && isBatchRecipe(fri)).toBe(true);
     });
 
+    it("never gives an open slot an excluded recipe, so a swap differs", () => {
+      const recipes = makeRecipes("breakfast-", "breakfast", 2);
+      const slots = makeSlots(1, ["breakfast"]).map((slot) => ({ ...slot, recipeId: "breakfast-01" }));
+      for (const seed of [1, 2, 3, 4, 5]) {
+        const assignments = generateMealPlan(
+          makeInput({ dayCount: 1, mealTypes: ["breakfast"], slots, recipes, excludedRecipeIds: ["breakfast-01"], seed }),
+        );
+        expect(recipesOf(assignments, "breakfast")).toEqual(["breakfast-02"]);
+      }
+    });
+
+    it("leaves a slot empty when the excluded recipe was the only one that fits", () => {
+      const assignments = generateMealPlan(
+        makeInput({
+          dayCount: 1,
+          mealTypes: ["breakfast"],
+          slots: makeSlots(1, ["breakfast"]),
+          recipes: makeRecipes("breakfast-", "breakfast", 1),
+          excludedRecipeIds: ["breakfast-01"],
+        }),
+      );
+      expect(assignments).toEqual([{ dayIndex: 0, mealType: "breakfast", recipeId: null, note: "no_recipe_fits_diets" }]);
+    });
+
     it("leaves meal types that are not asked for alone", () => {
       const assignments = generateMealPlan(makeInput({ mealTypes: ["breakfast", "lunch", "dinner"] }));
       expect(assignments.some((assignment) => assignment.mealType === "snack")).toBe(false);

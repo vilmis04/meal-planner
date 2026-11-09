@@ -44,6 +44,7 @@ export const GENERATION_FAILED_KEY = "plan.generate.errors.failed";
 // The 409 answers of POST /api/plans/:id/generate (E4), by status.
 export const GENERATION_ERROR_KEY_BY_STATUS: Readonly<Record<string, string>> = {
   "nothing-to-fill": "plan.generate.errors.nothingToFill",
+  "all-locked": "plan.regenerate.errors.allLocked",
   "no-participants": "plan.generate.errors.noParticipants",
   "plan-changed": "plan.generate.errors.planChanged",
 };
@@ -54,4 +55,34 @@ export function getGenerationErrorKey(httpStatus: number | null, status: string 
     return GENERATION_ERROR_KEY_BY_STATUS[status];
   }
   return httpStatus === 404 ? "plan.errors.notFound" : GENERATION_FAILED_KEY;
+}
+
+export const SWAP_FAILED_KEY = "plan.swap.errors.failed";
+
+// The 409 answers of POST /api/plans/:id/slots/:slotId/swap (E5), by status.
+export const SWAP_ERROR_KEY_BY_STATUS: Readonly<Record<string, string>> = {
+  "slot-locked": "plan.swap.errors.slotLocked",
+  "no-alternative": "plan.swap.errors.noAlternative",
+  "no-participants": "plan.generate.errors.noParticipants",
+  "plan-changed": "plan.generate.errors.planChanged",
+};
+
+// As for a generation: a 404 means the plan (or the slot) is gone or no longer shared with the user.
+export function getSwapErrorKey(httpStatus: number | null, status: string | null): string {
+  if (status !== null && SWAP_ERROR_KEY_BY_STATUS[status]) {
+    return SWAP_ERROR_KEY_BY_STATUS[status];
+  }
+  return httpStatus === 404 ? "plan.errors.notFound" : SWAP_FAILED_KEY;
+}
+
+export const LOCK_SAVE_FAILED_KEY = "plan.lock.saveFailed";
+
+// Messages raised by set_meal_plan_slots_locked() (supabase/migrations/20261110000000_add_meal_plan_slot_locks.sql).
+export const LOCK_ERROR_KEY_BY_MESSAGE: Readonly<Record<string, string>> = {
+  plan_not_found: "plan.errors.notFound",
+  slot_empty: "plan.lock.errors.slotEmpty",
+};
+
+export function getLockErrorKey({ message }: { message: string }): string {
+  return LOCK_ERROR_KEY_BY_MESSAGE[message] ?? LOCK_SAVE_FAILED_KEY;
 }

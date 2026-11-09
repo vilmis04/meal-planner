@@ -102,14 +102,15 @@ export function createSupabasePlanGenerationStore({
       return historyRowsSchema.parse(data);
     },
 
-    async applyGeneration(planId, assignments) {
+    async applyGeneration(planId, writes) {
       const { error } = await userClient.rpc("apply_meal_plan_generation", {
         target_plan_id: planId,
-        assignments: assignments.map((assignment) => ({
-          day_index: assignment.dayIndex,
-          meal_type: assignment.mealType,
-          recipe_id: assignment.recipeId,
-          note: assignment.note,
+        assignments: writes.map((write) => ({
+          day_index: write.dayIndex,
+          meal_type: write.mealType,
+          recipe_id: write.recipeId,
+          note: write.note,
+          previous_recipe_id: write.previousRecipeId,
         })),
       });
       if (error?.message === "plan_changed") return "plan-changed";

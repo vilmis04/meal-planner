@@ -48,6 +48,8 @@ export interface PlanGenerationInput {
   swapDiets: Readonly<Record<string, readonly Diet[]>>;
   history: readonly RecipeLastUse[];
   cooldownDays: number;
+  // Recipes the open slots must not get: a swap (E5) leaves out the recipe it replaces.
+  excludedRecipeIds?: readonly string[];
   seed: number;
 }
 

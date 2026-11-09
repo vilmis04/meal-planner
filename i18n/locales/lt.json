@@ -222,6 +222,34 @@
         "createdNotFilled": "Planas sukurtas, bet jo nepavyko užpildyti. Bandykite dar kartą plano puslapyje."
       }
     },
+    "regenerate": {
+      "action": "Perplanuoti neužrakintus",
+      "done": "Neužrakinti patiekalai perplanuoti",
+      "doneWithNotes": "Neužrakinti patiekalai perplanuoti. Prie kai kurių yra pastabų, peržiūrėkite jas.",
+      "errors": {
+        "allLocked": "Visi patiekalai užrakinti. Atrakinkite, ką norite perplanuoti."
+      }
+    },
+    "swap": {
+      "action": "Pasiūlyti kitą",
+      "suggest": "Pasiūlyti",
+      "done": "Pakeista kitu receptu",
+      "lockedHint": "Užrakinta. Atrakinkite plane, kad gautumėte pasiūlymų.",
+      "errors": {
+        "failed": "Nepavyko pasiūlyti kito recepto. Bandykite dar kartą.",
+        "slotLocked": "Šis patiekalas dabar užrakintas. Atrakinkite, kad pakeistumėte.",
+        "noAlternative": "Šiam patiekalui netinka joks kitas receptas."
+      }
+    },
+    "lock": {
+      "lock": "Užrakinti: {meal}, {day}",
+      "unlock": "Atrakinti: {meal}, {day}",
+      "locked": "Užrakinta",
+      "saveFailed": "Nepavyko išsaugoti užrakto. Bandykite dar kartą.",
+      "errors": {
+        "slotEmpty": "Tuščio patiekalo užrakinti negalima. Pirmiausia pasirinkite receptą."
+      }
+    },
     "batch": {
       "position": "{day} diena iš {count}",
       "covers": "užtenka iki {day}",

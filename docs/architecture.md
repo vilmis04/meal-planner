@@ -102,6 +102,8 @@ Rules:
 
 **Generate a plan (E4).** Client calls `POST /api/plans/:id/generate` -> server verifies membership -> loads participants, their diets and preferences, recipes with protein metadata and swaps, and recent plan history (for cooldown) -> pure `planner` returns slot assignments -> server writes slots -> shopping list is built by the pure `shopping` module and stored -> client shows the result. Same code is used by the scheduled job.
 
+**Lock, swap, regenerate (E5).** Locks are a slot column changed through `set_meal_plan_slots_locked()` (a recipe chosen by hand is locked). "Regenerate unlocked" is the same generate call with `mode: "regenerate_unlocked"`; a swap (`POST /api/plans/:id/slots/:slotId/swap`) runs the same pure planner on one slot (or its batch) with every other slot kept and the current recipe excluded. Every write names the recipe each slot held when it was read, so a change made meanwhile refuses the write (`plan_changed`) instead of being overwritten.
+
 **Shared shopping list (G6).** Items live in `shopping_items` rows. Clients subscribe to Realtime changes for the list id; each toggle or edit is a single-row update, so concurrent edits to different items do not conflict. Last write wins on the same item.
 
 **Scheduled plan creation (H2).** Coolify scheduled task (or Supabase `pg_cron` with `pg_net`) calls `POST /api/cron/create-plans` daily with `NUXT_CRON_SECRET`. The endpoint finds schedules due today in each user's/household's timezone, creates plans idempotently (unique key on schedule + period start), generates them, and writes a notification row. Chosen default: Coolify scheduled task, because it keeps all deployment config in one place.

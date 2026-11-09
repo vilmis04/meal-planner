@@ -222,6 +222,34 @@
         "createdNotFilled": "The plan was created but could not be filled. Try again from the plan."
       }
     },
+    "regenerate": {
+      "action": "Regenerate unlocked",
+      "done": "Unlocked slots regenerated",
+      "doneWithNotes": "Unlocked slots regenerated. Some slots have a note, so check them.",
+      "errors": {
+        "allLocked": "Every slot is locked. Unlock one to regenerate it."
+      }
+    },
+    "swap": {
+      "action": "Suggest another",
+      "suggest": "Suggest one",
+      "done": "Swapped for another recipe",
+      "lockedHint": "Locked. Unlock it on the plan to get suggestions.",
+      "errors": {
+        "failed": "No other recipe could be suggested. Try again.",
+        "slotLocked": "This slot is locked now. Unlock it to swap it.",
+        "noAlternative": "No other recipe fits this slot."
+      }
+    },
+    "lock": {
+      "lock": "Lock {meal} on {day}",
+      "unlock": "Unlock {meal} on {day}",
+      "locked": "Locked",
+      "saveFailed": "The lock could not be saved. Try again.",
+      "errors": {
+        "slotEmpty": "An empty slot cannot be locked. Choose a recipe first."
+      }
+    },
     "batch": {
       "position": "Day {day} of {count}",
       "covers": "covers {day}",

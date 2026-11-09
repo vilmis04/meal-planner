@@ -1,3 +1,4 @@
+import type { GenerationMode } from "#shared/utils/mealPlan";
 import type {
   CreateMealPlanResult,
   GeneratePlanResult,
@@ -6,11 +7,13 @@ import type {
   MealPlanLoadResult,
   NewMealPlan,
   SetSlotRecipeResult,
+  SetSlotsLockedResult,
   SnackSettings,
+  SwapSlotResult,
   UpdateParticipantsResult,
 } from "~/types/mealPlan.types";
 
-// Meal plans (E1 to E4). Row level security decides what the user sees: their individual plans and their household's.
+// Meal plans (E1 to E5). Row level security decides what the user sees: their individual plans and their household's.
 export function useMealPlans() {
   const supabase = useSupabaseClient();
 
@@ -144,10 +147,11 @@ export function useMealPlans() {
     return { status: "loaded", hated: result.data };
   };
 
-  // Fills the plan's empty slots on the server (E4), which reads everyone's ratings and plan history there.
-  const generate = async (planId: string): Promise<GeneratePlanResult> => {
+  // Fills the plan's empty slots (E4), or replaces every unlocked one (E5), on the server, which reads everyone's
+  // ratings and plan history there.
+  const generate = async (planId: string, mode: GenerationMode = "fill_empty"): Promise<GeneratePlanResult> => {
     const response = await $fetch
-      .raw(`/api/plans/${planId}/generate`, { method: "POST", ignoreResponseError: true, retry: 0 })
+      .raw(`/api/plans/${planId}/generate`, { method: "POST", body: { mode }, ignoreResponseError: true, retry: 0 })
       .catch((error: unknown) => {
         console.error("Generating the plan failed", error);
         return null;
@@ -164,5 +168,50 @@ export function useMealPlans() {
     return { isGenerated: true, summary: body.data };
   };
 
-  return { create, loadList, loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes, generate };
+  // Replaces a slot's recipe (and its batch's other days) with another one the generator's rules allow (E5).
+  const swapSlot = async (planId: string, slotId: string): Promise<SwapSlotResult> => {
+    const response = await $fetch
+      .raw(`/api/plans/${planId}/slots/${slotId}/swap`, { method: "POST", ignoreResponseError: true, retry: 0 })
+      .catch((error: unknown) => {
+        console.error("Swapping the slot failed", error);
+        return null;
+      });
+
+    const body = swapSlotResponseSchema.safeParse(response?._data);
+    if (!body.success) {
+      console.error("Swapping the slot failed", response?.status ?? "no response");
+      return { isSwapped: false, errorKey: getSwapErrorKey(response?.status ?? null, null) };
+    }
+    if (body.data.status !== "swapped") {
+      return { isSwapped: false, errorKey: getSwapErrorKey(response?.status ?? null, body.data.status) };
+    }
+    return { isSwapped: true };
+  };
+
+  // Locks or unlocks slots of one plan together, such as the days of a batch (E5).
+  const setSlotsLocked = async (slotIds: string[], isLocked: boolean): Promise<SetSlotsLockedResult> => {
+    const { error } = await supabase.rpc("set_meal_plan_slots_locked", {
+      target_slot_ids: slotIds,
+      should_lock: isLocked,
+    });
+
+    if (error) {
+      console.error("Saving the lock failed", error);
+      return { isSaved: false, errorKey: getLockErrorKey(error) };
+    }
+    return { isSaved: true };
+  };
+
+  return {
+    create,
+    loadList,
+    loadPlan,
+    updateSnackSettings,
+    updateParticipants,
+    setSlotRecipe,
+    loadHatedRecipes,
+    generate,
+    swapSlot,
+    setSlotsLocked,
+  };
 }

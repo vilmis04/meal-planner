@@ -197,3 +197,24 @@ export function getBatchDays(
   }
   return batchDays;
 }
+
+// The slots of the batch `slot` is a day of, in day order, or `slot` alone. Locking and swapping (E5) treat the
+// days of a batch as one: they are cooked once.
+export function getBatchSlots<S extends PlanSlotRef>(
+  slots: readonly S[],
+  recipes: readonly Pick<PickableRecipe, "id" | "portionDays">[],
+  slot: S,
+): S[] {
+  const batchDay = getBatchDays(slots, recipes).get(slot.id);
+  if (!batchDay) {
+    return [slot];
+  }
+  return slots
+    .filter(
+      (candidate) =>
+        candidate.mealType === slot.mealType &&
+        candidate.dayIndex >= batchDay.firstDayIndex &&
+        candidate.dayIndex <= batchDay.lastDayIndex,
+    )
+    .sort((first, second) => first.dayIndex - second.dayIndex);
+}

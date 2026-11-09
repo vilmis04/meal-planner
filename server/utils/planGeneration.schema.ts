@@ -4,13 +4,21 @@
 import { z } from "zod";
 import { DIETS, PROTEINS } from "../../shared/utils/diet";
 import { MEAL_TYPES } from "../../shared/utils/mealFilter";
-import { COOLDOWN_DAYS_MAX, PLAN_DAY_COUNT_MAX, PLAN_DAY_COUNT_MIN, PLAN_KINDS, WEEKDAYS, isIsoDate } from "../../shared/utils/mealPlan";
+import {
+  COOLDOWN_DAYS_MAX,
+  GENERATION_MODES,
+  PLAN_DAY_COUNT_MAX,
+  PLAN_DAY_COUNT_MIN,
+  PLAN_KINDS,
+  WEEKDAYS,
+  isIsoDate,
+} from "../../shared/utils/mealPlan";
 import { RECIPE_RATINGS } from "../../shared/utils/recipeRating";
 import { SEED_LIMIT } from "../../shared/utils/seededRandom";
 import type { StoredPlan } from "./planGenerationStore.types";
 
 export const GENERATION_PLAN_COLUMNS =
-  "id, kind, start_date, day_count, include_snacks, workdays, cooldown_days, meal_plan_slots(day_index, meal_type, recipe_id)";
+  "id, kind, start_date, day_count, include_snacks, workdays, cooldown_days, meal_plan_slots(id, day_index, meal_type, recipe_id, is_locked)";
 export const GENERATION_RECIPE_COLUMNS = "id, meal_type, portion_days, main_proteins";
 
 const isoDateSchema = z.string().refine(isIsoDate);
@@ -25,7 +33,13 @@ export const generationPlanRowSchema = z
     workdays: z.array(z.number().int().refine((weekday) => (WEEKDAYS as readonly number[]).includes(weekday))),
     cooldown_days: z.number().int().min(0).max(COOLDOWN_DAYS_MAX),
     meal_plan_slots: z.array(
-      z.object({ day_index: z.number().int().min(0), meal_type: z.enum(MEAL_TYPES), recipe_id: z.guid().nullable() }),
+      z.object({
+        id: z.guid(),
+        day_index: z.number().int().min(0),
+        meal_type: z.enum(MEAL_TYPES),
+        recipe_id: z.guid().nullable(),
+        is_locked: z.boolean(),
+      }),
     ),
   })
   .transform(
@@ -38,9 +52,11 @@ export const generationPlanRowSchema = z
       workdays: row.workdays,
       cooldownDays: row.cooldown_days,
       slots: row.meal_plan_slots.map((slot) => ({
+        id: slot.id,
         dayIndex: slot.day_index,
         mealType: slot.meal_type,
         recipeId: slot.recipe_id,
+        isLocked: slot.is_locked,
       })),
     }),
   );
@@ -71,10 +87,20 @@ export const historyRowsSchema = z
   .array(z.object({ recipe_id: z.guid(), last_planned_on: isoDateSchema }))
   .transform((rows) => rows.map((row) => ({ recipeId: row.recipe_id, lastPlannedOn: row.last_planned_on })));
 
-// POST /api/plans/:id/generate. Kept here because every file under server/api is a route.
+// POST /api/plans/:id/generate and POST /api/plans/:id/slots/:slotId/swap. Kept here because every file under
+// server/api is a route.
 export const generateRouteParamsSchema = z.object({ id: z.guid() });
+export const slotSwapRouteParamsSchema = z.object({ id: z.guid(), slotId: z.guid() });
+
 // A seed reproduces a generation (it is logged with every one); without it the server picks one.
+const seedSchema = z.number().int().min(0).max(SEED_LIMIT - 1).optional();
+
+// Without a mode only the empty slots are filled, as in E4.
 export const generateRequestBodySchema = z
-  .object({ seed: z.number().int().min(0).max(SEED_LIMIT - 1).optional() })
+  .object({ seed: seedSchema, mode: z.enum(GENERATION_MODES).optional() })
+  .nullish()
+  .transform((body) => body ?? {});
+export const slotSwapRequestBodySchema = z
+  .object({ seed: seedSchema })
   .nullish()
   .transform((body) => body ?? {});

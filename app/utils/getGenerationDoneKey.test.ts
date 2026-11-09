@@ -10,4 +10,11 @@ describe("getGenerationDoneKey", () => {
     expect(getGenerationDoneKey({ emptyCount: 1, compromisedCount: 0 })).toBe("plan.generate.doneWithNotes");
     expect(getGenerationDoneKey({ emptyCount: 0, compromisedCount: 2 })).toBe("plan.generate.doneWithNotes");
   });
+
+  it("says the unlocked slots were regenerated after a regeneration", () => {
+    expect(getGenerationDoneKey({ emptyCount: 0, compromisedCount: 0 }, "regenerate_unlocked")).toBe("plan.regenerate.done");
+    expect(getGenerationDoneKey({ emptyCount: 0, compromisedCount: 1 }, "regenerate_unlocked")).toBe(
+      "plan.regenerate.doneWithNotes",
+    );
+  });
 });

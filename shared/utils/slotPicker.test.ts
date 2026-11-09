@@ -4,6 +4,7 @@ import {
   countSlotRecipes,
   filterSlotRecipes,
   getBatchDays,
+  getBatchSlots,
   getBatchTarget,
   getHateWarning,
   groupHatedRecipes,
@@ -201,5 +202,26 @@ describe("getBatchDays", () => {
       batchRecipes,
     );
     expect(batchDays.size).toBe(0);
+  });
+});
+
+describe("getBatchSlots", () => {
+  const batchRecipes = [{ id: "stew", portionDays: 2 }];
+  const dinner = (dayIndex: number, recipeId: string | null) => ({
+    id: `dinner-${dayIndex}`,
+    dayIndex,
+    mealType: "dinner" as const,
+    recipeId,
+  });
+  const slots = [dinner(2, "stew"), dinner(1, "stew"), dinner(0, "salad"), dinner(3, null)];
+
+  it("gives every day of the slot's batch, in day order, from either day", () => {
+    expect(getBatchSlots(slots, batchRecipes, dinner(2, "stew")).map((slot) => slot.id)).toEqual(["dinner-1", "dinner-2"]);
+    expect(getBatchSlots(slots, batchRecipes, dinner(1, "stew")).map((slot) => slot.id)).toEqual(["dinner-1", "dinner-2"]);
+  });
+
+  it("gives the slot alone when it is not part of a batch", () => {
+    const salad = dinner(0, "salad");
+    expect(getBatchSlots(slots, batchRecipes, salad)).toEqual([salad]);
   });
 });

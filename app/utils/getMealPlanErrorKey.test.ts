@@ -5,14 +5,20 @@ import {
   GENERATION_ERROR_KEY_BY_STATUS,
   GENERATION_FAILED_KEY,
   GENERIC_MEAL_PLAN_ERROR_KEY,
+  LOCK_ERROR_KEY_BY_MESSAGE,
+  LOCK_SAVE_FAILED_KEY,
   MEAL_PLAN_ERROR_KEY_BY_MESSAGE,
   PARTICIPANTS_SAVE_FAILED_KEY,
   SLOT_ERROR_KEY_BY_MESSAGE,
   SLOT_SAVE_FAILED_KEY,
+  SWAP_ERROR_KEY_BY_STATUS,
+  SWAP_FAILED_KEY,
   getGenerationErrorKey,
+  getLockErrorKey,
   getMealPlanErrorKey,
   getParticipantsErrorKey,
   getSlotErrorKey,
+  getSwapErrorKey,
 } from "./getMealPlanErrorKey";
 
 const lookUp = (messages: unknown, key: string): unknown =>
@@ -53,8 +59,30 @@ describe("getMealPlanErrorKey", () => {
     expect(getGenerationErrorKey(409, "something-new")).toBe(GENERATION_FAILED_KEY);
   });
 
+  it.each(Object.entries(SWAP_ERROR_KEY_BY_STATUS))("maps the swap answer %s to %s", (status, key) => {
+    expect(getSwapErrorKey(409, status)).toBe(key);
+  });
+
+  it("reads a swap 404 as a plan that is not available, and anything else as a failure", () => {
+    expect(getSwapErrorKey(404, null)).toBe("plan.errors.notFound");
+    expect(getSwapErrorKey(500, null)).toBe(SWAP_FAILED_KEY);
+    expect(getSwapErrorKey(409, "something-new")).toBe(SWAP_FAILED_KEY);
+  });
+
+  it.each(Object.entries(LOCK_ERROR_KEY_BY_MESSAGE))("maps the lock error %s to %s", (message, key) => {
+    expect(getLockErrorKey({ message })).toBe(key);
+  });
+
+  it("falls back to a plain lock failure", () => {
+    expect(getLockErrorKey({ message: "invalid_slots" })).toBe(LOCK_SAVE_FAILED_KEY);
+  });
+
   it.each([
     ...Object.values(MEAL_PLAN_ERROR_KEY_BY_MESSAGE),
+    ...Object.values(SWAP_ERROR_KEY_BY_STATUS),
+    SWAP_FAILED_KEY,
+    ...Object.values(LOCK_ERROR_KEY_BY_MESSAGE),
+    LOCK_SAVE_FAILED_KEY,
     ...Object.values(GENERATION_ERROR_KEY_BY_STATUS),
     GENERATION_FAILED_KEY,
     ...Object.values(SLOT_ERROR_KEY_BY_MESSAGE),

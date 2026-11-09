@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const MEAL_PLAN_COLUMNS = "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at";
-export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note), meal_plan_participants(user_id)`;
+export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note, is_locked), meal_plan_participants(user_id)`;
 
 // The plan list shows the newest plans first; E6 replaces it with the week view and history.
 export const MEAL_PLAN_LIST_LIMIT = 50;
@@ -40,6 +40,7 @@ const slotRowSchema = z.object({
   recipe_id: z.guid().nullable(),
   // Why the generator left the slot empty or compromised (E4). SLOT_FILL_NOTES is in shared/utils/planGenerator.ts.
   fill_note: z.enum(SLOT_FILL_NOTES).nullable(),
+  is_locked: z.boolean(),
 });
 
 // meal_plan_hated_recipes() (E3): who hates which recipe, grouped by recipe id → user ids.
@@ -66,19 +67,28 @@ export const mealPlanDetailRowSchema = z
         mealType: slot.meal_type,
         recipeId: slot.recipe_id,
         fillNote: slot.fill_note,
+        // Regenerate and swap keep it (E5). A slot whose recipe was deleted is open again, as on the server.
+        isLocked: slot.is_locked && slot.recipe_id !== null,
       }))
       .sort(
         (a, b) => a.dayIndex - b.dayIndex || MEAL_TYPES.indexOf(a.mealType) - MEAL_TYPES.indexOf(b.mealType),
       ),
   }));
 
-// POST /api/plans/:id/generate (E4). The 409 answers say why nothing was written.
+const generationCountsShape = {
+  filledCount: z.number().int().min(0),
+  emptyCount: z.number().int().min(0),
+  compromisedCount: z.number().int().min(0),
+};
+
+// POST /api/plans/:id/generate (E4, E5). The 409 answers say why nothing was written.
 export const generatePlanResponseSchema = z.discriminatedUnion("status", [
-  z.object({
-    status: z.literal("generated"),
-    filledCount: z.number().int().min(0),
-    emptyCount: z.number().int().min(0),
-    compromisedCount: z.number().int().min(0),
-  }),
-  z.object({ status: z.enum(["nothing-to-fill", "no-participants", "plan-changed"]) }),
+  z.object({ status: z.literal("generated"), ...generationCountsShape }),
+  z.object({ status: z.enum(["nothing-to-fill", "all-locked", "no-participants", "plan-changed"]) }),
+]);
+
+// POST /api/plans/:id/slots/:slotId/swap (E5).
+export const swapSlotResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("swapped"), ...generationCountsShape }),
+  z.object({ status: z.enum(["slot-locked", "no-alternative", "no-participants", "plan-changed"]) }),
 ]);

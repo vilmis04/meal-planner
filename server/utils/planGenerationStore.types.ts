@@ -17,7 +17,22 @@ export interface StoredPlan {
   includeSnacks: boolean;
   workdays: number[];
   cooldownDays: number;
-  slots: { dayIndex: number; mealType: MealType; recipeId: string | null }[];
+  slots: StoredSlot[];
+}
+
+export interface StoredSlot {
+  id: string;
+  dayIndex: number;
+  mealType: MealType;
+  recipeId: string | null;
+  // As stored; a slot without a recipe counts as open whatever this says (isSlotLocked()).
+  isLocked: boolean;
+}
+
+// One generated slot as it is written, with the recipe the slot held when the plan was read, so the database can
+// refuse the write when someone changed the slot meanwhile (E5).
+export interface SlotWrite extends SlotAssignment {
+  previousRecipeId: string | null;
 }
 
 // Where the generator's inputs come from and where its plan goes. The service depends on this interface only, so
@@ -32,6 +47,7 @@ export interface PlanGenerationStore {
   loadParticipants(planId: string): Promise<GeneratorParticipant[]>;
   // Service role: the participants' other plans within `lookbackDays` before this one starts.
   loadHistory(planId: string, lookbackDays: number): Promise<RecipeLastUse[]>;
-  // As the signed-in user. "plan-changed" when a slot was filled meanwhile; nothing is written then.
-  applyGeneration(planId: string, assignments: readonly SlotAssignment[]): Promise<"applied" | "plan-changed">;
+  // As the signed-in user. "plan-changed" when a slot no longer holds its previous recipe, or was locked meanwhile;
+  // nothing is written then.
+  applyGeneration(planId: string, writes: readonly SlotWrite[]): Promise<"applied" | "plan-changed">;
 }
