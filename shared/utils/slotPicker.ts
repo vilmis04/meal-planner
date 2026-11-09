@@ -6,7 +6,16 @@
  * (supabase/migrations/20261108000000_add_meal_plan_slot_editing.sql).
  */
 
+import { isRecipeCompatible } from "./diet";
+import { addDays } from "./mealPlan";
 import type { MealType } from "./mealFilter";
+import type {
+  FilterableRecipe,
+  PlanHistoryEntry,
+  PlanHistoryTarget,
+  RecipeFilter,
+  RecipeFilterContext,
+} from "./slotPicker.types";
 
 export interface PickableRecipe {
   id: string;
@@ -59,6 +68,52 @@ export function filterSlotRecipes<T extends PickableRecipe>(
       const bCurrent = b.id === options.currentRecipeId ? 0 : 1;
       return aCurrent - bCurrent || collator.compare(a.name, b.name);
     });
+}
+
+// The picker's filter chips (E6), in the order they are shown. A recipe must pass every chip that is on.
+export const RECIPE_FILTERS = ["batch", "enjoyed", "fits_all_diets", "not_recent"] as const;
+
+export function matchesRecipeFilters(
+  recipe: FilterableRecipe,
+  filters: readonly RecipeFilter[],
+  context: RecipeFilterContext,
+): boolean {
+  return filters.every((filter) => RECIPE_FILTER_CHECKS[filter](recipe, context));
+}
+
+// Recipe id → the last day it was planned in one of `history`'s plans within the target plan's cooldown before
+// it starts: the same rule as the generator's cooldown (meal_plan_recipe_history()), over the plans that share a
+// participant with it. The generator also reads participants' plans the viewer cannot see; this reads only the
+// ones the viewer can, so nobody's individual plan shows through.
+export function getRecentlyPlannedRecipes(
+  history: readonly PlanHistoryEntry[],
+  target: PlanHistoryTarget,
+): Map<string, string> {
+  const recentRecipes = new Map<string, string>();
+  if (target.cooldownDays <= 0) {
+    return recentRecipes;
+  }
+
+  const windowStart = addDays(target.startDate, -target.cooldownDays);
+  const targetParticipants = new Set(target.participantIds);
+  for (const plan of history) {
+    const isRelated = plan.participantIds.some((participantId) => targetParticipants.has(participantId));
+    if (plan.id === target.planId || !isRelated) {
+      continue;
+    }
+    for (const slot of plan.slots) {
+      const plannedOn = addDays(plan.startDate, slot.dayIndex);
+      const isSkippedSnack = slot.mealType === "snack" && !plan.includeSnacks;
+      if (!slot.recipeId || isSkippedSnack || plannedOn >= target.startDate || plannedOn < windowStart) {
+        continue;
+      }
+      const known = recentRecipes.get(slot.recipeId);
+      if (!known || plannedOn > known) {
+        recentRecipes.set(slot.recipeId, plannedOn);
+      }
+    }
+  }
+  return recentRecipes;
 }
 
 // How many meal type recipes the slot can choose from, for "Search 32 dinners".
@@ -151,6 +206,9 @@ interface BatchDay {
   dayCount: number;
   firstDayIndex: number;
   lastDayIndex: number;
+  // Which batch of its meal this is, counted from 0 in day order. The week view (E6) tints every other batch of a
+  // meal differently, so two batches side by side never read as one.
+  batchNumber: number;
 }
 
 // Which slots are days of a batch: the same batch recipe in the same meal on consecutive days, in groups of its
@@ -169,6 +227,7 @@ export function getBatchDays(
   for (const mealSlots of byMeal.values()) {
     const ordered = [...mealSlots].sort((first, second) => first.dayIndex - second.dayIndex);
     let groupStart = 0;
+    let batchNumber = 0;
     while (groupStart < ordered.length) {
       const first = ordered[groupStart];
       const portionDays = first?.recipeId ? (portionDaysById.get(first.recipeId) ?? 1) : 1;
@@ -189,8 +248,10 @@ export function getBatchDays(
             dayCount: group.length,
             firstDayIndex: group[0]?.dayIndex ?? slot.dayIndex,
             lastDayIndex: group[group.length - 1]?.dayIndex ?? slot.dayIndex,
+            batchNumber,
           }),
         );
+        batchNumber++;
       }
       groupStart = groupEnd;
     }
@@ -218,3 +279,11 @@ export function getBatchSlots<S extends PlanSlotRef>(
     )
     .sort((first, second) => first.dayIndex - second.dayIndex);
 }
+
+const RECIPE_FILTER_CHECKS: Record<RecipeFilter, (recipe: FilterableRecipe, context: RecipeFilterContext) => boolean> = {
+  batch: (recipe) => recipe.portionDays > 1,
+  enjoyed: (recipe, context) => context.enjoyedRecipeIds.has(recipe.id),
+  fits_all_diets: (recipe, context) =>
+    context.participantDiets.every((diet) => isRecipeCompatible(diet, recipe.mainProteins)),
+  not_recent: (recipe, context) => !context.recentRecipeIds.has(recipe.id),
+};

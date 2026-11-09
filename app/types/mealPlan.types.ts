@@ -34,6 +34,12 @@ export type UpdateParticipantsResult = { isSaved: true } | { isSaved: false; err
 export type MealPlanLoadResult = { status: "found"; plan: MealPlan } | { status: "not-found" } | { status: "failed" };
 export type MealPlanListResult = { status: "loaded"; plans: MealPlanSummary[] } | { status: "failed" };
 
+// The plan list (E6): current and upcoming plans by start date, then past plans newest first, a page at a time.
+export type MealPlanOverviewResult =
+  | { status: "loaded"; activePlans: MealPlanSummary[]; pastPlans: MealPlanSummary[]; hasMorePast: boolean }
+  | { status: "failed" };
+export type PastMealPlansResult = { status: "loaded"; plans: MealPlanSummary[]; hasMore: boolean } | { status: "failed" };
+
 // Generating a plan (E4): the counts for the message, or the translation key of why nothing was filled.
 export type GenerationSummary = Extract<z.output<typeof generatePlanResponseSchema>, { status: "generated" }>;
 export type GeneratePlanResult = { isGenerated: true; summary: GenerationSummary } | { isGenerated: false; errorKey: string };

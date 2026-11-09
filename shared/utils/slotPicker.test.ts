@@ -7,9 +7,12 @@ import {
   getBatchSlots,
   getBatchTarget,
   getHateWarning,
+  getRecentlyPlannedRecipes,
   groupHatedRecipes,
+  matchesRecipeFilters,
   normalizeSearch,
 } from "./slotPicker";
+import type { PlanHistoryEntry, RecipeFilterContext } from "./slotPicker.types";
 
 const recipe = (id: string, name: string, mealType: PickableRecipe["mealType"], portionDays = 1): PickableRecipe => ({
   id,
@@ -185,14 +188,36 @@ describe("getBatchDays", () => {
 
   it("marks the days of a batch with their place in it", () => {
     const batchDays = getBatchDays([dinner(0, "stew"), dinner(1, "stew"), dinner(2, "salad")], batchRecipes);
-    expect(batchDays.get("dinner-0")).toEqual({ dayNumber: 1, dayCount: 2, firstDayIndex: 0, lastDayIndex: 1 });
-    expect(batchDays.get("dinner-1")).toEqual({ dayNumber: 2, dayCount: 2, firstDayIndex: 0, lastDayIndex: 1 });
+    expect(batchDays.get("dinner-0")).toEqual({
+      dayNumber: 1,
+      dayCount: 2,
+      firstDayIndex: 0,
+      lastDayIndex: 1,
+      batchNumber: 0,
+    });
+    expect(batchDays.get("dinner-1")).toEqual({
+      dayNumber: 2,
+      dayCount: 2,
+      firstDayIndex: 0,
+      lastDayIndex: 1,
+      batchNumber: 0,
+    });
     expect(batchDays.has("dinner-2")).toBe(false);
   });
 
   it("splits a longer run into batches of the recipe's days", () => {
     const batchDays = getBatchDays([0, 1, 2, 3, 4].map((day) => dinner(day, "stew")), batchRecipes);
     expect([0, 1, 2, 3, 4].map((day) => batchDays.get(`dinner-${day}`)?.dayNumber)).toEqual([1, 2, 1, 2, undefined]);
+  });
+
+  it("numbers the batches of each meal in day order", () => {
+    const lunch = (dayIndex: number) => ({ id: `lunch-${dayIndex}`, dayIndex, mealType: "lunch" as const, recipeId: "stew" });
+    const batchDays = getBatchDays(
+      [dinner(3, "stew"), dinner(4, "stew"), dinner(0, "stew"), dinner(1, "stew"), dinner(2, "salad"), lunch(2), lunch(3)],
+      batchRecipes,
+    );
+    expect([0, 1, 3, 4].map((day) => batchDays.get(`dinner-${day}`)?.batchNumber)).toEqual([0, 0, 1, 1]);
+    expect([2, 3].map((day) => batchDays.get(`lunch-${day}`)?.batchNumber)).toEqual([0, 0]);
   });
 
   it("ignores one-day recipes, empty slots, gaps and other meals", () => {
@@ -223,5 +248,84 @@ describe("getBatchSlots", () => {
   it("gives the slot alone when it is not part of a batch", () => {
     const salad = dinner(0, "salad");
     expect(getBatchSlots(slots, batchRecipes, salad)).toEqual([salad]);
+  });
+});
+
+describe("matchesRecipeFilters", () => {
+  const stew = { id: "stew", portionDays: 2, mainProteins: ["plant"] as const };
+  const salmon = { id: "salmon", portionDays: 1, mainProteins: ["fish"] as const };
+  const curry = { id: "curry", portionDays: 2, mainProteins: ["poultry", "plant"] as const };
+  const context: RecipeFilterContext = {
+    enjoyedRecipeIds: new Set(["salmon", "curry"]),
+    participantDiets: ["fish", "full"],
+    recentRecipeIds: new Set(["curry"]),
+  };
+  const matching = (filters: Parameters<typeof matchesRecipeFilters>[1]) =>
+    [stew, salmon, curry].filter((recipe) => matchesRecipeFilters(recipe, filters, context)).map((recipe) => recipe.id);
+
+  it("lets every recipe through with no filter on", () => {
+    expect(matching([])).toEqual(["stew", "salmon", "curry"]);
+  });
+
+  it("keeps batch recipes, the viewer's enjoyed ones, ones every diet allows, or ones not resting", () => {
+    expect(matching(["batch"])).toEqual(["stew", "curry"]);
+    expect(matching(["enjoyed"])).toEqual(["salmon", "curry"]);
+    expect(matching(["fits_all_diets"])).toEqual(["stew", "salmon"]);
+    expect(matching(["not_recent"])).toEqual(["stew", "salmon"]);
+  });
+
+  it("needs every filter that is on", () => {
+    expect(matching(["batch", "fits_all_diets"])).toEqual(["stew"]);
+    expect(matching(["enjoyed", "not_recent"])).toEqual(["salmon"]);
+    expect(matching(["batch", "enjoyed", "fits_all_diets", "not_recent"])).toEqual([]);
+  });
+
+  it("fits a vegetarian only with egg, dairy and plants", () => {
+    const vegetarian = { ...context, participantDiets: ["vegetarian", "full"] as const };
+    expect(matchesRecipeFilters(salmon, ["fits_all_diets"], vegetarian)).toBe(false);
+    expect(matchesRecipeFilters(stew, ["fits_all_diets"], vegetarian)).toBe(true);
+  });
+});
+
+describe("getRecentlyPlannedRecipes", () => {
+  const target = { planId: "this", startDate: "2026-11-09", cooldownDays: 14, participantIds: ["ana", "monika"] };
+  const plan = (id: string, startDate: string, overrides: Partial<PlanHistoryEntry> = {}): PlanHistoryEntry => ({
+    id,
+    startDate,
+    includeSnacks: true,
+    participantIds: ["ana"],
+    slots: [
+      { dayIndex: 0, mealType: "dinner", recipeId: "stew" },
+      { dayIndex: 2, mealType: "lunch", recipeId: "soup" },
+      { dayIndex: 3, mealType: "snack", recipeId: "nuts" },
+      { dayIndex: 4, mealType: "breakfast", recipeId: null },
+    ],
+    ...overrides,
+  });
+
+  it("gives the last day each recipe was planned within the cooldown before the plan starts", () => {
+    const recent = getRecentlyPlannedRecipes([plan("last week", "2026-11-02"), plan("before", "2026-10-26")], target);
+    expect(Object.fromEntries(recent)).toEqual({ stew: "2026-11-02", soup: "2026-11-04", nuts: "2026-11-05" });
+  });
+
+  it("leaves out days before the cooldown, on or after the start, and the plan itself", () => {
+    const recent = getRecentlyPlannedRecipes(
+      [plan("old", "2026-10-24"), plan("this", "2026-11-02"), plan("overlapping", "2026-11-07")],
+      target,
+    );
+    // The old plan's day 2 is 26 Oct, 14 days before 9 Nov; the overlapping plan's day 0 is 7 Nov.
+    expect(Object.fromEntries(recent)).toEqual({ soup: "2026-10-26", nuts: "2026-10-27", stew: "2026-11-07" });
+  });
+
+  it("reads only plans sharing a participant, and not their skipped snacks", () => {
+    const recent = getRecentlyPlannedRecipes(
+      [plan("someone else", "2026-11-02", { participantIds: ["ola"] }), plan("no snacks", "2026-11-02", { includeSnacks: false })],
+      target,
+    );
+    expect([...recent.keys()].sort()).toEqual(["soup", "stew"]);
+  });
+
+  it("gives nothing without a cooldown", () => {
+    expect(getRecentlyPlannedRecipes([plan("last week", "2026-11-02")], { ...target, cooldownDays: 0 }).size).toBe(0);
   });
 });

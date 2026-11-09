@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import type { RecipeSummary } from "~/types/recipe.types";
 
-defineProps<{ recipe: RecipeSummary; to: RouteLocationRaw }>();
+defineProps<{ recipe: DeepReadonly<RecipeSummary>; to: RouteLocationRaw }>();
 
 const { t } = useI18n();
 const { isLoaded } = useRecipeRatings();

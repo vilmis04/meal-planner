@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import type { RecipeSummary } from "~/types/recipe.types";
 
+// The cached recipe library is read-only (useRecipes()), and so is every list made from it.
 defineProps<{
-  recipes: readonly RecipeSummary[];
+  recipes: DeepReadonly<RecipeSummary[]>;
   // Where a row opens its recipe; the list keeps the meal filter in the address, so the link must carry it.
-  linkTo: (recipe: RecipeSummary) => RouteLocationRaw;
+  linkTo: (recipe: DeepReadonly<RecipeSummary>) => RouteLocationRaw;
 }>();
 
 const { t } = useI18n();

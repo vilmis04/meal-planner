@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Nutrition columns (calories_kcal, carbohydrates, protein, fat) are left out on purpose: they stay hidden until F1.
-export const RECIPE_LIST_COLUMNS = "id, name, meal_type, portion_days";
+// main_proteins lets the slot picker's "Fits all diets" filter (E6) check each participant's diet.
+export const RECIPE_LIST_COLUMNS = "id, name, meal_type, portion_days, main_proteins";
 export const RECIPE_DETAIL_COLUMNS =
   "id, name, meal_type, instructions, portion_days, main_proteins, recipe_ingredients(position, item, amount, unit)";
 
@@ -18,6 +19,7 @@ export const recipeListRowsSchema = z
       name: z.string(),
       meal_type: mealTypeSchema,
       portion_days: z.number().int().min(1),
+      main_proteins: z.array(z.enum(PROTEINS)),
     }),
   )
   .transform((rows) =>
@@ -26,6 +28,7 @@ export const recipeListRowsSchema = z
       name: row.name,
       mealType: row.meal_type,
       portionDays: row.portion_days,
+      mainProteins: row.main_proteins,
     })),
   );
 

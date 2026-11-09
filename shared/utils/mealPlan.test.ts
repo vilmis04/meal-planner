@@ -17,6 +17,7 @@ import {
   getPlanDays,
   getPlanEndDate,
   getPlanServings,
+  getPlanTimeline,
   getVisibleMealTypes,
   isIsoDate,
   normalizeWorkdays,
@@ -166,5 +167,19 @@ describe("workdays and cooldown (E4)", () => {
   it("sorts workdays and drops repeats and non-weekdays", () => {
     expect(normalizeWorkdays([5, 1, 3, 1, 9, 0])).toEqual([1, 3, 5]);
     expect(normalizeWorkdays([])).toEqual([]);
+  });
+});
+
+describe("getPlanTimeline", () => {
+  it.each([
+    ["ends before today", "2026-11-01", "2026-11-07", "past"],
+    ["ends today", "2026-11-02", "2026-11-08", "current"],
+    ["runs through today", "2026-11-05", "2026-11-11", "current"],
+    ["starts today", "2026-11-08", "2026-11-14", "current"],
+    ["is one day, today", "2026-11-08", "2026-11-08", "current"],
+    ["starts tomorrow", "2026-11-09", "2026-11-15", "upcoming"],
+    ["ended last year", "2025-12-29", "2026-01-04", "past"],
+  ])("a plan that %s", (_, startDate, endDate, timeline) => {
+    expect(getPlanTimeline(startDate, endDate, "2026-11-08")).toBe(timeline);
   });
 });

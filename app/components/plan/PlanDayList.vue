@@ -7,139 +7,140 @@ const props = defineProps<{
   plan: MealPlan;
   recipes: DeepReadonly<RecipeSummary[]> | null;
   hated: HatedRecipes | null;
-  viewerId: string | null;
   disabled?: boolean;
+  // A past plan (E6): its slots are shown, not chosen or locked.
+  isReadOnly?: boolean;
 }>();
 
-const emit = defineEmits<{ pick: [slot: MealPlanSlot]; toggleLock: [slot: MealPlanSlot] }>();
+const emit = defineEmits<{
+  pick: [slot: MealPlanSlot];
+  toggleLock: [slot: MealPlanSlot];
+}>();
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { days, getBatchLine, getBatchTone, getRecipeName, isHated, getSlotLabel, getLockLabel } = usePlanWeek(
+  () => props.plan,
+  () => props.recipes,
+  () => props.hated,
+);
 
-const recipeNames = computed(() => new Map((props.recipes ?? []).map((recipe) => [recipe.id, recipe.name])));
-const planDays = computed(() => getPlanDays(props.plan.startDate, props.plan.dayCount));
-// Slot id → its place in a batch, for "Day 1 of 2 · covers Wed" (E4).
-const batchDays = computed(() => getBatchDays(props.plan.slots, props.recipes ?? []));
-const shortWeekday = (dayIndex: number): string => {
-  const date = planDays.value[dayIndex];
-  return date ? formatShortWeekday(date, locale.value) : "";
-};
-const batchLine = (slotId: string): string | null => {
-  const batchDay = batchDays.value.get(slotId);
-  if (!batchDay) {
-    return null;
-  }
-  const position = t("plan.batch.position", { day: batchDay.dayNumber, count: batchDay.dayCount });
-  const detail =
-    batchDay.dayNumber === 1
-      ? t("plan.batch.covers", { day: shortWeekday(batchDay.lastDayIndex) })
-      : t("plan.batch.cooked", { day: shortWeekday(batchDay.firstDayIndex) });
-  return `${position} · ${detail}`;
-};
-// A recipe deleted from the library empties its slots; one missing here only means the list did not load.
-const recipeName = (recipeId: string): string => recipeNames.value.get(recipeId) ?? t("plan.slot.unknownRecipe");
-// The same "hate" warning as the picker, as an icon on a filled slot.
-const isHated = (recipeId: string | null): boolean => Boolean(recipeId && props.hated?.[recipeId]?.length);
-
-// The button's name says everything the row shows: what it holds, its batch and the generator's note.
-const slotLabel = (slot: MealPlanSlot, weekday: string): string => {
-  const open = t("plan.slot.open", {
-    meal: t(`recipes.mealType.${slot.mealType}`),
-    day: weekday,
-    recipe: slot.recipeId ? recipeName(slot.recipeId) : t("plan.detail.emptySlot"),
-  });
-  const note = slot.fillNote ? t(`plan.fillNote.${slot.fillNote}`) : null;
-  const lock = slot.isLocked ? t("plan.lock.locked") : null;
-  return [open, batchLine(slot.id), note, lock].filter((part) => part !== null).join(". ");
+const style = useCssModule();
+const getToneClass = (slotId: string): string | null => {
+  const tone = getBatchTone(slotId);
+  return tone ? (style[tone] ?? null) : null;
 };
 
-// "Lock lunch on Monday" / "Unlock lunch on Monday" (E5). A batch locks with its other days.
-const lockLabel = (slot: MealPlanSlot, weekday: string): string =>
-  t(slot.isLocked ? "plan.lock.unlock" : "plan.lock.lock", { meal: t(`recipes.mealType.${slot.mealType}`), day: weekday });
-
-// One card per day with its slots in meal order. Skipped snack slots stay in the plan but are not shown.
-const days = computed(() => {
-  const mealTypes = getVisibleMealTypes(props.plan.includeSnacks);
-  return planDays.value.map((date, dayIndex) => ({
-    date,
-    isWorkday: props.plan.workdays.includes(getIsoWeekday(date)),
-    weekday: formatPlanDay(date, locale.value, { weekday: "long" }),
-    day: formatPlanDay(date, locale.value, { day: "numeric", month: "short" }),
-    slots: props.plan.slots.filter((slot) => slot.dayIndex === dayIndex && mealTypes.includes(slot.mealType)),
-  }));
-});
+// A past plan's slot is plain text; any other slot is a button that opens the picker.
+const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
+  props.isReadOnly
+    ? { "data-testid": "plan-slot-view" }
+    : {
+        type: "button",
+        disabled: props.disabled,
+        "aria-label": getSlotLabel(slot, weekday),
+        "data-testid": "plan-slot-button",
+        onClick: () => emit("pick", slot),
+      };
 </script>
 
 <template>
-  <ol :class="$style.days" data-testid="plan-days">
-    <li v-for="day in days" :key="day.date" :class="$style.day" data-testid="plan-day">
-      <h2 :class="$style.dayTitle">
-        <span>{{ day.weekday }}</span>
-        <span :class="$style.date">{{ day.day }}</span>
-        <span v-if="day.isWorkday" :class="$style.workday" data-testid="plan-day-workday">{{ t("plan.detail.workday") }}</span>
-      </h2>
-      <v-card variant="flat" border :class="$style.card">
-        <ul :class="$style.slots">
-          <li v-for="slot in day.slots" :key="slot.id" :class="$style.row" data-testid="plan-slot">
-            <button
-              type="button"
-              :class="$style.slot"
-              :disabled="disabled"
-              :aria-label="slotLabel(slot, day.weekday)"
-              data-testid="plan-slot-button"
-              @click="emit('pick', slot)"
+  <div :class="$style.list">
+    <PlanWeekStrip :days="days" />
+    <ol :class="$style.days" data-testid="plan-days">
+      <li v-for="day in days" :id="`plan-day-${day.date}`" :key="day.date" :class="$style.day" data-testid="plan-day">
+        <h2 :class="$style.dayTitle">
+          <span>{{ day.weekday }}</span>
+          <span :class="$style.date">{{ day.day }}</span>
+          <span v-if="day.isToday" :class="$style.today" data-testid="plan-day-today">{{
+            t("plan.detail.today")
+          }}</span>
+          <!-- "Cook tonight" says more than "Workday" on a workday a batch is cooked, as in the design. -->
+          <span v-if="day.isCookingDay" :class="$style.cook" data-testid="plan-day-cook">
+            <v-icon icon="mdi-pot-steam-outline" size="14" aria-hidden="true" />
+            {{ t("plan.detail.cookTonight") }}
+          </span>
+          <span v-else-if="day.isWorkday" :class="$style.workday" data-testid="plan-day-workday">
+            {{ t("plan.detail.workday") }}
+          </span>
+        </h2>
+        <v-card variant="flat" border :class="$style.card">
+          <ul :class="$style.slots">
+            <li
+              v-for="slot in day.slots"
+              :key="slot.id"
+              :class="[$style.row, getToneClass(slot.id)]"
+              data-testid="plan-slot"
             >
-              <span :class="$style.text">
-                <span :class="$style.meal">
-                  {{ t(`recipes.mealType.${slot.mealType}`) }}
-                  <template v-if="slot.mealType === 'snack' && !plan.snacksOnList">
-                    · {{ t("plan.detail.notOnList") }}
-                  </template>
+              <component
+                :is="isReadOnly ? 'div' : 'button'"
+                :class="[$style.slot, { [$style.interactive]: !isReadOnly }]"
+                v-bind="getSlotAttributes(slot, day.weekday)"
+              >
+                <span :class="$style.text">
+                  <span :class="$style.meal">
+                    {{ t(`recipes.mealType.${slot.mealType}`) }}
+                    <template v-if="slot.mealType === 'snack' && !plan.snacksOnList">
+                      · {{ t("plan.detail.notOnList") }}
+                    </template>
+                  </span>
+                  <span v-if="slot.recipeId" :class="$style.recipe" data-testid="plan-slot-recipe">
+                    {{ getRecipeName(slot.recipeId) }}
+                  </span>
+                  <span v-else :class="$style.empty">{{ t("plan.detail.emptySlot") }}</span>
+                  <span v-if="getBatchLine(slot.id)" :class="$style.batch" data-testid="plan-slot-batch">
+                    <v-icon icon="mdi-link-variant" size="14" aria-hidden="true" />
+                    {{ getBatchLine(slot.id) }}
+                  </span>
+                  <span v-if="slot.fillNote" :class="$style.note" data-testid="plan-slot-note">
+                    <v-icon icon="mdi-information-outline" size="14" aria-hidden="true" />
+                    {{ t(`plan.fillNote.${slot.fillNote}`) }}
+                  </span>
                 </span>
-                <span v-if="slot.recipeId" :class="$style.recipe" data-testid="plan-slot-recipe">
-                  {{ recipeName(slot.recipeId) }}
-                </span>
-                <span v-else :class="$style.empty">{{ t("plan.detail.emptySlot") }}</span>
-                <span v-if="batchLine(slot.id)" :class="$style.batch" data-testid="plan-slot-batch">
-                  <v-icon icon="mdi-link-variant" size="14" aria-hidden="true" />
-                  {{ batchLine(slot.id) }}
-                </span>
-                <span v-if="slot.fillNote" :class="$style.note" data-testid="plan-slot-note">
-                  <v-icon icon="mdi-information-outline" size="14" aria-hidden="true" />
-                  {{ t(`plan.fillNote.${slot.fillNote}`) }}
-                </span>
-              </span>
-              <v-icon
-                v-if="isHated(slot.recipeId)"
-                icon="mdi-alert-outline"
-                color="error"
-                size="20"
-                :aria-label="t('plan.slot.hate.icon')"
-                role="img"
-                data-testid="plan-slot-hate"
+                <v-icon
+                  v-if="isHated(slot.recipeId)"
+                  icon="mdi-alert-outline"
+                  color="error"
+                  size="20"
+                  :aria-label="t('plan.slot.hate.icon')"
+                  role="img"
+                  data-testid="plan-slot-hate"
+                />
+                <v-icon
+                  v-if="!slot.recipeId && !isReadOnly"
+                  icon="mdi-plus"
+                  size="20"
+                  :class="$style.action"
+                  aria-hidden="true"
+                />
+              </component>
+              <!-- Beside the slot's button, not in it: a button cannot hold another. -->
+              <v-btn
+                v-if="slot.recipeId && !isReadOnly"
+                :icon="slot.isLocked ? 'mdi-lock' : 'mdi-lock-open-variant-outline'"
+                variant="text"
+                :color="slot.isLocked ? 'primary' : undefined"
+                :class="$style.lock"
+                :disabled="disabled"
+                :aria-label="getLockLabel(slot, day.weekday)"
+                :aria-pressed="slot.isLocked"
+                data-testid="plan-slot-lock"
+                @click="emit('toggleLock', slot)"
               />
-              <v-icon v-if="!slot.recipeId" icon="mdi-plus" size="20" :class="$style.action" aria-hidden="true" />
-            </button>
-            <!-- Beside the slot's button, not in it: a button cannot hold another. -->
-            <v-btn
-              v-if="slot.recipeId"
-              :icon="slot.isLocked ? 'mdi-lock' : 'mdi-lock-open-variant-outline'"
-              variant="text"
-              :color="slot.isLocked ? 'primary' : undefined"
-              :class="$style.lock"
-              :disabled="disabled"
-              :aria-label="lockLabel(slot, day.weekday)"
-              :aria-pressed="slot.isLocked"
-              data-testid="plan-slot-lock"
-              @click="emit('toggleLock', slot)"
-            />
-          </li>
-        </ul>
-      </v-card>
-    </li>
-  </ol>
+            </li>
+          </ul>
+        </v-card>
+      </li>
+    </ol>
+  </div>
 </template>
 
 <style module>
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .days {
   display: grid;
   gap: var(--space-3);
@@ -152,6 +153,8 @@ const days = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* Room above a day the week strip scrolls to. */
+  scroll-margin-top: var(--space-4);
 }
 
 .dayTitle {
@@ -168,6 +171,26 @@ const days = computed(() => {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-muted);
+}
+
+.today {
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: rgba(var(--v-theme-primary), 0.14);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cook {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-secondary);
+  text-transform: none;
 }
 
 .workday {
@@ -198,6 +221,20 @@ const days = computed(() => {
   align-items: center;
 }
 
+/* The days of a batch carry its tint on the left edge, the same as in the week grid, so they read as one. */
+.primary,
+.secondary {
+  box-shadow: inset 4px 0 0 var(--batch-color);
+}
+
+.primary {
+  --batch-color: var(--color-primary);
+}
+
+.secondary {
+  --batch-color: var(--color-secondary);
+}
+
 .lock {
   flex: 0 0 auto;
   margin-right: var(--space-1);
@@ -217,10 +254,13 @@ const days = computed(() => {
   color: inherit;
   font: inherit;
   text-align: left;
+}
+
+.interactive {
   cursor: pointer;
 }
 
-.slot:hover,
+.interactive:hover,
 .slot:focus-visible {
   background: rgba(var(--v-theme-on-surface), 0.04);
 }
@@ -281,7 +321,7 @@ const days = computed(() => {
 }
 
 .batch {
-  color: var(--color-primary);
+  color: var(--batch-color, var(--color-primary));
 }
 
 .note {
@@ -298,12 +338,5 @@ const days = computed(() => {
   font-size: 15px;
   font-style: italic;
   color: var(--color-muted);
-}
-
-/* With room, the week reads left to right like a calendar. */
-@media (min-width: 960px) {
-  .days {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
 }
 </style>
