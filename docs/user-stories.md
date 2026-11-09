@@ -191,6 +191,7 @@ As a user I want to adjust the list to what I need.
 - Add a custom item (name, optional amount/unit, category); edit amount; remove an item.
 - Mark an item "have at home" to move it to a collapsed group and exclude it from the to-buy count; undo available.
 - Edits survive list refreshes.
+- Built as security definer functions in `supabase/migrations/20261115000000_add_shopping_item_edits.sql` (add, amount, state, remove, restore; one line and its own fields per call, access through `can_access_shopping_list()`), `useShoppingItemEdits()` (changes show at once and go back field by field when refused) and the list page's line actions, add dialog and "Have at home" group (see README, "Shopping lists"). Manual lines take a name (1–120 characters), a category and an optional amount in g, kg, ml, l, pcs or pack, stored in base units. A changed amount of a generated line is an override that stays when the plan changes, shown next to the plan's amount and clearable. Removing a generated line only marks it removed (undo restores it, and a rebuild keeps it removed); removing a manual line deletes it (undo adds it again with the same id). "Have at home" is the last group, closed by default and left out of the to-buy count; moving a line home and removing one offer "Undo".
 
 ### G5. Cross out bought items (S, Phase 2)
 As a shopper I want to strike items through as I buy them without deleting.

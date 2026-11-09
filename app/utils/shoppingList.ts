@@ -6,7 +6,7 @@ import type { ShoppingItem } from "#shared/utils/shoppingList.types";
 // A plan's list and its lines (G2), as the list page reads them. Row level security shows lists of plans the viewer
 // can open only.
 export const SHOPPING_LIST_COLUMNS =
-  "id, missing_swap_count, shopping_items(id, source, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override)";
+  "id, missing_swap_count, shopping_items(id, source, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override, added_by)";
 
 const shoppingItemRowSchema = z
   .object({
@@ -22,6 +22,7 @@ const shoppingItemRowSchema = z
     state: z.enum(SHOPPING_ITEM_STATES),
     is_removed: z.boolean(),
     amount_override: z.number().positive().nullable(),
+    added_by: z.guid().nullable(),
   })
   .transform(
     (row): ShoppingItem => ({
@@ -37,6 +38,7 @@ const shoppingItemRowSchema = z
       state: row.state,
       isRemoved: row.is_removed,
       amountOverride: row.amount_override,
+      addedBy: row.added_by,
     }),
   );
 

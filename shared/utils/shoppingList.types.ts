@@ -1,10 +1,10 @@
 import type { Diet, Protein } from "./diet";
 import type { INGREDIENT_CATEGORIES } from "./ingredient";
 import type { MealType } from "./mealFilter";
-import type { EXTRAS_GROUP_KEY, SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES } from "./shoppingList";
+import type { EXTRAS_GROUP_KEY, HAVE_AT_HOME_GROUP_KEY, SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES } from "./shoppingList";
 
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];
-type ShoppingItemState = (typeof SHOPPING_ITEM_STATES)[number];
+export type ShoppingItemState = (typeof SHOPPING_ITEM_STATES)[number];
 type ShoppingItemSource = (typeof SHOPPING_ITEM_SOURCES)[number];
 
 export interface ShoppingListSlot {
@@ -95,21 +95,25 @@ export interface ShoppingItem {
   state: ShoppingItemState;
   isRemoved: boolean;
   amountOverride: number | null;
+  // Who added a manual line; null for generated lines (G4).
+  addedBy: string | null;
 }
 
-// A group of the list: a category, or the "to taste" extras. G4 adds "have at home".
-export type ShoppingListGroupKey = IngredientCategory | typeof EXTRAS_GROUP_KEY;
+// A group of the list: a category, the "to taste" extras, or what is at home (G4).
+export type ShoppingListGroupKey = IngredientCategory | typeof EXTRAS_GROUP_KEY | typeof HAVE_AT_HOME_GROUP_KEY;
 
 interface ShoppingListGroup {
   key: ShoppingListGroupKey;
   items: ShoppingItem[];
-  // What the group's header counts: every line shown in it for now; G4 and G5 narrow it to the lines still to buy.
+  // What the group's header counts: its lines (G5 narrows it to the ones still to buy, "3 of 7").
   itemCount: number;
 }
 
-// What the list shows: its groups in list order (categories in the order of a walk through a shop, then the extras),
-// empty groups left out.
+// What the list shows: its groups in list order (categories in the order of a walk through a shop, the extras, then
+// what is at home), empty groups left out.
 export interface ShoppingListView {
   groups: ShoppingListGroup[];
-  itemCount: number;
+  // Lines still to buy: shown and not at home.
+  toBuyCount: number;
+  atHomeCount: number;
 }

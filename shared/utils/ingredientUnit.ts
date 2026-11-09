@@ -61,6 +61,15 @@ export function toDisplayQuantity(quantity: IngredientQuantity): IngredientQuant
   };
 }
 
+// The units an amount in this base unit can be typed in: g or kg for grams, ml or l for millilitres, and a unit counted
+// on its own only as itself.
+export function getUnitsWithBase(baseUnit: string): string[] {
+  const largerUnits = CONVERSIONS.filter((conversion) => conversion.baseUnit === baseUnit).map(
+    (conversion) => conversion.unit,
+  );
+  return [baseUnit, ...largerUnits];
+}
+
 const roundTo = (value: number, fractionDigits: number): number => {
   const scale = 10 ** fractionDigits;
   return Math.round(value * scale) / scale;
