@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue";
+import type { MealNutrition, PlanNutrition } from "#shared/utils/nutrition.types";
 import type { HatedRecipes, MealPlan, MealPlanSlot } from "~/types/mealPlan.types";
 import type { RecipeSummary } from "~/types/recipe.types";
 
@@ -10,6 +11,8 @@ const props = defineProps<{
   disabled?: boolean;
   // A past plan (E6): its slots are shown, not chosen or locked.
   isReadOnly?: boolean;
+  // Calories and macros, once the user asks for them (F1); null keeps them hidden.
+  nutrition?: PlanNutrition | null;
 }>();
 
 const emit = defineEmits<{
@@ -24,6 +27,18 @@ const { days, getBatchLine, getBatchTone, getRecipeName, isHated, getSlotLabel, 
   () => props.hated,
 );
 
+const { formatNumber, formatMacroLine, formatMealLine, formatNutritionLabel } = useNutritionFormat();
+
+// Each day with its total and each slot with its meal's values; both null while nutrition is hidden.
+const nutritionDays = computed(() =>
+  days.value.map((day) => ({
+    day,
+    // A day with nothing planned has no total to show.
+    dayNutrition: props.nutrition?.days[day.dayIndex] ?? null,
+    slots: day.slots.map((slot) => ({ slot, meal: props.nutrition?.meals.get(slot.id) ?? null })),
+  })),
+);
+
 const style = useCssModule();
 const getToneClass = (slotId: string): string | null => {
   const tone = getBatchTone(slotId);
@@ -31,13 +46,19 @@ const getToneClass = (slotId: string): string | null => {
 };
 
 // A past plan's slot is plain text; any other slot is a button that opens the picker.
-const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
+// With nutrition shown, the button's name also says the meal's values.
+const getLabel = (slot: MealPlanSlot, weekday: string, meal: MealNutrition | null): string => {
+  const label = getSlotLabel(slot, weekday);
+  return meal ? `${label}. ${formatNutritionLabel(meal.nutrition)}` : label;
+};
+
+const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrition | null) =>
   props.isReadOnly
     ? { "data-testid": "plan-slot-view" }
     : {
         type: "button",
         disabled: props.disabled,
-        "aria-label": getSlotLabel(slot, weekday),
+        "aria-label": getLabel(slot, weekday, meal),
         "data-testid": "plan-slot-button",
         onClick: () => emit("pick", slot),
       };
@@ -47,7 +68,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
   <div :class="$style.list">
     <PlanWeekStrip :days="days" />
     <ol :class="$style.days" data-testid="plan-days">
-      <li v-for="day in days" :id="`plan-day-${day.date}`" :key="day.date" :class="$style.day" data-testid="plan-day">
+      <li v-for="{ day, dayNutrition, slots } in nutritionDays" :id="`plan-day-${day.date}`" :key="day.date" :class="$style.day" data-testid="plan-day">
         <h2 :class="$style.dayTitle">
           <span>{{ day.weekday }}</span>
           <span :class="$style.date">{{ day.day }}</span>
@@ -66,7 +87,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
         <v-card variant="flat" border :class="$style.card">
           <ul :class="$style.slots">
             <li
-              v-for="slot in day.slots"
+              v-for="{ slot, meal } in slots"
               :key="slot.id"
               :class="[$style.row, getToneClass(slot.id)]"
               data-testid="plan-slot"
@@ -74,7 +95,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
               <component
                 :is="isReadOnly ? 'div' : 'button'"
                 :class="[$style.slot, { [$style.interactive]: !isReadOnly }]"
-                v-bind="getSlotAttributes(slot, day.weekday)"
+                v-bind="getSlotAttributes(slot, day.weekday, meal)"
               >
                 <span :class="$style.text">
                   <span :class="$style.meal">
@@ -82,6 +103,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
                     <template v-if="slot.mealType === 'snack' && !plan.snacksOnList">
                       · {{ t("plan.detail.notOnList") }}
                     </template>
+                    <template v-if="meal?.source === 'swap'"> · {{ t("nutrition.withSwap") }}</template>
                   </span>
                   <span v-if="slot.recipeId" :class="$style.recipe" data-testid="plan-slot-recipe">
                     {{ getRecipeName(slot.recipeId) }}
@@ -95,6 +117,12 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
                     <v-icon icon="mdi-information-outline" size="14" aria-hidden="true" />
                     {{ t(`plan.fillNote.${slot.fillNote}`) }}
                   </span>
+                  <span v-if="meal" :class="$style.macros" data-testid="plan-slot-macros">
+                    {{ formatMealLine(meal) }}
+                  </span>
+                </span>
+                <span v-if="meal" :class="$style.kcal" data-testid="plan-slot-kcal">
+                  {{ formatNumber(meal.nutrition.caloriesKcal) }}
                 </span>
                 <v-icon
                   v-if="isHated(slot.recipeId)"
@@ -128,6 +156,19 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
               />
             </li>
           </ul>
+          <div v-if="dayNutrition && dayNutrition.countedMealCount + dayNutrition.excludedMealCount > 0" :class="$style.total" data-testid="plan-day-total">
+            <span :class="$style.text">
+              <span :class="$style.totalTitle">{{ t("nutrition.plan.dayTotal") }}</span>
+              <span v-if="dayNutrition.total" :class="$style.macros">{{ formatMacroLine(dayNutrition.total) }}</span>
+              <span v-if="dayNutrition.excludedMealCount > 0" :class="$style.excluded">
+                {{ t("nutrition.plan.dayExcluded", dayNutrition.excludedMealCount) }}
+              </span>
+            </span>
+            <span :class="$style.kcal" data-testid="plan-day-total-kcal">
+              {{ formatNumber(dayNutrition.total?.caloriesKcal ?? null) }}
+              <span :class="$style.unit">{{ t("nutrition.kcal") }}</span>
+            </span>
+          </div>
         </v-card>
       </li>
     </ol>
@@ -332,6 +373,47 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
   font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
+}
+
+.macros,
+.excluded {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.excluded {
+  color: var(--color-warning);
+}
+
+.kcal {
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-border);
+  background: rgba(var(--v-theme-on-surface), 0.03);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.totalTitle {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .empty {

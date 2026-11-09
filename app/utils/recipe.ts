@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-// Nutrition columns (calories_kcal, carbohydrates, protein, fat) are left out on purpose: they stay hidden until F1.
+// Nutrition columns (calories_kcal, carbohydrates, protein, fat) are left out on purpose: they are read on their own,
+// only once the user asks to see them (RECIPE_NUTRITION_COLUMNS in app/utils/nutrition.ts, F1).
 // main_proteins lets the slot picker's "Fits all diets" filter (E6) check each participant's diet.
 export const RECIPE_LIST_COLUMNS = "id, name, meal_type, portion_days, main_proteins";
 export const RECIPE_DETAIL_COLUMNS =

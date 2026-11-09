@@ -22,6 +22,13 @@ const { household, load: loadHousehold } = useHousehold();
 const { recipes, loadFailed: recipesFailed, loadList: loadRecipes } = useRecipes();
 const { ratings, isLoaded: isRatingLoaded, load: loadRatings } = useRecipeRatings();
 const { profile } = useProfile();
+const { isNutritionShown } = useNutritionVisibility();
+const {
+  nutritionByRecipe,
+  loadFailed: nutritionFailed,
+  load: loadNutrition,
+  loadSwapNutrition,
+} = useRecipeNutrition();
 const { show } = useAppSnackbar();
 const user = useSupabaseUser();
 const today = useToday();
@@ -34,6 +41,8 @@ const [{ data: result, refresh: refreshPlan }, { data: hatedResult, refresh: ref
   useAsyncData(`plan-hated-${id}`, () => loadHatedRecipes(id)),
   callOnce("household", loadHousehold, { mode: "navigation" }),
   recipes.value ? undefined : loadRecipes(),
+  // Calories and macros are read only for a user who asked to see them (F1).
+  isNutritionShown.value && !nutritionByRecipe.value ? loadNutrition() : undefined,
 ]);
 
 const plan = computed(() => (result.value?.status === "found" ? result.value.plan : null));
@@ -283,6 +292,87 @@ const canRegenerate = computed(
 );
 const generatingMode = ref<GenerationMode | null>(null);
 
+// Nutrition on request (F1): hidden until the user asks, then per meal, per day and on average for one participant
+// at a time ("Showing for"), since a participant whose diet needs a protein swap eats the swap's macros.
+watch(isNutritionShown, (isShown) => {
+  if (isShown && !nutritionByRecipe.value) {
+    loadNutrition();
+  }
+});
+
+const nutritionParticipants = computed(() => {
+  if (!plan.value) {
+    return [];
+  }
+  if (plan.value.kind === "individual") {
+    return profile.value ? [{ userId: profile.value.id, displayName: profile.value.displayName }] : [];
+  }
+  const ids = new Set(plan.value.participantIds);
+  return members.value.filter((member) => ids.has(member.userId));
+});
+const chosenNutritionParticipantId = ref<string | null>(null);
+// The chosen participant while they still eat from the plan; otherwise the viewer, or the first participant.
+const nutritionParticipantId = computed({
+  get: () => {
+    const ids = nutritionParticipants.value.map((participant) => participant.userId);
+    const chosen = chosenNutritionParticipantId.value;
+    return chosen !== null && ids.includes(chosen) ? chosen : getDefaultNutritionParticipant(ids, viewerId.value);
+  },
+  set: (value: string | null) => {
+    chosenNutritionParticipantId.value = value;
+  },
+});
+const nutritionDiet = computed(() => {
+  if (plan.value?.kind === "individual") {
+    return profile.value?.diet ?? null;
+  }
+  return household.value?.members.find((member) => member.userId === nutritionParticipantId.value)?.diet ?? null;
+});
+
+// Swap estimates for the planned recipes and every participant's diet that can need a swap, read as one request
+// whenever either changes.
+const swapNutritionRequest = computed(() => {
+  if (!isNutritionShown.value || !plan.value) {
+    return null;
+  }
+  const recipeIds = [...new Set(visibleSlots.value.flatMap((slot) => (slot.recipeId ? [slot.recipeId] : [])))].sort();
+  const diets = [...new Set((participantDiets.value ?? []).filter((diet) => diet !== "full"))].sort();
+  return { recipeIds, diets, key: `${recipeIds.join(",")}|${diets.join(",")}` };
+});
+const { data: swapNutritionResult } = await useAsyncData(
+  `plan-swap-nutrition-${id}`,
+  () => {
+    const request = swapNutritionRequest.value;
+    return request
+      ? loadSwapNutrition(request.recipeIds, request.diets)
+      : Promise.resolve({ status: "loaded" as const, swapNutrition: {} });
+  },
+  { watch: [() => swapNutritionRequest.value?.key] },
+);
+
+const planNutrition = computed(() => {
+  const current = plan.value;
+  const nutritionById = nutritionByRecipe.value;
+  if (!isNutritionShown.value || !current || !nutritionById || !recipes.value) {
+    return null;
+  }
+  const nutritionRecipes = new Map(
+    recipes.value.flatMap((recipe) => {
+      const nutrition = nutritionById[recipe.id];
+      return nutrition ? [[recipe.id, { mainProteins: recipe.mainProteins, nutrition }] as const] : [];
+    }),
+  );
+  const swapNutrition = swapNutritionResult.value?.status === "loaded" ? swapNutritionResult.value.swapNutrition : {};
+  return getPlanNutrition({
+    slots: visibleSlots.value,
+    dayCount: current.dayCount,
+    recipes: nutritionRecipes,
+    diet: nutritionDiet.value,
+    swapNutrition: new Map(Object.entries(swapNutrition)),
+  });
+});
+const isSwapNutritionFailed = computed(() => swapNutritionResult.value?.status === "failed");
+
 async function generatePlan(mode: GenerationMode) {
   const current = plan.value;
   if (!current || isSaving.value) {
@@ -330,6 +420,7 @@ async function generatePlan(mode: GenerationMode) {
             </v-chip>
           </h1>
         </div>
+        <NutritionToggle is-compact-on-phone />
         <!-- A floating button above the navigation on phones, beside the title from 960px. -->
         <v-btn
           v-if="canRegenerate"
@@ -352,6 +443,15 @@ async function generatePlan(mode: GenerationMode) {
       </v-alert>
 
       <PlanAlongsideNotice v-if="alongside" :alongside="alongside" />
+
+      <PlanNutritionSummary
+        v-if="isNutritionShown"
+        v-model:participant-id="nutritionParticipantId"
+        :nutrition="planNutrition"
+        :participants="nutritionParticipants"
+        :is-load-failed="nutritionFailed || recipesFailed"
+        :is-swap-load-failed="isSwapNutritionFailed"
+      />
 
       <v-btn
         v-if="hasEmptySlots && !isReadOnly"
@@ -389,6 +489,7 @@ async function generatePlan(mode: GenerationMode) {
           :hated="hated"
           :disabled="isSaving"
           :is-read-only="isReadOnly"
+          :nutrition="planNutrition"
           :class="$style.dayList"
           @pick="openPicker"
           @toggle-lock="toggleLock"
@@ -399,6 +500,7 @@ async function generatePlan(mode: GenerationMode) {
           :hated="hated"
           :disabled="isSaving"
           :is-read-only="isReadOnly"
+          :nutrition="planNutrition"
           :class="$style.weekGrid"
           @pick="openPicker"
           @toggle-lock="toggleLock"
@@ -466,6 +568,7 @@ async function generatePlan(mode: GenerationMode) {
 
 .heading {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
   min-width: 0;

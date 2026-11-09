@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue";
+import type { MealNutrition, PlanNutrition } from "#shared/utils/nutrition.types";
 import type { HatedRecipes, MealPlan, MealPlanSlot } from "~/types/mealPlan.types";
 import type { RecipeSummary } from "~/types/recipe.types";
 import type { PlanWeekCell } from "~/types/planWeek.types";
@@ -13,6 +14,8 @@ const props = defineProps<{
   disabled?: boolean;
   // A past plan: its slots are shown, not chosen or locked.
   isReadOnly?: boolean;
+  // Calories and macros, once the user asks for them (F1): each cell's values and a row of day totals.
+  nutrition?: PlanNutrition | null;
 }>();
 
 const emit = defineEmits<{
@@ -27,6 +30,8 @@ const { days, getBatchLine, getBatchTone, getBatchJoins, getRecipeName, isHated,
     () => props.recipes,
     () => props.hated,
   );
+
+const { formatKcal, formatMacroLine, formatMealLine, formatNutritionLabel } = useNutritionFormat();
 
 const DAYS_PER_ROW = 7;
 
@@ -51,21 +56,32 @@ const weeks = computed(() => {
             tone: slot ? getBatchTone(slot.id) : null,
             isJoinedToPrevious: joins.hasPrevious && column > 0,
             isJoinedToNext: joins.hasNext && column < weekDays.length - 1,
+            meal: slot ? (props.nutrition?.meals.get(slot.id) ?? null) : null,
           };
         }),
       })),
+      // One total per day, while nutrition is shown.
+      totals: props.nutrition
+        ? weekDays.map((day) => ({ day, dayNutrition: props.nutrition?.days[day.dayIndex] ?? null }))
+        : [],
     };
   });
 });
 
 // A past plan's slot is plain text; any other slot is a button that opens the picker.
-const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
+// With nutrition shown, the button's name also says the meal's values.
+const getLabel = (slot: MealPlanSlot, weekday: string, meal: MealNutrition | null): string => {
+  const label = getSlotLabel(slot, weekday);
+  return meal ? `${label}. ${formatNutritionLabel(meal.nutrition)}` : label;
+};
+
+const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrition | null) =>
   props.isReadOnly
     ? { "data-testid": "plan-cell-view" }
     : {
         type: "button",
         disabled: props.disabled,
-        "aria-label": getSlotLabel(slot, weekday),
+        "aria-label": getLabel(slot, weekday, meal),
         "data-testid": "plan-cell-button",
         onClick: () => emit("pick", slot),
       };
@@ -128,7 +144,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
             <component
               :is="isReadOnly ? 'div' : 'button'"
               :class="[$style.cellBody, { [$style.interactive]: !isReadOnly }]"
-              v-bind="getSlotAttributes(cell.slot, cell.day.weekday)"
+              v-bind="getSlotAttributes(cell.slot, cell.day.weekday, cell.meal)"
             >
               <span v-if="cell.slot.recipeId" :class="$style.recipe" data-testid="plan-cell-recipe">
                 {{ getRecipeName(cell.slot.recipeId) }}
@@ -143,6 +159,10 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
               <span v-if="cell.slot.fillNote" :class="$style.note" data-testid="plan-cell-note">
                 <v-icon icon="mdi-information-outline" size="12" aria-hidden="true" />
                 {{ t(`plan.fillNote.${cell.slot.fillNote}`) }}
+              </span>
+              <span v-if="cell.meal" :class="$style.nutrition" data-testid="plan-cell-nutrition">
+                <span :class="$style.kcal">{{ formatKcal(cell.meal.nutrition.caloriesKcal) }}</span>
+                <span>{{ formatMealLine(cell.meal) }}</span>
               </span>
               <span v-if="isHated(cell.slot.recipeId) || (!cell.slot.recipeId && !isReadOnly)" :class="$style.icons">
                 <v-icon
@@ -172,6 +192,25 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
               @click="emit('toggleLock', cell.slot)"
             />
           </div>
+        </div>
+      </div>
+
+      <div v-if="week.totals.length > 0" role="row" :class="$style.row" data-testid="plan-grid-totals">
+        <div role="rowheader" :class="$style.mealHeader">
+          <span :class="$style.mealName">{{ t("nutrition.plan.dayTotalShort") }}</span>
+        </div>
+        <div
+          v-for="{ day, dayNutrition } in week.totals"
+          :key="day.date"
+          role="cell"
+          :class="$style.totalCell"
+          data-testid="plan-grid-total"
+        >
+          <span v-if="dayNutrition?.total" :class="$style.totalKcal">{{ formatKcal(dayNutrition.total.caloriesKcal) }}</span>
+          <span v-if="dayNutrition?.total">{{ formatMacroLine(dayNutrition.total) }}</span>
+          <span v-if="dayNutrition && dayNutrition.excludedMealCount > 0" :class="$style.note">
+            {{ t("nutrition.plan.dayExcluded", dayNutrition.excludedMealCount) }}
+          </span>
         </div>
       </div>
     </div>
@@ -377,6 +416,40 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string) =>
 .note {
   align-items: flex-start;
   color: var(--color-warning);
+}
+
+.nutrition {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.kcal {
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.totalCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.totalKcal {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-on-surface);
 }
 
 .icons {

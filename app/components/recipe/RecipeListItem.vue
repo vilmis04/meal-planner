@@ -3,10 +3,18 @@ import type { DeepReadonly } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import type { RecipeSummary } from "~/types/recipe.types";
 
-defineProps<{ recipe: DeepReadonly<RecipeSummary>; to: RouteLocationRaw }>();
+const props = defineProps<{ recipe: DeepReadonly<RecipeSummary>; to: RouteLocationRaw }>();
 
 const { t } = useI18n();
 const { isLoaded } = useRecipeRatings();
+// "390 kcal" beside the tags once the user asks for nutrition (F1).
+const { isNutritionShown } = useNutritionVisibility();
+const { nutritionByRecipe } = useRecipeNutrition();
+const { formatKcal } = useNutritionFormat();
+const kcal = computed(() => {
+  const nutrition = nutritionByRecipe.value?.[props.recipe.id];
+  return isNutritionShown.value && nutrition ? formatKcal(nutrition.caloriesKcal) : null;
+});
 </script>
 
 <template>
@@ -23,6 +31,7 @@ const { isLoaded } = useRecipeRatings();
         <span :class="$style.tags">
           <v-chip size="small" label variant="tonal">{{ t(`recipes.mealType.${recipe.mealType}`) }}</v-chip>
           <RecipeBatchChip v-if="recipe.portionDays > 1" :portion-days="recipe.portionDays" />
+          <span v-if="kcal" :class="$style.kcal" data-testid="recipe-list-kcal">{{ kcal }}</span>
         </span>
       </span>
     </NuxtLink>
@@ -115,6 +124,14 @@ const { isLoaded } = useRecipeRatings();
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+}
+
+.kcal {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .rating {

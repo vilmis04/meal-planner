@@ -1,3 +1,4 @@
+import type { MealNutrition } from "#shared/utils/nutrition.types";
 import type { MealPlanSlot } from "./mealPlan.types";
 
 // The tint of a batch's days in the week view (E6): the brand green, or amber for every other batch of a meal.
@@ -32,4 +33,6 @@ export interface PlanWeekCell {
   tone: BatchTone | null;
   isJoinedToPrevious: boolean;
   isJoinedToNext: boolean;
+  // The meal's calories and macros while nutrition is shown (F1).
+  meal: MealNutrition | null;
 }
