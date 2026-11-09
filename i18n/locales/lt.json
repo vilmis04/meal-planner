@@ -104,7 +104,17 @@
       },
       "noneAhead": "Nei dabar, nei vėliau nieko nesuplanuota. Sukurkite planą ateinančiai savaitei.",
       "progress": "{day} diena iš {count}",
-      "showOlder": "Rodyti senesnius planus"
+      "showOlder": "Rodyti senesnius planus",
+      "withoutYou": "be jūsų"
+    },
+    "alongside": {
+      "createOwn": "Šiame namų ūkio plane jūs nedalyvaujate. Šioms dienoms galite susikurti savo planą.",
+      "createOwnAction": "Sukurti savo planą",
+      "ownPlan": "Šiame namų ūkio plane jūs nedalyvaujate. Jūsų planas: {range}.",
+      "ownPlanAction": "Atidaryti mano planą",
+      "householdPlan": "Tomis pačiomis dienomis yra ir namų ūkio planas ({range}), kuriame jūs nedalyvaujate.",
+      "householdEating": "Jūs dalyvaujate ir namų ūkio plane ({range}). Jei šis planas jį pakeičia, ten atžymėkite save.",
+      "householdAction": "Atidaryti namų ūkio planą"
     },
     "new": {
       "pageTitle": "Naujas planas",

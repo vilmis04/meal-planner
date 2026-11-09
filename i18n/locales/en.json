@@ -104,7 +104,17 @@
       },
       "noneAhead": "Nothing planned for now or later. Make a plan for the coming week.",
       "progress": "day {day} of {count}",
-      "showOlder": "Show older plans"
+      "showOlder": "Show older plans",
+      "withoutYou": "without you"
+    },
+    "alongside": {
+      "createOwn": "You are not eating from this household plan. You can make your own plan for these days.",
+      "createOwnAction": "Create my own plan",
+      "ownPlan": "You are not eating from this household plan. Your own plan covers {range}.",
+      "ownPlanAction": "Open my plan",
+      "householdPlan": "The household plan for {range} runs alongside this one, without you.",
+      "householdEating": "You also eat from the household plan for {range}. Untick yourself there if this plan replaces it.",
+      "householdAction": "Open household plan"
     },
     "new": {
       "pageTitle": "New plan",

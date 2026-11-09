@@ -16,6 +16,7 @@ const {
   swapSlot,
   setSlotsLocked,
   loadRecentRecipes,
+  loadOverlappingPlans,
 } = useMealPlans();
 const { household, load: loadHousehold } = useHousehold();
 const { recipes, loadFailed: recipesFailed, loadList: loadRecipes } = useRecipes();
@@ -36,6 +37,10 @@ const [{ data: result, refresh: refreshPlan }, { data: hatedResult, refresh: ref
 ]);
 
 const plan = computed(() => (result.value?.status === "found" ? result.value.plan : null));
+// The viewer's other plans for some of the same days (E7), once the plan's days are known. A plan's days never change.
+const { data: overlappingResult } = await useAsyncData(`plan-overlapping-${id}`, () =>
+  plan.value ? loadOverlappingPlans(plan.value) : Promise.resolve({ status: "loaded" as const, plans: [] }),
+);
 const range = computed(() =>
   plan.value ? formatPlanRange(plan.value.startDate, plan.value.endDate, locale.value) : "",
 );
@@ -119,6 +124,15 @@ const participantIds = computed({
 
 // Slot picker (E3).
 const viewerId = computed(() => user.value?.id ?? null);
+
+// A household plan the viewer does not eat from leads to their own plan for those days, and their own plan to the
+// household plan beside it (E7). Nothing is said when the other plans could not be read.
+const alongside = computed(() => {
+  if (!plan.value || !viewerId.value || overlappingResult.value?.status !== "loaded") {
+    return null;
+  }
+  return getPlanAlongside(plan.value, overlappingResult.value.plans, viewerId.value, today.value);
+});
 const hated = computed(() => (hatedResult.value?.status === "loaded" ? hatedResult.value.hated : null));
 const hatedFailed = computed(() => hatedResult.value?.status === "failed");
 const members = computed(() =>
@@ -336,6 +350,8 @@ async function generatePlan(mode: GenerationMode) {
       <v-alert v-if="isReadOnly" type="info" variant="tonal" density="compact" data-testid="plan-past-notice">
         {{ t("plan.detail.pastNotice") }}
       </v-alert>
+
+      <PlanAlongsideNotice v-if="alongside" :alongside="alongside" />
 
       <v-btn
         v-if="hasEmptySlots && !isReadOnly"

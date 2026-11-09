@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import type { PlanKind } from "#shared/utils/mealPlan";
+import type { NewPlanPrefill } from "#shared/utils/planAlongside.types";
+
+// What the screen's address asked to fill in (E7), such as the days of a household plan the user is not eating from.
+const props = defineProps<{ prefill: NewPlanPrefill }>();
 
 const { t } = useI18n();
 const { household, load: loadHousehold } = useHousehold();
 const { create, generate } = useMealPlans();
 const { show } = useAppSnackbar();
 
-const kind = ref<PlanKind>(household.value ? "household" : "individual");
-// Set in the browser: "next Monday" depends on the user's own date, not the server's.
-const startDate = ref("");
-const dayCount = ref(PLAN_DAY_COUNT_DEFAULT);
+// A household plan only for someone in a household, whatever the address asked for.
+const getInitialKind = (): PlanKind => {
+  if (!household.value) {
+    return "individual";
+  }
+  return props.prefill.kind ?? "household";
+};
+const kind = ref<PlanKind>(getInitialKind());
+// Set in the browser unless the address names it: "next Monday" depends on the user's own date, not the server's.
+const startDate = ref(props.prefill.startDate ?? "");
+const dayCount = ref(props.prefill.dayCount ?? PLAN_DAY_COUNT_DEFAULT);
 const includeSnacks = ref(true);
 const snacksOnList = ref(true);
 const workdays = ref<number[]>([...DEFAULT_WORKDAYS]);

@@ -7,6 +7,8 @@ const { t } = useI18n();
 const { loadPastPlans } = useMealPlans();
 const { show } = useAppSnackbar();
 const { today, request } = useMealPlanOverview();
+const user = useSupabaseUser();
+const viewerId = computed(() => user.value?.id ?? null);
 
 useHead({ title: () => t("plan.pageTitle") });
 
@@ -88,7 +90,7 @@ async function showOlderPlans() {
         </h2>
         <ul :class="$style.list">
           <li v-for="plan in section.plans" :key="plan.id">
-            <PlanListItem :plan="plan" :timeline="section.timeline" :today="today" />
+            <PlanListItem :plan="plan" :timeline="section.timeline" :today="today" :viewer-id="viewerId" />
           </li>
         </ul>
       </section>
@@ -97,7 +99,7 @@ async function showOlderPlans() {
         <h2 id="plans-past" :class="$style.sectionTitle">{{ t("plan.list.sections.past") }}</h2>
         <ul :class="$style.list">
           <li v-for="plan in pastPlans" :key="plan.id">
-            <PlanListItem :plan="plan" timeline="past" :today="today" />
+            <PlanListItem :plan="plan" timeline="past" :today="today" :viewer-id="viewerId" />
           </li>
         </ul>
         <v-btn
