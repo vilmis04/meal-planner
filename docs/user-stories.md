@@ -197,6 +197,7 @@ As a user I want to adjust the list to what I need.
 As a shopper I want to strike items through as I buy them without deleting.
 - Tap toggles bought state with strike-through; bought items remain visible (optionally sorted to the bottom) and can be un-bought.
 - Progress indicator (e.g. 12 of 30 bought).
+- Built on G4's `set_shopping_item_state()` (no migration) with the list page's tick box lines, "Bought last" chip and progress header (see README, "Shopping lists"). Each line to buy is a checkbox button the width of the row; a bought line is struck through and muted, stays in its group and goes to the bottom while "Bought last" is on (default; remembered in this browser). The header reads "12 of 31 bought" with a bar, and each group "3 of 7": progress counts every shown line not at home, extras and manual lines included. Lines at home have no tick box; a bought line can be moved home. Bought stays bought through rebuilds, also when the plan's amount changes. One line's calls are sent in order, so quick taps cannot arrive reversed.
 
 ### G6. Household shared list with live updates (M, Phase 3)
 As a household member I want to see the same list as others.
