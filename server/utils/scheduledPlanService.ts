@@ -1,10 +1,10 @@
 /*
  * Scheduled plans (H2): every enabled schedule whose run day is today, on the schedule's own clock, gets the plan for
- * its next period, generated (E4) and with its shopping list built (G2). The plan is an ordinary draft people change
- * as they like.
+ * its next period, generated (E4) and with its shopping list built (G2), and the people it concerns get a notice
+ * (H3). The plan is an ordinary draft people change as they like.
  *
  * Running again is safe: create_scheduled_meal_plan() keeps one plan per schedule and period, and a plan an earlier
- * run made is left as it is (not generated again), whatever happened to it since. A run day that was missed (the job
+ * run made is left as it is (not generated again, and no one is told again), whatever happened to it since. A run day that was missed (the job
  * did not run that day) is not caught up later.
  *
  * Reading the schedules is the one thing every schedule needs, so it failing fails the run. After that each schedule
@@ -14,6 +14,7 @@ import { getDateInTimeZone, getScheduleRun } from "../../shared/utils/planSchedu
 import type { ScheduleRun } from "../../shared/utils/planSchedule.types";
 import { getErrorMessage, writeJsonLog } from "./jsonLog";
 import { generatePlan } from "./planGenerationService";
+import type { PlanNotificationStore } from "./planNotificationStore.types";
 import type {
   ScheduledPlanDependencies,
   ScheduledPlanResult,
@@ -58,6 +59,7 @@ const runSchedule = async (
     scheduleStore,
     generationStore,
     shoppingListStore,
+    notificationStore,
     createSeed,
     log,
   }: Required<ScheduledPlanDependencies>,
@@ -98,6 +100,10 @@ const runSchedule = async (
     step = "shopping_list";
     const shoppingList = await refreshShoppingList({ store: shoppingListStore }, { planId });
 
+    // Last, so the notice points at a finished draft.
+    step = "notify";
+    const notifiedCount = await notificationStore.notifyPlanCreated(planId);
+
     const result: ScheduledPlanResult = {
       ...owner,
       status: "created",
@@ -105,13 +111,32 @@ const runSchedule = async (
       ...period,
       generation: generation.status,
       shoppingList: shoppingList.status,
+      notifiedCount,
     };
     log({ event: "scheduled_plan_created", ...result });
     return result;
   } catch (error) {
     const result: ScheduledPlanResult = { ...owner, status: "failed", step, planId, message: getErrorMessage(error) };
     log({ event: "scheduled_plan_failed", level: "error", ...result });
+    // The draft exists, unfinished: people still hear about it, and can generate it or open its list themselves.
+    if (planId !== null && step !== "notify") {
+      await notifyUnfinishedPlan({ notificationStore, log }, { ...owner, planId });
+    }
     return result;
+  }
+};
+
+// The schedule's result is already "failed", so a failure here is only logged.
+const notifyUnfinishedPlan = async (
+  { notificationStore, log }: { notificationStore: PlanNotificationStore; log: (entry: Record<string, unknown>) => void },
+  // The schedule's owner and the plan, for the log.
+  { planId, ...owner }: { planId: string; [field: string]: unknown },
+): Promise<void> => {
+  try {
+    const notifiedCount = await notificationStore.notifyPlanCreated(planId);
+    log({ event: "scheduled_plan_notified", ...owner, planId, notifiedCount });
+  } catch (error) {
+    log({ event: "scheduled_plan_notify_failed", level: "error", ...owner, planId, message: getErrorMessage(error) });
   }
 };
 

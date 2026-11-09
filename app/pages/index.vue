@@ -14,6 +14,7 @@ await callOnce("household", load, { mode: "navigation" });
       {{ profile ? t("home.greeting", { name: profile.displayName }) : t("home.title") }}
     </h1>
     <PlanHomeCard />
+    <PlanDraftNotice />
     <HouseholdHomeCard />
   </div>
 </template>

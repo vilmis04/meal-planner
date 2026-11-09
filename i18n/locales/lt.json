@@ -95,6 +95,11 @@
       "currentHint": "Dabar: {range}",
       "upcomingHint": "Kitas: {range}"
     },
+    "draftNotice": {
+      "title": "Kitas plano juodraštis paruoštas.",
+      "text": "Sukurtas automatiškai laikotarpiui {range} ({kind}).",
+      "action": "Peržiūrėti juodraštį"
+    },
     "list": {
       "new": "Naujas planas",
       "empty": "Planų dar nėra. Sukurkite planą ateinančiai savaitei.",
@@ -274,8 +279,8 @@
       "everyoneHint": "Kol pažymėti visi, vėliau prie namų ūkio prisijungę žmonės taip pat įtraukiami.",
       "snacksOnList": "Užkandžiai pirkinių sąraše",
       "next": "Kitas kartas: {day}",
-      "nextHousehold": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Visi namų ūkio nariai galės jį keisti, kol jis neprasidėjo.",
-      "nextIndividual": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Galėsite jį keisti, kol jis neprasidėjo.",
+      "nextHousehold": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Visi namų ūkio nariai gaus pranešimą ir galės jį keisti, kol jis neprasidėjo.",
+      "nextIndividual": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Gausite pranešimą ir galėsite jį keisti, kol jis neprasidėjo.",
       "ownerOnly": "Namų ūkio automatinius planus keisti gali tik jo savininkas.",
       "cancel": "Atšaukti",
       "done": "Gerai",

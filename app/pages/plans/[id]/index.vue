@@ -46,6 +46,15 @@ const [{ data: result, refresh: refreshPlan }, { data: hatedResult, refresh: ref
 ]);
 
 const plan = computed(() => (result.value?.status === "found" ? result.value.plan : null));
+
+const { markPlanRead } = usePlanNotifications();
+// Opening a plan the scheduled job made reads its notice (H3), so the home screen stops showing it. In the browser
+// only: rendering the page changes nothing.
+onMounted(() => {
+  if (plan.value?.isCreatedAutomatically) {
+    void markPlanRead(id);
+  }
+});
 // The viewer's other plans for some of the same days (E7), once the plan's days are known. A plan's days never change.
 const { data: overlappingResult } = await useAsyncData(`plan-overlapping-${id}`, () =>
   plan.value ? loadOverlappingPlans(plan.value) : Promise.resolve({ status: "loaded" as const, plans: [] }),

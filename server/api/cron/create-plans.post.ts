@@ -4,8 +4,8 @@ import { SEED_LIMIT } from "#shared/utils/seededRandom";
 /*
  * POST /api/cron/create-plans: the scheduled plan job (H2). The scheduler (a Coolify scheduled task, see README,
  * "Scheduled plans") calls it once a day, or more often: every call is safe to repeat. It makes the plan of every
- * enabled schedule whose run day is today on its own clock, generates it and builds its shopping list
- * (scheduledPlanService.ts). Header: "Authorization: Bearer <NUXT_CRON_SECRET>".
+ * enabled schedule whose run day is today on its own clock, generates it, builds its shopping list and gives the people
+ * it concerns a notice (scheduledPlanService.ts). Header: "Authorization: Bearer <NUXT_CRON_SECRET>".
  *
  *   200 ScheduledPlanRun                    every due schedule has its plan (results say which were made now)
  *   500 ScheduledPlanRun                    some schedules failed (each is logged); the others have their plans
@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
         scheduleStore: createSupabasePlanScheduleStore(serviceClient),
         generationStore: createServiceRolePlanGenerationStore(serviceClient),
         shoppingListStore: createServiceRoleShoppingListStore(serviceClient),
+        notificationStore: createSupabasePlanNotificationStore(serviceClient),
         createSeed: () => randomInt(SEED_LIMIT),
       },
       { now: new Date() },

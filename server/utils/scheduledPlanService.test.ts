@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { MEAL_TYPES } from "../../shared/utils/mealFilter";
 import type { PlanGenerationStore, StoredPlan } from "./planGenerationStore.types";
+import type { PlanNotificationStore } from "./planNotificationStore.types";
 import { createScheduledPlans } from "./scheduledPlanService";
 import type { ScheduledPlanDependencies } from "./scheduledPlanService.types";
 import type { PlanScheduleStore, ScheduledPlanCreation, StoredPlanSchedule } from "./scheduledPlanStore.types";
@@ -94,20 +95,35 @@ const makeDependencies = (
     }),
   };
 
+  // Two people hear about each plan, once (create_plan_created_notifications()'s unique key).
+  const notifiedPlans = new Set<string>();
+  const notificationStore: PlanNotificationStore = {
+    notifyPlanCreated: vi.fn(async (planId: string) => {
+      if (notifiedPlans.has(planId)) {
+        return 0;
+      }
+      notifiedPlans.add(planId);
+      return 2;
+    }),
+  };
+
   const log = vi.fn();
   const dependencies: ScheduledPlanDependencies = {
     scheduleStore,
     generationStore,
     shoppingListStore,
+    notificationStore,
     createSeed: () => 7,
     log,
   };
-  return { dependencies, plans, log, generationStore, shoppingListStore };
+  return { dependencies, plans, log, generationStore, shoppingListStore, notificationStore };
 };
 
 describe("createScheduledPlans", () => {
-  it("makes, generates and lists the plan of a schedule due today (AC1, AC3)", async () => {
-    const { dependencies, plans, generationStore, shoppingListStore } = makeDependencies([makeSchedule()]);
+  it("makes, generates and lists the plan of a schedule due today, and tells people (AC1, AC3, H3)", async () => {
+    const { dependencies, plans, generationStore, shoppingListStore, notificationStore } = makeDependencies([
+      makeSchedule(),
+    ]);
 
     const run = await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
 
@@ -124,15 +140,17 @@ describe("createScheduledPlans", () => {
         endDate: "2026-11-17",
         generation: "generated",
         shoppingList: "refreshed",
+        notifiedCount: 2,
       },
     ]);
     expect(plans.get("plan-1")?.startDate).toBe("2026-11-16");
     expect(generationStore.applyGeneration).toHaveBeenCalledTimes(1);
     expect(shoppingListStore.applyList).toHaveBeenCalledTimes(1);
+    expect(notificationStore.notifyPlanCreated).toHaveBeenCalledWith("plan-1");
   });
 
   it("does not make a second plan when it runs again (AC2)", async () => {
-    const { dependencies, plans, generationStore } = makeDependencies([makeSchedule()]);
+    const { dependencies, plans, generationStore, notificationStore } = makeDependencies([makeSchedule()]);
 
     await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
     const second = await createScheduledPlans(dependencies, { now: new Date("2026-11-14T18:00:00Z") });
@@ -140,8 +158,9 @@ describe("createScheduledPlans", () => {
     expect(second).toMatchObject({ createdCount: 0, existingCount: 1, failedCount: 0 });
     expect(second.results[0]).toMatchObject({ status: "existing", planId: "plan-1" });
     expect(plans.size).toBe(1);
-    // The plan is left as people may have changed it since.
+    // The plan is left as people may have changed it since, and they were told about it already.
     expect(generationStore.applyGeneration).toHaveBeenCalledTimes(1);
+    expect(notificationStore.notifyPlanCreated).toHaveBeenCalledTimes(1);
   });
 
   it("goes by each schedule's own clock", async () => {
@@ -196,8 +215,8 @@ describe("createScheduledPlans", () => {
     );
   });
 
-  it("reports a plan that was made but not generated, so it is not lost", async () => {
-    const { dependencies } = makeDependencies([makeSchedule()]);
+  it("reports a plan that was made but not generated, so it is not lost, and still tells people", async () => {
+    const { dependencies, log, notificationStore } = makeDependencies([makeSchedule()]);
     dependencies.generationStore.loadRecipes = async () => {
       throw new Error("timeout");
     };
@@ -205,6 +224,55 @@ describe("createScheduledPlans", () => {
     const run = await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
 
     expect(run.results[0]).toMatchObject({ status: "failed", step: "generate", planId: "plan-1", message: "timeout" });
+    expect(notificationStore.notifyPlanCreated).toHaveBeenCalledWith("plan-1");
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({ event: "scheduled_plan_notified", scheduleId: "home-schedule", planId: "plan-1", notifiedCount: 2 }),
+    );
+  });
+
+  it("only logs a notice that fails for an unfinished plan", async () => {
+    const { dependencies, log } = makeDependencies([makeSchedule()]);
+    dependencies.generationStore.loadRecipes = async () => {
+      throw new Error("timeout");
+    };
+    dependencies.notificationStore.notifyPlanCreated = async () => {
+      throw new Error("connection reset");
+    };
+
+    const run = await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
+
+    expect(run.results[0]).toMatchObject({ status: "failed", step: "generate", message: "timeout" });
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({ event: "scheduled_plan_notify_failed", level: "error", planId: "plan-1", message: "connection reset" }),
+    );
+  });
+
+  it("reports a notice that could not be given, and goes on with the next schedule (H3)", async () => {
+    const { dependencies, notificationStore } = makeDependencies([makeSchedule({ id: "broken" }), makeSchedule({ id: "fine" })]);
+    const notifyPlanCreated = notificationStore.notifyPlanCreated;
+    dependencies.notificationStore.notifyPlanCreated = vi.fn(async (planId: string) => {
+      if (planId === "plan-1") throw new Error("connection reset");
+      return notifyPlanCreated(planId);
+    });
+
+    const run = await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
+
+    expect(run).toMatchObject({ createdCount: 1, failedCount: 1 });
+    expect(run.results[0]).toMatchObject({ status: "failed", step: "notify", planId: "plan-1", message: "connection reset" });
+    expect(run.results[1]).toMatchObject({ status: "created", planId: "plan-2", notifiedCount: 2 });
+    // Telling people is not tried twice in one run.
+    expect(dependencies.notificationStore.notifyPlanCreated).toHaveBeenCalledTimes(2);
+  });
+
+  it("tells no one when no plan was made", async () => {
+    const { dependencies, notificationStore } = makeDependencies([makeSchedule()]);
+    dependencies.scheduleStore.createPlan = async () => {
+      throw new Error("connection reset");
+    };
+
+    await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
+
+    expect(notificationStore.notifyPlanCreated).not.toHaveBeenCalled();
   });
 
   it("reports a list that could not be built", async () => {
@@ -231,12 +299,15 @@ describe("createScheduledPlans", () => {
   });
 
   it("skips a schedule turned off while the job ran", async () => {
-    const { dependencies } = makeDependencies([makeSchedule()], { createPlan: async () => ({ status: "disabled" }) });
+    const { dependencies, notificationStore } = makeDependencies([makeSchedule()], {
+      createPlan: async () => ({ status: "disabled" }),
+    });
 
     const run = await createScheduledPlans(dependencies, { now: SATURDAY_MORNING });
 
     expect(run).toMatchObject({ disabledCount: 1, failedCount: 0 });
     expect(run.results[0]).toMatchObject({ status: "disabled" });
+    expect(notificationStore.notifyPlanCreated).not.toHaveBeenCalled();
   });
 
   it("keeps a plan nobody can be planned for as an empty draft", async () => {
