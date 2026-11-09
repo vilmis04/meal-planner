@@ -206,7 +206,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrit
           :class="$style.totalCell"
           data-testid="plan-grid-total"
         >
-          <span :class="$style.totalKcal">{{ formatKcal(dayNutrition?.total?.caloriesKcal ?? null) }}</span>
+          <span v-if="dayNutrition?.total" :class="$style.totalKcal">{{ formatKcal(dayNutrition.total.caloriesKcal) }}</span>
           <span v-if="dayNutrition?.total">{{ formatMacroLine(dayNutrition.total) }}</span>
           <span v-if="dayNutrition && dayNutrition.excludedMealCount > 0" :class="$style.note">
             {{ t("nutrition.plan.dayExcluded", dayNutrition.excludedMealCount) }}

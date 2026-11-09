@@ -94,6 +94,7 @@ const sourceNote = computed(() => {
 }
 
 .label {
+  overflow-wrap: anywhere;
   font-size: 12px;
   color: var(--color-muted);
 }

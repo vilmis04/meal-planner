@@ -59,7 +59,7 @@ As a user I want to set my diet: vegetarian, fish, poultry, pork, beef, or full.
 
 ### C2. Recipe browse (M, Phase 2)
 As a user I want to browse and open recipes so I know what is available.
-- List filtered by meal type, with name, kcal summary hidden by default (see F1).
+- List filtered by meal type, with name, kcal summary hidden by default (see F1: shown while "Show nutrition" is on).
 - Detail shows ingredients (per person), instructions, and 1-day/2-day batch indicator.
 - Visible to any signed-in user.
 
@@ -159,6 +159,7 @@ As a user I want to see calories and macros only when I ask.
 - A "Show nutrition" toggle reveals per-meal kcal, carbs, protein, fat; the setting is remembered per user.
 - Per-day totals and the plan average (per participant) appear in the revealed view.
 - Recipes missing macros are excluded from totals, with a note.
+- Built as `profiles.show_nutrition` (off by default, saved through `useNutritionVisibility()`) and the pure `getPlanNutrition()` in `shared/utils/nutrition.ts` (see README, "Nutrition"). Macros are read only once the user asks for them. "Show nutrition" sits on the plan page (an icon on phones) and on recipe detail; the plan page shows "Showing for" one participant at a time, because a participant whose diet needs a protein swap gets the swap's estimate (or the recipe's own macros as an approximation when the swap has none). The day list and week grid show each meal's kcal and macros and a total per planned day; the daily average is over the days that have a total. A recipe counts towards totals only with all four values; three seeded recipes lack one and are shown with a dash and counted in the note. The recipe list shows kcal while the setting is on.
 
 ---
 

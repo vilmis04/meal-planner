@@ -10,9 +10,11 @@ export function useNutritionFormat() {
   const formatNumber = (value: number | null): string =>
     value === null ? t("nutrition.missingValue") : numberFormat.value.format(value);
 
-  const formatKcal = (value: number | null): string => t("nutrition.kcalValue", { value: formatNumber(value) });
+  const formatKcal = (value: number | null): string =>
+    value === null ? t("nutrition.missingValue") : t("nutrition.kcalValue", { value: formatNumber(value) });
 
-  const formatGrams = (value: number | null): string => t("nutrition.gramsValue", { value: formatNumber(value) });
+  const formatGrams = (value: number | null): string =>
+    value === null ? t("nutrition.missingValue") : t("nutrition.gramsValue", { value: formatNumber(value) });
 
   // "C 62 · P 14 · F 9", as in the nutrition design.
   const formatMacroLine = (nutrition: Nutrition): string =>

@@ -33,6 +33,7 @@ const { formatNumber, formatMacroLine, formatMealLine, formatNutritionLabel } = 
 const nutritionDays = computed(() =>
   days.value.map((day) => ({
     day,
+    // A day with nothing planned has no total to show.
     dayNutrition: props.nutrition?.days[day.dayIndex] ?? null,
     slots: day.slots.map((slot) => ({ slot, meal: props.nutrition?.meals.get(slot.id) ?? null })),
   })),
@@ -155,7 +156,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrit
               />
             </li>
           </ul>
-          <div v-if="dayNutrition" :class="$style.total" data-testid="plan-day-total">
+          <div v-if="dayNutrition && dayNutrition.countedMealCount + dayNutrition.excludedMealCount > 0" :class="$style.total" data-testid="plan-day-total">
             <span :class="$style.text">
               <span :class="$style.totalTitle">{{ t("nutrition.plan.dayTotal") }}</span>
               <span v-if="dayNutrition.total" :class="$style.macros">{{ formatMacroLine(dayNutrition.total) }}</span>

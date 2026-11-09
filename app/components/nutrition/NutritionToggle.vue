@@ -18,32 +18,39 @@ async function toggle() {
 </script>
 
 <template>
-  <v-btn
-    v-if="isCompactOnPhone"
-    icon="mdi-chart-donut"
-    :variant="isNutritionShown ? 'tonal' : 'text'"
-    :color="isNutritionShown ? 'primary' : undefined"
-    :aria-label="label"
-    :aria-pressed="isNutritionShown"
-    :class="$style.iconButton"
-    data-testid="nutrition-toggle-icon"
-    @click="toggle"
-  />
-  <v-btn
-    :variant="isNutritionShown ? 'tonal' : 'outlined'"
-    :color="isNutritionShown ? 'primary' : undefined"
-    rounded="pill"
-    prepend-icon="mdi-chart-donut"
-    :aria-pressed="isNutritionShown"
-    :class="[$style.textButton, { [$style.desktopOnly]: isCompactOnPhone }]"
-    data-testid="nutrition-toggle"
-    @click="toggle"
-  >
-    {{ label }}
-  </v-btn>
+  <div :class="$style.root">
+    <v-btn
+      v-if="isCompactOnPhone"
+      icon="mdi-chart-donut"
+      :variant="isNutritionShown ? 'tonal' : 'text'"
+      :color="isNutritionShown ? 'primary' : undefined"
+      :aria-label="label"
+      :aria-pressed="isNutritionShown"
+      :class="$style.iconButton"
+      data-testid="nutrition-toggle-icon"
+      @click="toggle"
+    />
+    <v-btn
+      :variant="isNutritionShown ? 'tonal' : 'outlined'"
+      :color="isNutritionShown ? 'primary' : undefined"
+      rounded="pill"
+      prepend-icon="mdi-chart-donut"
+      :aria-pressed="isNutritionShown"
+      :class="[$style.textButton, { [$style.desktopOnly]: isCompactOnPhone }]"
+      data-testid="nutrition-toggle"
+      @click="toggle"
+    >
+      {{ label }}
+    </v-btn>
+  </div>
 </template>
 
 <style module>
+.root {
+  display: flex;
+  flex: 0 0 auto;
+}
+
 .iconButton {
   flex: 0 0 auto;
 }

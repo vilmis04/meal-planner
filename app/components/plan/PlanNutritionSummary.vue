@@ -139,6 +139,10 @@ async function hide() {
   min-width: 0;
 }
 
+.viewer > label {
+  white-space: nowrap;
+}
+
 .name {
   color: var(--color-on-background);
 }
