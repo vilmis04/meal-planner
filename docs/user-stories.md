@@ -211,6 +211,7 @@ As a shopper I want to say where I bought an item.
 - When marking an item bought I can optionally pick or type a shop; it is saved in `purchases`.
 - Skipping it is allowed, and a default shop can be remembered for the session.
 - Shops are shared within the household.
+- Built as `supabase/migrations/20261117000000_create_shops_and_purchases.sql` (`shops`, `purchases`, `set_shopping_item_state()` with an optional shop, `set_shopping_item_shop()`), the list page's "Shopping at Lidl" chip, `ShoppingShopDialog.vue` and the "Add shop" prompt after a tick (see README, "Shopping lists"). Each bought line has a purchase written in the same call as the tick (its shop optional) and deleted when it is unticked. With a shop chosen for the session (`sessionStorage`, this tab only) ticks record it without asking; without one, a short "Onion bought · Add shop" message offers to add one and can be ignored. Shops are found by name whatever the case or spacing, shared by the household's members (a person without a household has their own), and shown on bought lines as "Bought at Lidl" for everyone, live. A bought line whose amount went up says "Needs 200 g more". Renaming or deleting shops and "usually bought at" hints (I1a) are not built.
 
 ---
 
