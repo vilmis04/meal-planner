@@ -25,6 +25,22 @@ const [{ data: planResult }, { data: listResult, refresh: reloadList, status: li
 const plan = computed(() => (planResult.value?.status === "found" ? planResult.value.plan : null));
 const list = computed(() => (listResult.value?.result.status === "found" ? listResult.value.result.list : null));
 const view = computed(() => (list.value ? getShoppingListView(list.value.items) : null));
+const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
+
+// The groups as their headers show them. Extras are titled and explained apart from the categories.
+const groups = computed(() =>
+  (view.value?.groups ?? []).map((group) => {
+    const isExtras = group.key === EXTRAS_GROUP_KEY;
+    return {
+      ...group,
+      title: isExtras ? t("shoppingList.extras.title") : t(`shoppingList.category.${group.key}`),
+      hint: isExtras ? t("shoppingList.extras.hint") : undefined,
+      countLabel: String(group.itemCount),
+      countDescription: t("shoppingList.itemCount", group.itemCount),
+      isExpanded: isGroupExpanded(group.key),
+    };
+  }),
+);
 const isRefreshFailed = computed(() => listResult.value?.isUpToDate === false);
 
 const range = computed(() => (plan.value ? formatPlanRange(plan.value.startDate, plan.value.endDate, locale.value) : ""));
@@ -89,22 +105,19 @@ const participantNames = computed(() => {
       </p>
 
       <div :class="$style.groups">
-        <!-- G3 makes these collapsible, with counts. -->
-        <section
-          v-for="group in view.groups"
-          :key="group.category"
-          :class="$style.group"
-          :data-testid="`shopping-group-${group.category}`"
+        <ShoppingItemGroup
+          v-for="group in groups"
+          :key="group.key"
+          :title="group.title"
+          :hint="group.hint"
+          :count-label="group.countLabel"
+          :count-description="group.countDescription"
+          :expanded="group.isExpanded"
+          :data-testid="`shopping-group-${group.key}`"
+          @update:expanded="setGroupExpanded(group.key, $event)"
         >
-          <h2 :class="$style.groupTitle">{{ t(`shoppingList.category.${group.category}`) }}</h2>
           <ShoppingItemList :items="group.items" :participant-names="participantNames" />
-        </section>
-
-        <section v-if="view.extras.length > 0" :class="$style.group" data-testid="shopping-group-extras">
-          <h2 :class="$style.groupTitle">{{ t("shoppingList.extras.title") }}</h2>
-          <p :class="$style.groupHint">{{ t("shoppingList.extras.hint") }}</p>
-          <ShoppingItemList :items="view.extras" :participant-names="participantNames" />
-        </section>
+        </ShoppingItemGroup>
       </div>
     </template>
     <v-alert
@@ -166,26 +179,6 @@ const participantNames = computed(() => {
 .groups {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-}
-
-.group {
-  display: flex;
-  flex-direction: column;
-}
-
-.groupTitle {
-  margin: 0 0 var(--space-1);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-muted);
-}
-
-.groupHint {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-muted);
+  gap: 10px;
 }
 </style>

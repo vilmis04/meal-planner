@@ -29,6 +29,7 @@ import type {
   IngredientCategory,
   ShoppingItem,
   ShoppingListBuild,
+  ShoppingListGroupKey,
   ShoppingListIngredient,
   ShoppingListInput,
   ShoppingListRecipe,
@@ -40,6 +41,8 @@ import type {
 // shopping_items_source_supported checks must match.
 export const SHOPPING_ITEM_STATES = ["to_buy", "have_at_home", "bought"] as const;
 export const SHOPPING_ITEM_SOURCES = ["generated", "manual"] as const;
+// The group of "to taste" lines, after the categories.
+export const EXTRAS_GROUP_KEY = "extras";
 
 // Where an item without an alias goes until it is mapped (G1's report lists it).
 const UNMAPPED_CATEGORY: IngredientCategory = "other";
@@ -107,18 +110,18 @@ export function buildShoppingList(input: ShoppingListInput): ShoppingListBuild {
   return { items: items.sort(compareGeneratedItems), missingSwapCount: missingSwaps.size };
 }
 
-// The lines the list shows (in the plan and not removed), by category in list order without empty categories, and
-// the "to taste" extras on their own. Names follow the recipes' language.
+// The lines the list shows (in the plan and not removed), by category in INGREDIENT_CATEGORIES order (a walk through a
+// shop), then the "to taste" extras, without empty groups. Names follow the recipes' language.
 export function getShoppingListView(items: readonly ShoppingItem[]): ShoppingListView {
   const shownItems = items
     .filter((item) => item.inPlan && !item.isRemoved)
     .sort((first, second) => compareNames(first.name, second.name));
-  const groups = INGREDIENT_CATEGORIES.map((category) => ({
-    category,
-    items: shownItems.filter((item) => !item.isExtra && item.category === category),
-  })).filter((group) => group.items.length > 0);
-  const extras = shownItems.filter((item) => item.isExtra);
-  return { groups, extras, itemCount: shownItems.length };
+  const categoryGroups = INGREDIENT_CATEGORIES.map((category) =>
+    toGroup(category, shownItems.filter((item) => !item.isExtra && item.category === category)),
+  );
+  const extrasGroup = toGroup(EXTRAS_GROUP_KEY, shownItems.filter((item) => item.isExtra));
+  const groups = [...categoryGroups, extrasGroup].filter((group) => group.items.length > 0);
+  return { groups, itemCount: shownItems.length };
 }
 
 interface LineIdentity {
@@ -148,6 +151,12 @@ interface ParticipantShare {
   ingredients: ParticipantIngredient[];
   isSwapMissing: boolean;
 }
+
+const toGroup = (key: ShoppingListGroupKey, groupItems: ShoppingItem[]) => ({
+  key,
+  items: groupItems,
+  itemCount: groupItems.length,
+});
 
 const getListedMealTypes = (includeSnacks: boolean, snacksOnList: boolean): Set<MealType> =>
   new Set(getVisibleMealTypes(includeSnacks && snacksOnList));

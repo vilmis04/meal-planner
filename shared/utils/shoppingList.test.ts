@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { INGREDIENT_CATEGORIES } from "./ingredient";
-import { SHOPPING_ITEM_SOURCES, SHOPPING_ITEM_STATES, buildShoppingList, getShoppingListView } from "./shoppingList";
+import {
+  EXTRAS_GROUP_KEY,
+  SHOPPING_ITEM_SOURCES,
+  SHOPPING_ITEM_STATES,
+  buildShoppingList,
+  getShoppingListView,
+} from "./shoppingList";
 import type { Diet } from "./diet";
 import type {
   ShoppingItem,
@@ -355,22 +361,34 @@ describe("buildShoppingList", () => {
 });
 
 describe("getShoppingListView", () => {
-  it("groups shown lines by category in list order, hides empty categories and keeps extras apart", () => {
+  it("groups shown lines by category in list order, then the extras, and hides empty groups", () => {
     const view = getShoppingListView([
       storedItem({ id: "salt", name: "Druska", category: "pantry", amount: null, unit: null, isExtra: true }),
       storedItem({ id: "oats", name: "Avižiniai dribsniai", category: "grains_and_bread" }),
       storedItem({ id: "eggs", name: "Kiaušiniai", category: "dairy_and_eggs" }),
       storedItem({ id: "cheese", name: "Čederio sūris", category: "dairy_and_eggs" }),
+      storedItem({ id: "onion", name: "Svogūnai", category: "fruit_and_vegetables" }),
       storedItem({ id: "gone", name: "Menkė", category: "meat_and_fish", inPlan: false, state: "bought" }),
       storedItem({ id: "removed", name: "Vištiena", category: "meat_and_fish", isRemoved: true }),
     ]);
 
-    expect(view.groups.map((group) => [group.category, group.items.map((item) => item.id)])).toEqual([
-      ["dairy_and_eggs", ["cheese", "eggs"]],
-      ["grains_and_bread", ["oats"]],
+    expect(view.groups.map((group) => [group.key, group.items.map((item) => item.id), group.itemCount])).toEqual([
+      ["fruit_and_vegetables", ["onion"], 1],
+      ["dairy_and_eggs", ["cheese", "eggs"], 2],
+      ["grains_and_bread", ["oats"], 1],
+      [EXTRAS_GROUP_KEY, ["salt"], 1],
     ]);
-    expect(view.extras.map((item) => item.id)).toEqual(["salt"]);
-    expect(view.itemCount).toBe(4);
+    expect(view.itemCount).toBe(5);
+  });
+
+  it("leaves the extras group out when there are no extras", () => {
+    const view = getShoppingListView([storedItem({ id: "oats", name: "Avižiniai dribsniai", category: "grains_and_bread" })]);
+
+    expect(view.groups.map((group) => group.key)).toEqual(["grains_and_bread"]);
+  });
+
+  it("has no groups for an empty list", () => {
+    expect(getShoppingListView([])).toEqual({ groups: [], itemCount: 0 });
   });
 });
 
