@@ -732,6 +732,12 @@
       "invalidUnit": "Choose one of the units offered.",
       "amountNotEditable": "Items to taste have no amount to change.",
       "tooManyItems": "This list has too many items of your own. Remove some first."
+    },
+    "live": {
+      "on": "Live",
+      "onDescription": "Changes by others in your household show here as they happen.",
+      "paused": "Reconnecting…",
+      "pausedDescription": "Live updates are paused. Others' changes will show once the connection is back."
     }
   }
 }

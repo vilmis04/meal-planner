@@ -1,6 +1,11 @@
 import type { NewShoppingItem, ShoppingItemAmountChange } from "#shared/utils/shoppingItemEdit.types";
 import type { ShoppingItem, ShoppingItemState } from "#shared/utils/shoppingList.types";
-import type { ShoppingItemEditResult, ShoppingItemPatch } from "~/types/shoppingList.types";
+import type {
+  RemoteShoppingItemChange,
+  ShoppingItemEditResult,
+  ShoppingItemGuardedField,
+  ShoppingItemPatch,
+} from "~/types/shoppingList.types";
 
 interface RpcResponse {
   error: { message: string } | null;
@@ -11,13 +16,47 @@ interface RpcResponse {
 // it, the changed fields go back, unless the same field of the same line was changed again meanwhile.
 // Calls for one line are sent one after another (G5): ticking a line twice quickly must reach the database in that
 // order, or it could end up bought while the page shows it unticked.
+// Other members' changes (G6) come in through applyRemoteChange() and fresh reads through applyStoredItems(); both
+// keep the fields this viewer has on the way (createShoppingItemFieldGuards()).
 export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
-  // Line id and field → the newest change to it, so a late refusal cannot undo a later change.
-  const latestChange = new Map<string, number>();
-  let changeCount = 0;
+  // Which fields this viewer is changing: a late refusal cannot undo a later change, and a remote change cannot
+  // overwrite one on the way.
+  const guards = createShoppingItemFieldGuards();
   const sendInOrder = createOrderedSender();
+  // The newest remote changes, numbered from 0 in arrival order, so a read that started before some of them arrived can
+  // apply them again on top of what it read (it may have read the database before they happened).
+  const recentRemoteChanges: { number: number; change: RemoteShoppingItemChange }[] = [];
+  let remoteChangeCount = 0;
+
+  const getGuardedFields = (itemId: string): ReadonlySet<ShoppingItemGuardedField> =>
+    guards.getGuardedFields(itemId, performance.now());
+
+  // A change to a line from Realtime: another member's, or the echo of this viewer's own.
+  const applyRemoteChange = (change: RemoteShoppingItemChange): void => {
+    recentRemoteChanges.push({ number: remoteChangeCount++, change });
+    if (recentRemoteChanges.length > MAX_RECENT_REMOTE_CHANGES) {
+      recentRemoteChanges.shift();
+    }
+    if (change.kind === "upsert") {
+      guards.acknowledge(change.item.id, { ...change.item, isPresent: true });
+    } else {
+      guards.acknowledge(change.itemId, { isPresent: false });
+    }
+    items.value = applyRemoteShoppingItemChange(items.value, change, getGuardedFields);
+  };
+
+  // How many remote changes have arrived; a read takes this before it starts and hands it to applyStoredItems().
+  const countRemoteChanges = (): number => remoteChangeCount;
+
+  // The lines as read from the database, then the remote changes that arrived since the read started.
+  const applyStoredItems = (stored: readonly ShoppingItem[], remoteChangesBefore: number): void => {
+    const merged = mergeStoredShoppingItems(items.value, stored, getGuardedFields);
+    items.value = recentRemoteChanges
+      .filter(({ number }) => number >= remoteChangesBefore)
+      .reduce((lines, { change }) => applyRemoteShoppingItemChange(lines, change, getGuardedFields), merged);
+  };
 
   // The app picks the id, so the line keeps the id it is shown with and a retried call adds it once.
   const addItem = (listId: string, newItem: NewShoppingItem): Promise<ShoppingItemEditResult> =>
@@ -62,16 +101,20 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
       );
     }
 
+    const changeId = guards.begin(item.id, { isPresent: false });
     items.value = items.value.filter((line) => line.id !== item.id);
     const { error } = await sendInOrder(item.id, () =>
       supabase.rpc("remove_shopping_item", { target_item_id: item.id }),
     );
     // Someone else removed it first: it is gone either way.
     if (!error || error.message === "item_not_found") {
+      guards.settle(item.id, changeId, true, performance.now());
       return { isSaved: true };
     }
     console.error("Removing the shopping item failed", error);
-    if (!items.value.some((line) => line.id === item.id)) {
+    const isStillOurs = guards.isLatest(item.id, "isPresent", changeId);
+    guards.settle(item.id, changeId, false, performance.now());
+    if (isStillOurs && !items.value.some((line) => line.id === item.id)) {
       items.value = [...items.value, item];
     }
     return { isSaved: false, errorKey: getShoppingItemErrorKey(error) };
@@ -88,6 +131,7 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
   };
 
   const insertItem = async (listId: string, item: ShoppingItem): Promise<ShoppingItemEditResult> => {
+    const changeId = guards.begin(item.id, { isPresent: true });
     items.value = [...items.value.filter((line) => line.id !== item.id), item];
     const { error } = await sendInOrder(item.id, () =>
       supabase.rpc("add_shopping_item", {
@@ -101,9 +145,14 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     );
     if (error) {
       console.error("Adding the shopping item failed", error);
-      items.value = items.value.filter((line) => line.id !== item.id);
+      const isStillOurs = guards.isLatest(item.id, "isPresent", changeId);
+      guards.settle(item.id, changeId, false, performance.now());
+      if (isStillOurs) {
+        items.value = items.value.filter((line) => line.id !== item.id);
+      }
       return { isSaved: false, errorKey: getShoppingItemErrorKey(error) };
     }
+    guards.settle(item.id, changeId, true, performance.now());
     // A line added again by an undo keeps being at home, or bought, if it was.
     if (item.state === "to_buy") {
       return { isSaved: true };
@@ -124,25 +173,33 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     }
 
     const previous = getPatchedFields(current, patch);
-    const changeId = ++changeCount;
-    const fieldKeys = Object.keys(patch).map((field) => `${itemId}:${field}`);
-    for (const fieldKey of fieldKeys) {
-      latestChange.set(fieldKey, changeId);
-    }
+    const changeId = guards.begin(itemId, patch);
     items.value = patchShoppingItem(items.value, itemId, patch);
 
     const { error } = await sendInOrder(itemId, send);
     if (!error) {
+      guards.settle(itemId, changeId, true, performance.now());
       return { isSaved: true };
     }
 
     console.error("Saving the shopping item failed", error);
-    const stillOurs = Object.entries(previous).filter(
-      ([field]) => latestChange.get(`${itemId}:${field}`) === changeId,
-    );
+    const stillOurs = Object.entries(previous).filter(([field]) => guards.isLatest(itemId, field, changeId));
+    guards.settle(itemId, changeId, false, performance.now());
     items.value = patchShoppingItem(items.value, itemId, Object.fromEntries(stillOurs));
     return { isSaved: false, errorKey: getShoppingItemErrorKey(error) };
   };
 
-  return { addItem, setAmount, setState, removeItem, restoreItem };
+  return {
+    addItem,
+    setAmount,
+    setState,
+    removeItem,
+    restoreItem,
+    applyRemoteChange,
+    countRemoteChanges,
+    applyStoredItems,
+  };
 }
+
+// Enough for any read to finish within; older changes are already in what a read returns.
+const MAX_RECENT_REMOTE_CHANGES = 500;

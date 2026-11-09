@@ -16,11 +16,19 @@ const { show } = useAppSnackbar();
 
 const id = String(route.params.id);
 
+// The lines as this page shows them: the loaded list, with this viewer's changes applied before the database confirms
+// them (G4) and other members' changes as they happen (G6).
+const items = ref<ShoppingItem[]>([]);
+const { addItem, setAmount, setState, removeItem, restoreItem, applyRemoteChange, countRemoteChanges, applyStoredItems } =
+  useShoppingItemEdits(items);
+
 // The list is brought up to date with the plan first (the server rebuilds it only when the plan changed), then read.
-// The plan gives the header; the household gives names for "Swap for Monika".
+// The plan gives the header; the household gives names for "Swap for Monika". How many live changes had arrived when
+// the read started is kept, so the ones that arrive while it runs are applied again on top of it (G6).
 const loadList = async () => {
+  const remoteChangesBefore = countRemoteChanges();
   const isUpToDate = await refresh(id);
-  return { isUpToDate, result: await load(id) };
+  return { isUpToDate, remoteChangesBefore, result: await load(id) };
 };
 const [{ data: planResult }, { data: listResult, refresh: reloadList, status: listStatus }] = await Promise.all([
   useAsyncData(`plan-${id}`, () => loadPlan(id)),
@@ -30,16 +38,47 @@ const [{ data: planResult }, { data: listResult, refresh: reloadList, status: li
 
 const plan = computed(() => (planResult.value?.status === "found" ? planResult.value.plan : null));
 const list = computed(() => (listResult.value?.result.status === "found" ? listResult.value.result.list : null));
-// The lines as this page shows them: the loaded list, with this viewer's changes applied before the database confirms
-// them (G4). A reload (Try again) starts from what is stored.
-const items = ref<ShoppingItem[]>([]);
-watch(list, (current) => (items.value = current ? [...current.items] : []), { immediate: true });
+// Every read (the first, Try again, catching up) goes through here; what this viewer has on the way is kept.
+watch(
+  listResult,
+  (current) => {
+    if (current?.result.status === "found") {
+      applyStoredItems(current.result.list.items, current.remoteChangesBefore);
+    } else {
+      items.value = [];
+    }
+  },
+  { immediate: true },
+);
 const { isBoughtLast, setBoughtLast } = useShoppingListBoughtLast();
 const view = computed(() =>
   list.value ? getShoppingListView(items.value, { isBoughtLast: isBoughtLast.value }) : null,
 );
 const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
-const { addItem, setAmount, setState, removeItem, restoreItem } = useShoppingItemEdits(items);
+
+// Catching up after changes may have been missed (G6): the lines are read again, and when the plan changed meanwhile
+// the list is first brought up to date, as on opening it. Losing access (left the household) shows "not found".
+const catchUp = createCoalescedRunner(async () => {
+  const remoteChangesBefore = countRemoteChanges();
+  const result = await load(id);
+  if (result.status === "failed") {
+    return;
+  }
+  if (result.status === "found" && result.list.generatedVersion < result.list.sourceVersion) {
+    await reloadList();
+    return;
+  }
+  listResult.value = { isUpToDate: true, remoteChangesBefore, result };
+});
+const { status: liveStatus } = useShoppingListLive(() => list.value?.id ?? null, {
+  onItemChange: applyRemoteChange,
+  onListChange: (change) => {
+    if (isShoppingListCatchUpNeeded(change, list.value?.missingSwapCount ?? 0)) {
+      catchUp();
+    }
+  },
+  onCatchUp: catchUp,
+});
 
 // The groups as their headers show them. Extras and "Have at home" are titled apart from the categories.
 const getGroupHeading = (key: ShoppingListGroupKey) => {
@@ -183,7 +222,10 @@ const participantNames = computed(() => {
     <template v-if="list && view">
       <header :class="$style.header">
         <span v-if="subtitle" :class="$style.subtitle" data-testid="shopping-list-plan">{{ subtitle }}</span>
-        <h1 :class="$style.title">{{ t("shoppingList.title") }}</h1>
+        <div :class="$style.titleRow">
+          <h1 :class="$style.title">{{ t("shoppingList.title") }}</h1>
+          <ShoppingListLiveStatus :status="liveStatus" />
+        </div>
       </header>
 
       <div :class="$style.progress">
@@ -338,6 +380,14 @@ const participantNames = computed(() => {
   font-size: 13px;
   font-weight: 600;
   color: var(--color-muted);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .title {
