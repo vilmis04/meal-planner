@@ -639,7 +639,15 @@
     "open": "Pirkinių sąrašas",
     "back": "Atgal į planą",
     "itemCount": "Prekių nėra | Prekių: {count} | Prekių: {count}",
-    "toBuyCount": "Pirkti nieko nereikia | Pirkti: {count} | Pirkti: {count}",
+    "groupProgress": "{bought} iš {count}",
+    "groupProgressDescription": "nupirkta {bought} iš {count}",
+    "progress": {
+      "summary": "Nupirkta {bought} iš {total}",
+      "nothingToBuy": "Pirkti nieko nereikia",
+      "label": "Apsipirkimo eiga",
+      "valueText": "Nupirkta {bought} iš {total}"
+    },
+    "boughtLast": "Nupirktos apačioje",
     "atHomeCount": "Namie: {count}",
     "category": {
       "fruit_and_vegetables": "Vaisiai ir daržovės",

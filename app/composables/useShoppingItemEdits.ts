@@ -9,12 +9,15 @@ interface RpcResponse {
 // Changes to a shopping list (G4), one line and one field at a time through the list functions, so two people
 // changing different lines never overwrite each other. The page shows a change at once; when the database refuses
 // it, the changed fields go back, unless the same field of the same line was changed again meanwhile.
+// Calls for one line are sent one after another (G5): ticking a line twice quickly must reach the database in that
+// order, or it could end up bought while the page shows it unticked.
 export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
   // Line id and field → the newest change to it, so a late refusal cannot undo a later change.
   const latestChange = new Map<string, number>();
   let changeCount = 0;
+  const sendInOrder = createOrderedSender();
 
   // The app picks the id, so the line keeps the id it is shown with and a retried call adds it once.
   const addItem = (listId: string, newItem: NewShoppingItem): Promise<ShoppingItemEditResult> =>
@@ -60,7 +63,9 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     }
 
     items.value = items.value.filter((line) => line.id !== item.id);
-    const { error } = await supabase.rpc("remove_shopping_item", { target_item_id: item.id });
+    const { error } = await sendInOrder(item.id, () =>
+      supabase.rpc("remove_shopping_item", { target_item_id: item.id }),
+    );
     // Someone else removed it first: it is gone either way.
     if (!error || error.message === "item_not_found") {
       return { isSaved: true };
@@ -84,20 +89,22 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
 
   const insertItem = async (listId: string, item: ShoppingItem): Promise<ShoppingItemEditResult> => {
     items.value = [...items.value.filter((line) => line.id !== item.id), item];
-    const { error } = await supabase.rpc("add_shopping_item", {
-      target_list_id: listId,
-      new_item_id: item.id,
-      item_name: item.name,
-      item_category: item.category,
-      item_amount: item.amount,
-      item_unit: item.unit,
-    });
+    const { error } = await sendInOrder(item.id, () =>
+      supabase.rpc("add_shopping_item", {
+        target_list_id: listId,
+        new_item_id: item.id,
+        item_name: item.name,
+        item_category: item.category,
+        item_amount: item.amount,
+        item_unit: item.unit,
+      }),
+    );
     if (error) {
       console.error("Adding the shopping item failed", error);
       items.value = items.value.filter((line) => line.id !== item.id);
       return { isSaved: false, errorKey: getShoppingItemErrorKey(error) };
     }
-    // A line added again by an undo keeps being at home if it was.
+    // A line added again by an undo keeps being at home, or bought, if it was.
     if (item.state === "to_buy") {
       return { isSaved: true };
     }
@@ -124,7 +131,7 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
     }
     items.value = patchShoppingItem(items.value, itemId, patch);
 
-    const { error } = await send();
+    const { error } = await sendInOrder(itemId, send);
     if (!error) {
       return { isSaved: true };
     }
