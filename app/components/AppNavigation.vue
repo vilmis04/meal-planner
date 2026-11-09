@@ -1,8 +1,7 @@
 <script setup lang="ts">
 interface NavItem {
   key: string;
-  // Null while the page does not exist yet: the item is shown but cannot be opened.
-  to: string | null;
+  to: string;
   icon: string;
   activeIcon: string;
 }
@@ -10,39 +9,46 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { key: "home", to: "/", icon: "mdi-home-outline", activeIcon: "mdi-home" },
   { key: "plan", to: "/plans", icon: "mdi-calendar-week", activeIcon: "mdi-calendar-week" },
-  { key: "list", to: null, icon: "mdi-cart-outline", activeIcon: "mdi-cart" },
+  { key: "list", to: "/list", icon: "mdi-cart-outline", activeIcon: "mdi-cart" },
   { key: "recipes", to: "/recipes", icon: "mdi-book-open-variant", activeIcon: "mdi-book-open-variant" },
   { key: "me", to: "/me", icon: "mdi-account-circle-outline", activeIcon: "mdi-account-circle" },
 ];
 
+// A plan's shopping list lives under its plan but belongs to "List", e.g. "/plans/0b6f…/list".
+const SHOPPING_LIST_PATH_REGEX = /^\/plans\/[^/]+\/list\/?$/;
+
 const { t } = useI18n();
 const route = useRoute();
 
-const isActive = ({ to }: NavItem): boolean =>
-  to === "/" ? route.path === "/" : to !== null && route.path.startsWith(to);
+const isActive = ({ key, to }: NavItem): boolean => {
+  const isShoppingList = SHOPPING_LIST_PATH_REGEX.test(route.path);
+  switch (key) {
+    case "home":
+      return route.path === "/";
+    case "list":
+      return isShoppingList || route.path.startsWith(to);
+    case "plan":
+      return !isShoppingList && route.path.startsWith(to);
+    default:
+      return route.path.startsWith(to);
+  }
+};
 </script>
 
 <template>
   <nav :class="$style.nav" :aria-label="t('nav.label')">
-    <template v-for="item in NAV_ITEMS" :key="item.key">
-      <NuxtLink
-        v-if="item.to"
-        :to="item.to"
-        :class="[$style.item, isActive(item) && $style.active]"
-        :aria-current="isActive(item) ? 'page' : undefined"
-      >
-        <span :class="$style.icon">
-          <v-icon :icon="isActive(item) ? item.activeIcon : item.icon" size="22" />
-        </span>
-        <span :class="$style.label">{{ t(`nav.${item.key}`) }}</span>
-      </NuxtLink>
-      <span v-else :class="[$style.item, $style.disabled]" aria-disabled="true">
-        <span :class="$style.icon">
-          <v-icon :icon="item.icon" size="22" />
-        </span>
-        <span :class="$style.label">{{ t(`nav.${item.key}`) }}</span>
+    <NuxtLink
+      v-for="item in NAV_ITEMS"
+      :key="item.key"
+      :to="item.to"
+      :class="[$style.item, isActive(item) && $style.active]"
+      :aria-current="isActive(item) ? 'page' : undefined"
+    >
+      <span :class="$style.icon">
+        <v-icon :icon="isActive(item) ? item.activeIcon : item.icon" size="22" />
       </span>
-    </template>
+      <span :class="$style.label">{{ t(`nav.${item.key}`) }}</span>
+    </NuxtLink>
   </nav>
 </template>
 
@@ -95,11 +101,6 @@ const isActive = ({ to }: NavItem): boolean =>
 
 .active .label {
   font-weight: 600;
-}
-
-.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* 960px is --breakpoint-md; custom properties cannot be used in media queries. */

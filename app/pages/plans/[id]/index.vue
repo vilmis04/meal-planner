@@ -444,6 +444,18 @@ async function generatePlan(mode: GenerationMode) {
 
       <PlanAlongsideNotice v-if="alongside" :alongside="alongside" />
 
+      <v-btn
+        :to="`/plans/${plan.id}/list`"
+        variant="tonal"
+        color="primary"
+        prepend-icon="mdi-cart-outline"
+        append-icon="mdi-chevron-right"
+        :class="$style.listLink"
+        data-testid="plan-shopping-list"
+      >
+        {{ t("shoppingList.open") }}
+      </v-btn>
+
       <PlanNutritionSummary
         v-if="isNutritionShown"
         v-model:participant-id="nutritionParticipantId"
@@ -605,6 +617,12 @@ async function generatePlan(mode: GenerationMode) {
 
 .generate {
   align-self: flex-start;
+  text-transform: none;
+}
+
+.listLink {
+  align-self: flex-start;
+  min-height: 44px;
   text-transform: none;
 }
 

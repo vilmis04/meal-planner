@@ -632,5 +632,39 @@
       "swapEstimate": "Įvertinta jūsų pakaitalui, todėl apytiksliai.",
       "swapWithoutEstimate": "Originalaus recepto vertės: jūsų pakaitalas dar neįvertintas, todėl vertės apytikslės."
     }
+  },
+  "shoppingList": {
+    "pageTitle": "Pirkinių sąrašas",
+    "title": "Pirkinių sąrašas",
+    "open": "Pirkinių sąrašas",
+    "back": "Atgal į planą",
+    "itemCount": "Prekių nėra | Prekių: {count} | Prekių: {count}",
+    "category": {
+      "fruit_and_vegetables": "Vaisiai ir daržovės",
+      "meat_and_fish": "Mėsa ir žuvis",
+      "dairy_and_eggs": "Pieno produktai ir kiaušiniai",
+      "grains_and_bread": "Grūdai ir duona",
+      "pantry": "Sandėliukas",
+      "frozen": "Šaldyti",
+      "other": "Kita"
+    },
+    "extras": {
+      "title": "Priedai",
+      "hint": "Pagal skonį: patikrinkite, ką turite namie"
+    },
+    "swapFor": "Pakaitalas: {names}",
+    "empty": "Pirkti kol kas nieko. Įtraukite receptų į planą, ir jų ingredientai atsiras čia.",
+    "noParticipants": "Iš šio plano dar niekas nevalgo. Pasirinkite dalyvius plane, ir sąrašas atsinaujins.",
+    "snacksOff": "Užkandžiai į šį sąrašą neįtraukti. Tai galite pakeisti plano užkandžių nustatymuose.",
+    "missingSwaps": "Kai kurie patiekalai sąraše pagal originalų receptą, nes dalyvio baltymų pakaitalas dar neparuoštas. Kai bus paruoštas, sąrašas atsinaujins.",
+    "refreshFailed": "Nepavyko atnaujinti sąrašo pagal planą. Rodoma paskutinė versija.",
+    "retry": "Bandyti dar kartą",
+    "loadFailed": "Nepavyko įkelti pirkinių sąrašo. Pabandykite vėliau.",
+    "notFound": "Šis pirkinių sąrašas nepasiekiamas. Jo planas gali priklausyti kitam.",
+    "pick": {
+      "title": "Plano dar nėra",
+      "hint": "Kiekvienas planas turi pirkinių sąrašą. Sukurkite planą ir jį gausite.",
+      "action": "Į planus"
+    }
   }
 }

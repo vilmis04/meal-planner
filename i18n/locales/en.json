@@ -632,5 +632,39 @@
       "swapEstimate": "Estimated for your swap, so approximate.",
       "swapWithoutEstimate": "For the original recipe: your swap has no estimate yet, so the values are approximate."
     }
+  },
+  "shoppingList": {
+    "pageTitle": "Shopping list",
+    "title": "Shopping list",
+    "open": "Shopping list",
+    "back": "Back to plan",
+    "itemCount": "no items | 1 item | {count} items",
+    "category": {
+      "fruit_and_vegetables": "Fruit & vegetables",
+      "meat_and_fish": "Meat & fish",
+      "dairy_and_eggs": "Dairy & eggs",
+      "grains_and_bread": "Grains & bread",
+      "pantry": "Pantry",
+      "frozen": "Frozen",
+      "other": "Other"
+    },
+    "extras": {
+      "title": "Extras",
+      "hint": "To taste: check what you have at home"
+    },
+    "swapFor": "Swap for {names}",
+    "empty": "Nothing to buy yet. Add recipes to the plan and their ingredients appear here.",
+    "noParticipants": "No one eats from this plan yet. Choose who does on the plan, and the list follows.",
+    "snacksOff": "Snacks are left off this list. Change it in the plan's snack options.",
+    "missingSwaps": "Some meals list the original recipe for a participant whose protein swap is not ready yet. The list updates once it is.",
+    "refreshFailed": "The list could not be brought up to date with the plan. It shows the last version.",
+    "retry": "Try again",
+    "loadFailed": "The shopping list could not be loaded. Try again later.",
+    "notFound": "This shopping list is not available. Its plan may belong to someone else.",
+    "pick": {
+      "title": "No plan yet",
+      "hint": "A shopping list comes with every plan. Create a plan to get one.",
+      "action": "Go to plans"
+    }
   }
 }

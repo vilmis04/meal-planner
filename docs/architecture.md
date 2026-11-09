@@ -71,7 +71,7 @@ server/
   utils/            Supabase and AI (Gemini) clients
 shared/ (or domain/)
   planner/          plan generator (pure)
-  shopping/         scaling, unit conversion, merging (pure; unit rules in shared/utils/ingredientUnit.ts, G1)
+  shopping/         scaling, unit conversion, merging (pure; unit rules in shared/utils/ingredientUnit.ts, G1; the list in shared/utils/shoppingList.ts, G2)
   diet/             diet ladder and compatibility (pure)
   nutrition/        per-day totals and averages (pure; shared/utils/nutrition.ts, F1)
 supabase/
@@ -111,6 +111,8 @@ Rules:
 **Nutrition on request (F1).** Hidden until the user turns on "Show nutrition", which is stored on the profile (`profiles.show_nutrition`). Only then does the browser read the library's macros (one paged read, like the recipe list) and the ready protein swaps' estimates for the plan's recipes and its participants' diets; row level security already allowed both. The pure `nutrition` module turns them into per-meal values, day totals and the daily average for the participant the viewer picks, leaving recipes with incomplete macros out of the totals.
 
 **Ingredient canonicalisation (G1).** Recipes keep their free-text items. `ingredient_aliases` maps each item, spelled exactly as written, to a canonical `ingredients` row with its shopping category; the mapping is a reviewed migration, and anything without an alias (a new seed item, or a protein swap replacement the AI named) shows up in `unmapped_ingredient_items` and the mapping report instead of being guessed. The list (G2) merges by ingredient and base unit (`toBaseQuantity()`: kg to g, l to ml; pieces and other units on their own).
+
+**Shopping list from the plan (G2).** Each plan gets its `shopping_lists` row when it is created. Triggers move the list's `source_version` whenever its inputs change (slot recipes, participants, snack options, a participant's diet, a protein swap becoming ready), so the database itself knows when a list is out of date, whatever wrote the change. Opening the list calls `POST /api/plans/:id/shopping-list`, which rebuilds it only then: the pure `shopping` module (`buildShoppingList()`) scales each participant's portion (with their ready protein swap) and merges by canonical ingredient and base unit, and `apply_shopping_list_generation()` writes it against the version it was built from (`list_changed` otherwise, and the server builds again). A rebuild writes only the generated columns of `shopping_items` and keeps lines people changed, so G4/G5 edits survive; everything runs as the signed-in user. A Realtime subscription to `shopping_lists` (G6) can tell an open list to refresh.
 
 **Shared shopping list (G6).** Items live in `shopping_items` rows. Clients subscribe to Realtime changes for the list id; each toggle or edit is a single-row update, so concurrent edits to different items do not conflict. Last write wins on the same item.
 
