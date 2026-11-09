@@ -5,13 +5,21 @@ import {
   PLAN_DAY_COUNT_MIN,
   PLAN_KINDS,
   addDays,
+  COOLDOWN_DAYS_DEFAULT,
+  COOLDOWN_DAYS_MAX,
+  COOLDOWN_DAYS_OPTIONS,
+  DEFAULT_WORKDAYS,
+  WEEKDAYS,
   clampDayCount,
+  getDaysBetween,
   getDefaultStartDate,
+  getIsoWeekday,
   getPlanDays,
   getPlanEndDate,
   getPlanServings,
   getVisibleMealTypes,
   isIsoDate,
+  normalizeWorkdays,
   toLocalIsoDate,
 } from "./mealPlan";
 
@@ -129,5 +137,34 @@ describe("getPlanServings", () => {
 
   it("is 0 for a plan with no one in it", () => {
     expect(getPlanServings([])).toBe(0);
+  });
+});
+
+describe("workdays and cooldown (E4)", () => {
+  // Written out on purpose: these are the database checks and defaults.
+  it("matches the database", () => {
+    expect(WEEKDAYS).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(DEFAULT_WORKDAYS).toEqual([1, 2, 3, 4, 5]);
+    expect(COOLDOWN_DAYS_DEFAULT).toBe(14);
+    expect(COOLDOWN_DAYS_MAX).toBe(60);
+    expect(COOLDOWN_DAYS_OPTIONS).toContain(COOLDOWN_DAYS_DEFAULT);
+    expect(Math.max(...COOLDOWN_DAYS_OPTIONS)).toBeLessThanOrEqual(COOLDOWN_DAYS_MAX);
+  });
+
+  it("numbers weekdays from Monday = 1 to Sunday = 7", () => {
+    expect(getIsoWeekday("2026-11-09")).toBe(1);
+    expect(getIsoWeekday("2026-11-14")).toBe(6);
+    expect(getIsoWeekday("2026-11-15")).toBe(7);
+  });
+
+  it("counts whole days between dates, across months and daylight saving changes", () => {
+    expect(getDaysBetween("2026-10-20", "2026-11-09")).toBe(20);
+    expect(getDaysBetween("2026-03-28", "2026-03-30")).toBe(2);
+    expect(getDaysBetween("2026-11-09", "2026-11-02")).toBe(-7);
+  });
+
+  it("sorts workdays and drops repeats and non-weekdays", () => {
+    expect(normalizeWorkdays([5, 1, 3, 1, 9, 0])).toEqual([1, 3, 5]);
+    expect(normalizeWorkdays([])).toEqual([]);
   });
 });

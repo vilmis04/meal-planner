@@ -5,7 +5,7 @@ defineOptions({ name: "PlanPage" });
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const { loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes } = useMealPlans();
+const { loadPlan, updateSnackSettings, updateParticipants, setSlotRecipe, loadHatedRecipes, generate } = useMealPlans();
 const { household, load: loadHousehold } = useHousehold();
 const { recipes, loadFailed: recipesFailed, loadList: loadRecipes } = useRecipes();
 const { show } = useAppSnackbar();
@@ -146,6 +146,36 @@ async function saveSlot(recipeId: string | null, fillDays: number) {
 
 const chooseRecipe = (recipeId: string, fillDays: number) => saveSlot(recipeId, fillDays);
 const clearSlot = () => saveSlot(null, 1);
+
+// Generation (E4): fills the empty slots the plan shows; a recipe already chosen stays. Offered while any is empty.
+const visibleSlots = computed(() => {
+  const mealTypes = getVisibleMealTypes(plan.value?.includeSnacks ?? true);
+  return (plan.value?.slots ?? []).filter((slot) => mealTypes.includes(slot.mealType));
+});
+const hasEmptySlots = computed(() => visibleSlots.value.some((slot) => slot.recipeId === null));
+const isPlanEmpty = computed(() => visibleSlots.value.every((slot) => slot.recipeId === null));
+const isGenerating = ref(false);
+
+async function fillPlan() {
+  const current = plan.value;
+  if (!current || isSaving.value) {
+    return;
+  }
+
+  isSaving.value = true;
+  isGenerating.value = true;
+  const generated = await generate(current.id);
+  // Also after "someone changed the plan meanwhile": the page shows what is there now.
+  await refreshPlan();
+  isGenerating.value = false;
+  isSaving.value = false;
+
+  if (generated.isGenerated) {
+    show(getGenerationDoneKey(generated.summary), "success");
+  } else {
+    show(generated.errorKey, "error");
+  }
+}
 </script>
 
 <template>
@@ -159,6 +189,20 @@ const clearSlot = () => saveSlot(null, 1);
         <span :class="$style.kind" data-testid="plan-kind-label">{{ t(`plan.kind.${plan.kind}`) }}</span>
         <h1 :class="$style.title" data-testid="plan-range">{{ range }}</h1>
       </header>
+
+      <v-btn
+        v-if="hasEmptySlots"
+        color="primary"
+        size="large"
+        prepend-icon="mdi-auto-fix"
+        :loading="isGenerating"
+        :disabled="isSaving"
+        :class="$style.generate"
+        data-testid="plan-fill"
+        @click="fillPlan"
+      >
+        {{ isPlanEmpty ? t("plan.generate.action") : t("plan.generate.fillEmpty") }}
+      </v-btn>
 
       <div :class="$style.layout">
         <div :class="$style.settings">
@@ -244,6 +288,11 @@ const clearSlot = () => saveSlot(null, 1);
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+}
+
+.generate {
+  align-self: flex-start;
+  text-transform: none;
 }
 
 .layout {

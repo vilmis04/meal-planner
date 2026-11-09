@@ -35,12 +35,9 @@ const query = ref("");
 // A batch recipe waiting for "only today" or "today and the next day".
 const pendingRecipeId = ref<string | null>(null);
 
-// "Tue", or "An" in Lithuanian: Intl writes Lithuanian short weekdays in lower case ("an"), but the standard
-// abbreviations, and the buttons that start with them, are capitalised.
 const weekday = (dayIndex: number): string => {
   const date = props.planDays[dayIndex];
-  const name = date ? formatPlanDay(date, locale.value, { weekday: "short" }) : "";
-  return name.charAt(0).toLocaleUpperCase(locale.value) + name.slice(1);
+  return date ? formatShortWeekday(date, locale.value) : "";
 };
 
 const header = computed(() => {

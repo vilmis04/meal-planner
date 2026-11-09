@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const MEAL_PLAN_COLUMNS = "id, kind, start_date, day_count, include_snacks, snacks_on_list, created_at";
-export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, meal_plan_slots(id, day_index, meal_type, recipe_id), meal_plan_participants(user_id)`;
+export const MEAL_PLAN_DETAIL_COLUMNS = `${MEAL_PLAN_COLUMNS}, workdays, meal_plan_slots(id, day_index, meal_type, recipe_id, fill_note), meal_plan_participants(user_id)`;
 
 // The plan list shows the newest plans first; E6 replaces it with the week view and history.
 export const MEAL_PLAN_LIST_LIMIT = 50;
@@ -38,6 +38,8 @@ const slotRowSchema = z.object({
   day_index: z.number().int().min(0),
   meal_type: z.enum(MEAL_TYPES),
   recipe_id: z.guid().nullable(),
+  // Why the generator left the slot empty or compromised (E4). SLOT_FILL_NOTES is in shared/utils/planGenerator.ts.
+  fill_note: z.enum(SLOT_FILL_NOTES).nullable(),
 });
 
 // meal_plan_hated_recipes() (E3): who hates which recipe, grouped by recipe id → user ids.
@@ -49,11 +51,13 @@ export const hatedRecipeRowsSchema = z
 export const mealPlanDetailRowSchema = z
   .object({
     ...mealPlanRowShape,
+    workdays: z.array(z.number().int()),
     meal_plan_slots: z.array(slotRowSchema),
     meal_plan_participants: z.array(z.object({ user_id: z.guid() })),
   })
   .transform((row) => ({
     ...toMealPlan(row),
+    workdays: normalizeWorkdays(row.workdays),
     participantIds: row.meal_plan_participants.map((participant) => participant.user_id),
     slots: row.meal_plan_slots
       .map((slot) => ({
@@ -61,8 +65,20 @@ export const mealPlanDetailRowSchema = z
         dayIndex: slot.day_index,
         mealType: slot.meal_type,
         recipeId: slot.recipe_id,
+        fillNote: slot.fill_note,
       }))
       .sort(
         (a, b) => a.dayIndex - b.dayIndex || MEAL_TYPES.indexOf(a.mealType) - MEAL_TYPES.indexOf(b.mealType),
       ),
   }));
+
+// POST /api/plans/:id/generate (E4). The 409 answers say why nothing was written.
+export const generatePlanResponseSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("generated"),
+    filledCount: z.number().int().min(0),
+    emptyCount: z.number().int().min(0),
+    compromisedCount: z.number().int().min(0),
+  }),
+  z.object({ status: z.enum(["nothing-to-fill", "no-participants", "plan-changed"]) }),
+]);

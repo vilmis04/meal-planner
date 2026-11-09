@@ -3,6 +3,7 @@ import type { PickableRecipe, PlanSlotRef } from "./slotPicker";
 import {
   countSlotRecipes,
   filterSlotRecipes,
+  getBatchDays,
   getBatchTarget,
   getHateWarning,
   groupHatedRecipes,
@@ -166,5 +167,39 @@ describe("hate warnings", () => {
 
   it("shows only the viewer on an individual plan", () => {
     expect(getHateWarning("r1", hated, [], "u-monika")).toEqual({ includesViewer: true, names: [], unnamedCount: 0 });
+  });
+});
+
+describe("getBatchDays", () => {
+  const batchRecipes = [
+    { id: "stew", portionDays: 2 },
+    { id: "salad", portionDays: 1 },
+  ];
+  const dinner = (dayIndex: number, recipeId: string | null) => ({
+    id: `dinner-${dayIndex}`,
+    dayIndex,
+    mealType: "dinner" as const,
+    recipeId,
+  });
+
+  it("marks the days of a batch with their place in it", () => {
+    const batchDays = getBatchDays([dinner(0, "stew"), dinner(1, "stew"), dinner(2, "salad")], batchRecipes);
+    expect(batchDays.get("dinner-0")).toEqual({ dayNumber: 1, dayCount: 2, firstDayIndex: 0, lastDayIndex: 1 });
+    expect(batchDays.get("dinner-1")).toEqual({ dayNumber: 2, dayCount: 2, firstDayIndex: 0, lastDayIndex: 1 });
+    expect(batchDays.has("dinner-2")).toBe(false);
+  });
+
+  it("splits a longer run into batches of the recipe's days", () => {
+    const batchDays = getBatchDays([0, 1, 2, 3, 4].map((day) => dinner(day, "stew")), batchRecipes);
+    expect([0, 1, 2, 3, 4].map((day) => batchDays.get(`dinner-${day}`)?.dayNumber)).toEqual([1, 2, 1, 2, undefined]);
+  });
+
+  it("ignores one-day recipes, empty slots, gaps and other meals", () => {
+    const lunch = { id: "lunch-1", dayIndex: 1, mealType: "lunch" as const, recipeId: "stew" };
+    const batchDays = getBatchDays(
+      [dinner(0, "salad"), dinner(1, "salad"), dinner(2, null), dinner(3, null), dinner(4, "stew"), dinner(6, "stew"), lunch],
+      batchRecipes,
+    );
+    expect(batchDays.size).toBe(0);
   });
 });

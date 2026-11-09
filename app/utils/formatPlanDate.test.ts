@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ODD_SPACES, formatPlanDay, formatPlanRange } from "./formatPlanDate";
+import { ODD_SPACES, formatPlanDay, formatPlanRange, formatShortWeekday } from "./formatPlanDate";
 
 // ODD_SPACES is global, so search() is used: it ignores lastIndex.
 const hasOddSpaces = (text: string): boolean => text.search(ODD_SPACES) !== -1;
@@ -38,5 +38,12 @@ describe("formatPlanDay", () => {
 
   it("spells the month out in Lithuanian", () => {
     expect(formatPlanDay("2026-11-09", "lt", { day: "numeric", month: "short" })).toBe("lapkričio 9 d.");
+  });
+});
+
+describe("formatShortWeekday", () => {
+  it("writes a capitalised short weekday in both languages", () => {
+    expect(formatShortWeekday("2026-11-10", "en")).toBe("Tue");
+    expect(formatShortWeekday("2026-11-09", "lt")).toBe("Pr");
   });
 });

@@ -144,3 +144,56 @@ export function getHateWarning(
     unnamedCount: others.length - named.length,
   };
 }
+
+interface BatchDay {
+  // 1 for the day it is cooked, 2 for the next day, and so on.
+  dayNumber: number;
+  dayCount: number;
+  firstDayIndex: number;
+  lastDayIndex: number;
+}
+
+// Which slots are days of a batch: the same batch recipe in the same meal on consecutive days, in groups of its
+// portionDays from the first of them (a batch is not stored as a link, E3). Slot id → its place in the batch.
+export function getBatchDays(
+  slots: readonly PlanSlotRef[],
+  recipes: readonly Pick<PickableRecipe, "id" | "portionDays">[],
+): Map<string, BatchDay> {
+  const portionDaysById = new Map(recipes.map((recipe) => [recipe.id, recipe.portionDays]));
+  const batchDays = new Map<string, BatchDay>();
+  const byMeal = new Map<MealType, PlanSlotRef[]>();
+  for (const slot of slots) {
+    byMeal.set(slot.mealType, [...(byMeal.get(slot.mealType) ?? []), slot]);
+  }
+
+  for (const mealSlots of byMeal.values()) {
+    const ordered = [...mealSlots].sort((first, second) => first.dayIndex - second.dayIndex);
+    let groupStart = 0;
+    while (groupStart < ordered.length) {
+      const first = ordered[groupStart];
+      const portionDays = first?.recipeId ? (portionDaysById.get(first.recipeId) ?? 1) : 1;
+      let groupEnd = groupStart + 1;
+      while (
+        groupEnd < ordered.length &&
+        groupEnd - groupStart < portionDays &&
+        ordered[groupEnd]?.recipeId === first?.recipeId &&
+        ordered[groupEnd]?.dayIndex === (ordered[groupEnd - 1]?.dayIndex ?? 0) + 1
+      ) {
+        groupEnd++;
+      }
+      const group = ordered.slice(groupStart, groupEnd);
+      if (group.length > 1) {
+        group.forEach((slot, index) =>
+          batchDays.set(slot.id, {
+            dayNumber: index + 1,
+            dayCount: group.length,
+            firstDayIndex: group[0]?.dayIndex ?? slot.dayIndex,
+            lastDayIndex: group[group.length - 1]?.dayIndex ?? slot.dayIndex,
+          }),
+        );
+      }
+      groupStart = groupEnd;
+    }
+  }
+  return batchDays;
+}

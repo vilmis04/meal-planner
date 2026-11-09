@@ -129,6 +129,7 @@ As a user I want a plan filled automatically.
 - Liked recipes are weighted higher but are never guaranteed; the weighting is covered by unit tests with fixed seeds.
 - If constraints cannot be met, the plan is generated best-effort and shows why a slot is empty or compromised.
 - No external AI is called.
+- Built as the pure `generateMealPlan()` (`shared/utils/planGenerator.ts`, fixed-seed unit tests), run by `POST /api/plans/:id/generate` and written with `apply_meal_plan_generation()` (see README, "Plan generation"). Workdays (default Mon–Fri) and the cooldown (default 14 days, 0 to 28 offered) are chosen per plan on the New plan screen. E4 fills empty slots only: a recipe chosen by hand is kept as if locked; per-slot locks and regenerating filled slots come with E5. Diet and hate are never relaxed; the cooldown relaxes before a recipe repeats within a plan, and a batch relaxes the cooldown before giving up its batch. Each relaxed or empty slot shows why. Batches never span two plans.
 
 ### E5. Lock, swap, regenerate (M, Phase 3)
 As a user I want to adjust a generated plan.

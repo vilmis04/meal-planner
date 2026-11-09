@@ -1,6 +1,6 @@
 /*
- * Get a protein swap, generating it on demand (D2). The one entry point for the API route, the plan
- * generator (E4) and the backfill script, so the cache rule lives in one place:
+ * Get a protein swap, generating it on demand (D2). The one entry point for the API route and the backfill
+ * script, so the cache rule lives in one place (the plan generator, E4, reads stored ready swaps only):
  *
  *   stored, ready and made from the current ingredients  -> return it, no AI call
  *   another request is generating it                     -> "pending", ask again shortly
