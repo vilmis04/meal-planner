@@ -112,7 +112,7 @@ Why not make the whole plan AI-generated:
 - Hidden by default. A "Show nutrition" toggle reveals values per meal, a per-day total, and the plan-period average. For household plans the viewer picks whose view to see.
 
 ### 3.9 Scheduled plan creation
-- A user or household can enable automatic plan creation: choose a weekday (e.g. Saturday), the period length, and the default participants.
+- A user or household can enable automatic plan creation: choose a weekday (e.g. Saturday), the weekday the plan starts on (e.g. the following Monday), the period length, the default participants (everyone by default, newcomers included) and whether snacks go on the shopping list. A person has their own schedule; a household has one, changed by its owner.
 - On that day the app creates the plan for the next period and its shopping list, using the normal generator, and notifies members. Scheduled plans are drafts the household can adjust before the period begins.
 
 ### 3.10 Insights (later)
@@ -120,7 +120,7 @@ Why not make the whole plan AI-generated:
 
 ## 4. Data model additions (outline)
 
-`profiles`, `households`, `household_members`, `household_invites`, `meal_plans` (kind, owner/household, start/end), `meal_plan_participants`, `meal_plan_slots` (date, meal type, recipe, locked, swap), `user_recipe_preferences`, `recipe_protein_swaps` (recipe, diet, swapped ingredients), `ingredients` (canonical name, category), `shopping_lists`, `shopping_items` (quantity, unit, category, state: to-buy / have-at-home / bought, source: generated / manual), `shops` (household or person, normalised unique name), `purchases` (item, shop, bought by and when, amount bought), `plan_schedules`. Recipes gain `diet_tags`/`main_proteins`; ingredients link to the canonical `ingredients` table.
+`profiles`, `households`, `household_members`, `household_invites`, `meal_plans` (kind, owner/household, start/end), `meal_plan_participants`, `meal_plan_slots` (date, meal type, recipe, locked, swap), `user_recipe_preferences`, `recipe_protein_swaps` (recipe, diet, swapped ingredients), `ingredients` (canonical name, category), `shopping_lists`, `shopping_items` (quantity, unit, category, state: to-buy / have-at-home / bought, source: generated / manual), `shops` (household or person, normalised unique name), `purchases` (item, shop, bought by and when, amount bought), `plan_schedules` (person or household, weekdays to create on and start on, length, snacks on the list, time zone) with `plan_schedule_participants`. Recipes gain `diet_tags`/`main_proteins`; ingredients link to the canonical `ingredients` table.
 
 **Translations:** locale files (LT, EN) hold UI keys. Recipe content gets translation tables keyed by locale, e.g. `recipe_translations` (recipe, locale, name, instructions), `recipe_ingredient_translations` (or names via `ingredient_translations` on the canonical table), `tip_translations`, and translated category names. The existing Lithuanian columns become the LT rows; EN rows are added by a reviewed (AI-assisted, one-off) translation migration. `profiles` gains `locale` and `theme`.
 

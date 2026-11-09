@@ -67,6 +67,15 @@ async function showOlderPlans() {
       </v-btn>
     </header>
 
+    <v-card to="/plans/schedule" variant="flat" border :class="$style.schedule" data-testid="plans-schedule">
+      <v-list-item
+        :title="t('plan.schedule.title')"
+        :subtitle="t('plan.schedule.linkHint')"
+        prepend-icon="mdi-calendar-sync"
+        append-icon="mdi-chevron-right"
+      />
+    </v-card>
+
     <v-alert v-if="!overview" type="error" variant="tonal" data-testid="plans-load-failed">
       {{ t("plan.errors.listLoadFailed") }}
     </v-alert>
@@ -143,6 +152,10 @@ async function showOlderPlans() {
 
 .new {
   text-transform: none;
+}
+
+.schedule {
+  border-radius: var(--radius-lg);
 }
 
 .empty {

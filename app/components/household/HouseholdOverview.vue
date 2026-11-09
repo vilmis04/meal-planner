@@ -155,6 +155,16 @@ async function handleConfirm() {
 
     <HouseholdInviteCard />
 
+    <v-card to="/plans/schedule?for=household" variant="flat" border :class="$style.card" data-testid="household-schedule">
+      <v-list-item
+        :title="t('plan.schedule.title')"
+        :subtitle="t(isOwner ? 'plan.schedule.linkHintOwner' : 'plan.schedule.linkHintMember')"
+        prepend-icon="mdi-calendar-sync"
+        append-icon="mdi-chevron-right"
+        :class="$style.link"
+      />
+    </v-card>
+
     <section :class="$style.actions">
       <v-btn variant="outlined" color="error" size="large" block prepend-icon="mdi-logout" @click="handleLeave">
         {{ t("household.members.leave") }}
@@ -268,6 +278,10 @@ async function handleConfirm() {
 
 .initial {
   font-weight: 700;
+}
+
+.link {
+  min-height: 64px;
 }
 
 .actions {

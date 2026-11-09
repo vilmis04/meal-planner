@@ -246,6 +246,47 @@
       "cooldownOff": "No rest",
       "cooldownDays": "{count} day | {count} days"
     },
+    "schedule": {
+      "pageTitle": "Automatic plans",
+      "title": "Automatic plans",
+      "back": "Back to plans",
+      "linkHint": "Make the next plan on a chosen day",
+      "linkHintOwner": "Make the household's next plan on a chosen day",
+      "linkHintMember": "See when the household's next plan is made",
+      "enable": "Create plans automatically",
+      "forHousehold": "For the household",
+      "forMe": "Just for you",
+      "createOn": "Create on",
+      "length": "Plan length",
+      "starts": "Starts",
+      "startsOn": {
+        "1": "Following Monday",
+        "2": "Following Tuesday",
+        "3": "Following Wednesday",
+        "4": "Following Thursday",
+        "5": "Following Friday",
+        "6": "Following Saturday",
+        "7": "Following Sunday"
+      },
+      "everyone": "Everyone ({count})",
+      "someOf": "{count} of {total}",
+      "everyoneHint": "While everyone is ticked, people who join the household later take part too.",
+      "snacksOnList": "Snacks on shopping list",
+      "next": "Next: {day}",
+      "nextHousehold": "A draft for {range} and its shopping list will be ready. Everyone in the household can change it before it starts.",
+      "nextIndividual": "A draft for {range} and its shopping list will be ready for you to change before it starts.",
+      "ownerOnly": "Only the household's owner can change its automatic plans.",
+      "cancel": "Cancel",
+      "done": "Done",
+      "errors": {
+        "loadFailed": "The automatic plan settings could not be loaded.",
+        "saveFailed": "The setting could not be saved. Try again.",
+        "notInHousehold": "You are not in a household any more, so only your own schedule can be changed.",
+        "notOwner": "Only the household's owner can change its automatic plans.",
+        "invalidWeekday": "Choose a day from Monday to Sunday.",
+        "invalidTimeZone": "Your device's time zone was not recognised, so the setting could not be saved."
+      }
+    },
     "generate": {
       "action": "Generate plan",
       "fillEmpty": "Fill empty slots",

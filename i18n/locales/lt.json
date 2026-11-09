@@ -246,6 +246,47 @@
       "cooldownOff": "Planuoti bet kada",
       "cooldownDays": "{count} d. | {count} d."
     },
+    "schedule": {
+      "pageTitle": "Automatiniai planai",
+      "title": "Automatiniai planai",
+      "back": "Atgal į planus",
+      "linkHint": "Kitas planas sudaromas pasirinktą dieną",
+      "linkHintOwner": "Kitas namų ūkio planas sudaromas pasirinktą dieną",
+      "linkHintMember": "Kada sudaromas kitas namų ūkio planas",
+      "enable": "Kurti planus automatiškai",
+      "forHousehold": "Namų ūkiui",
+      "forMe": "Tik jums",
+      "createOn": "Kada kurti",
+      "length": "Plano trukmė",
+      "starts": "Prasideda",
+      "startsOn": {
+        "1": "Kitą pirmadienį",
+        "2": "Kitą antradienį",
+        "3": "Kitą trečiadienį",
+        "4": "Kitą ketvirtadienį",
+        "5": "Kitą penktadienį",
+        "6": "Kitą šeštadienį",
+        "7": "Kitą sekmadienį"
+      },
+      "everyone": "Visi ({count})",
+      "someOf": "{count} iš {total}",
+      "everyoneHint": "Kol pažymėti visi, vėliau prie namų ūkio prisijungę žmonės taip pat įtraukiami.",
+      "snacksOnList": "Užkandžiai pirkinių sąraše",
+      "next": "Kitas kartas: {day}",
+      "nextHousehold": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Visi namų ūkio nariai galės jį keisti, kol jis neprasidėjo.",
+      "nextIndividual": "Bus paruoštas plano juodraštis ({range}) ir jo pirkinių sąrašas. Galėsite jį keisti, kol jis neprasidėjo.",
+      "ownerOnly": "Namų ūkio automatinius planus keisti gali tik jo savininkas.",
+      "cancel": "Atšaukti",
+      "done": "Gerai",
+      "errors": {
+        "loadFailed": "Nepavyko įkelti automatinių planų nustatymų.",
+        "saveFailed": "Nepavyko išsaugoti nustatymo. Bandykite dar kartą.",
+        "notInHousehold": "Jūs nebe namų ūkyje, todėl galite keisti tik savo nustatymus.",
+        "notOwner": "Namų ūkio automatinius planus keisti gali tik jo savininkas.",
+        "invalidWeekday": "Pasirinkite dieną nuo pirmadienio iki sekmadienio.",
+        "invalidTimeZone": "Neatpažinta jūsų įrenginio laiko juosta, todėl nustatymo išsaugoti nepavyko."
+      }
+    },
     "generate": {
       "action": "Sudaryti planą",
       "fillEmpty": "Užpildyti tuščius",
