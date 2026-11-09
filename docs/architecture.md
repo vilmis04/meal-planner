@@ -71,7 +71,7 @@ server/
   utils/            Supabase and AI (Gemini) clients
 shared/ (or domain/)
   planner/          plan generator (pure)
-  shopping/         scaling, unit conversion, merging (pure)
+  shopping/         scaling, unit conversion, merging (pure; unit rules in shared/utils/ingredientUnit.ts, G1)
   diet/             diet ladder and compatibility (pure)
   nutrition/        per-day totals and averages (pure; shared/utils/nutrition.ts, F1)
 supabase/
@@ -109,6 +109,8 @@ Rules:
 **Plans side by side (E7).** An individual plan for days a household plan also covers is an ordinary plan; the database neither links nor forbids them. The plan page reads the overlapping plans the viewer can already see and decides in the browser what to say about them (`getPlanAlongside()`); the New plan screen is prefilled from its address. Each plan keeps its own participants, so each will get its own shopping list.
 
 **Nutrition on request (F1).** Hidden until the user turns on "Show nutrition", which is stored on the profile (`profiles.show_nutrition`). Only then does the browser read the library's macros (one paged read, like the recipe list) and the ready protein swaps' estimates for the plan's recipes and its participants' diets; row level security already allowed both. The pure `nutrition` module turns them into per-meal values, day totals and the daily average for the participant the viewer picks, leaving recipes with incomplete macros out of the totals.
+
+**Ingredient canonicalisation (G1).** Recipes keep their free-text items. `ingredient_aliases` maps each item, spelled exactly as written, to a canonical `ingredients` row with its shopping category; the mapping is a reviewed migration, and anything without an alias (a new seed item, or a protein swap replacement the AI named) shows up in `unmapped_ingredient_items` and the mapping report instead of being guessed. The list (G2) merges by ingredient and base unit (`toBaseQuantity()`: kg to g, l to ml; pieces and other units on their own).
 
 **Shared shopping list (G6).** Items live in `shopping_items` rows. Clients subscribe to Realtime changes for the list id; each toggle or edit is a single-row update, so concurrent edits to different items do not conflict. Last write wins on the same item.
 
