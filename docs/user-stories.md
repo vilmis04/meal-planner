@@ -233,6 +233,7 @@ As a user I want the next plan created for me on my chosen day.
 ### H3. Notification (M, Phase 4)
 As a member I want to know a plan was created.
 - Members get an in-app notice (email optional, later) linking to the new plan.
+- Built as `supabase/migrations/20261120000000_create_notifications.sql` (`notifications`, `create_plan_created_notifications()` for the job, `mark_plan_notifications_read()`) and the home screen's "Your next draft is ready … Review draft" notice (`PlanDraftNotice`); see README, "Scheduled plans". The job tells every current household member (or the individual plan's owner) once per plan, after the plan is generated and listed, and also when a later step failed; opening the plan marks it read. The "Automatic plans" screen now says everyone gets a notice. No bell, no Realtime and no email.
 
 ---
 

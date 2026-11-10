@@ -37,3 +37,6 @@ export const scheduleRowSchema = z
 export const createdPlanRowsSchema = z
   .tuple([z.object({ meal_plan_id: z.guid(), is_created: z.boolean() })])
   .transform(([row]) => row);
+
+// create_plan_created_notifications(): how many people were told now.
+export const notifiedCountSchema = z.number().int().min(0);
