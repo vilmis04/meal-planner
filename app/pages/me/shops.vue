@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopInsightRange } from "~/types/shopInsights.types";
+import type { InsightRange } from "~/types/insightRange.types";
 
 defineOptions({ name: "ShopInsightsPage" });
 
@@ -14,10 +14,10 @@ const { household, load: loadHousehold } = useHousehold();
 useHead({ title: () => t("insights.shops.pageTitle") });
 
 // The range lives in the address (?range=all_time), so reload and the back button keep it.
-const range = computed<ShopInsightRange>({
-  get: () => parseShopInsightRange(route.query.range),
+const range = computed<InsightRange>({
+  get: () => parseInsightRange(route.query.range),
   set: (picked) => {
-    router.replace({ query: picked === DEFAULT_SHOP_INSIGHT_RANGE ? {} : { range: picked } });
+    router.replace({ query: picked === DEFAULT_INSIGHT_RANGE ? {} : { range: picked } });
   },
 });
 

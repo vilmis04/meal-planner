@@ -24,7 +24,7 @@ import {
   swapDietRowSchema,
 } from "./planGeneration.schema";
 import { memoizeAsync } from "./memoizeAsync";
-import type { PlanGenerationStore } from "./planGenerationStore.types";
+import type { PlanGenerationStore, SlotWrite } from "./planGenerationStore.types";
 
 // Supabase answers at most 1000 rows per request (silently), so the recipe library and swaps are read in pages.
 const PAGE_SIZE = 1000;
@@ -133,20 +133,30 @@ const createPlanGenerationStore = ({
       return historyRowsSchema.parse(data);
     },
 
-    async applyGeneration(planId, writes) {
-      const { error } = await planClient.rpc(applyGenerationFunction, {
-        target_plan_id: planId,
-        assignments: writes.map((write) => ({
-          day_index: write.dayIndex,
-          meal_type: write.mealType,
-          recipe_id: write.recipeId,
-          note: write.note,
-          previous_recipe_id: write.previousRecipeId,
-        })),
-      });
-      if (error?.message === "plan_changed") return "plan-changed";
-      if (error) throw new Error(`Saving the generated plan ${planId} failed: ${error.message}`);
-      return "applied";
-    },
+    applyGeneration: (planId, writes) => writeSlots(planClient, applyGenerationFunction, planId, writes),
+
+    applySwap: (planId, writes) => writeSlots(planClient, "apply_meal_plan_swap", planId, writes),
   };
+};
+
+// Writes generated slots with one of the functions that take apply_meal_plan_generation()'s arguments and errors.
+const writeSlots = async (
+  planClient: SupabaseClient,
+  functionName: "apply_meal_plan_generation" | "write_meal_plan_generation" | "apply_meal_plan_swap",
+  planId: string,
+  writes: readonly SlotWrite[],
+): Promise<"applied" | "plan-changed"> => {
+  const { error } = await planClient.rpc(functionName, {
+    target_plan_id: planId,
+    assignments: writes.map((write) => ({
+      day_index: write.dayIndex,
+      meal_type: write.mealType,
+      recipe_id: write.recipeId,
+      note: write.note,
+      previous_recipe_id: write.previousRecipeId,
+    })),
+  });
+  if (error?.message === "plan_changed") return "plan-changed";
+  if (error) throw new Error(`Saving the generated plan ${planId} failed: ${error.message}`);
+  return "applied";
 };

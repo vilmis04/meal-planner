@@ -14,7 +14,7 @@ import type { GenerationMode } from "../../shared/utils/mealPlan";
 import { getBatchSlots } from "../../shared/utils/slotPicker";
 import { writeJsonLog } from "./jsonLog";
 import type { GeneratePlanResult, PlanGenerationDeps, SwapSlotResult } from "./planGenerationService.types";
-import type { PlanGenerationStore, StoredPlan, StoredSlot } from "./planGenerationStore.types";
+import type { PlanGenerationStore, SlotWrite, StoredPlan, StoredSlot } from "./planGenerationStore.types";
 
 // The history covers the cooldown and the same number of days again, while a rested recipe's weight recovers.
 const HISTORY_COOLDOWN_MULTIPLE = 2;
@@ -41,7 +41,7 @@ export async function generatePlan(
   }
 
   const assignments = generateMealPlan({ ...inputs, slots, seed });
-  if ((await writeAssignments(store, plan, assignments)) === "plan-changed") {
+  if ((await store.applyGeneration(plan.id, withPreviousRecipes(plan, assignments))) === "plan-changed") {
     return { status: "plan-changed" };
   }
 
@@ -81,7 +81,7 @@ export async function swapPlanSlot(
     return { status: "no-alternative" };
   }
 
-  if ((await writeAssignments(store, plan, assignments)) === "plan-changed") {
+  if ((await store.applySwap(plan.id, withPreviousRecipes(plan, assignments))) === "plan-changed") {
     return { status: "plan-changed" };
   }
 
@@ -118,21 +118,14 @@ const loadGeneratorInputs = async (
 };
 
 // Each assignment goes with the recipe its slot held when the plan was read, so a slot changed meanwhile refuses
-// the whole write.
-const writeAssignments = (
-  store: PlanGenerationStore,
-  plan: StoredPlan,
-  assignments: readonly SlotAssignment[],
-): Promise<"applied" | "plan-changed"> => {
+// the whole write (and a swap knows which recipes it replaced).
+const withPreviousRecipes = (plan: StoredPlan, assignments: readonly SlotAssignment[]): SlotWrite[] => {
   const getSlotKey = ({ dayIndex, mealType }: { dayIndex: number; mealType: string }): string => `${dayIndex}:${mealType}`;
   const previousRecipeIds = new Map(plan.slots.map((slot) => [getSlotKey(slot), slot.recipeId]));
-  return store.applyGeneration(
-    plan.id,
-    assignments.map((assignment) => ({
-      ...assignment,
-      previousRecipeId: previousRecipeIds.get(getSlotKey(assignment)) ?? null,
-    })),
-  );
+  return assignments.map((assignment) => ({
+    ...assignment,
+    previousRecipeId: previousRecipeIds.get(getSlotKey(assignment)) ?? null,
+  }));
 };
 
 const summarize = (assignments: readonly SlotAssignment[], seed: number) => ({

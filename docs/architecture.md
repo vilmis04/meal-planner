@@ -95,6 +95,7 @@ Rules:
   - Notifications (H3): each person reads their own, only while they can open the plan; written by the scheduled job (service role function), marked read through a function.
   - Preferences: owner only; the generator reads participants' preferences on the server after verifying the caller is in the household.
   - Purchases and shops: shops are household scoped (or the person's own without a household); a purchase is readable with its shopping list (G7).
+  - Skips (I2): a `meal_plan_skips` row is readable with its plan; written only by `set_meal_plan_slot()` and `apply_meal_plan_swap()`.
 - **Service role key** is used only in server code, never exposed to the client, and only after an explicit authorisation check.
 - **Invites:** random single-use tokens stored hashed, with expiry; accepting is a server function.
 - **Secrets:** only in Coolify env vars. `.env.example` lists names without values.
@@ -105,6 +106,8 @@ Rules:
 **Generate a plan (E4).** Client calls `POST /api/plans/:id/generate` -> server verifies membership -> loads participants, their diets and preferences, recipes with protein metadata and swaps, and recent plan history (for cooldown) -> pure `planner` returns slot assignments -> server writes slots -> shopping list is built by the pure `shopping` module and stored -> client shows the result. Same code is used by the scheduled job.
 
 **Lock, swap, regenerate (E5).** Locks are a slot column changed through `set_meal_plan_slots_locked()` (a recipe chosen by hand is locked). "Regenerate unlocked" is the same generate call with `mode: "regenerate_unlocked"`; a swap (`POST /api/plans/:id/slots/:slotId/swap`) runs the same pure planner on one slot (or its batch) with every other slot kept and the current recipe excluded. Every write names the recipe each slot held when it was read, so a change made meanwhile refuses the write (`plan_changed`) instead of being overwritten.
+
+**Preference insights (I2).** "Liked" is the viewer's own `enjoy` ratings, ranked by how many meals of each are on the plans they eat from (participant) in the range. "Skipped" needed a record, since a replaced slot kept no history: `meal_plan_skips` gets a row whenever a person takes a recipe out of a slot (a swap, through `apply_meal_plan_swap()`, which the swap route now writes with; or replacing or clearing it in the picker, through `set_meal_plan_slot()`), in the same transaction as the change. A generation or "regenerate unlocked" records nothing. `get_preference_insights(range_days)` is security invoker and sums both up for the page.
 
 **Plan overview and history (E6).** The plan list asks Postgres for current and upcoming plans (`end_date >= today`) and pages through past ones (`end_date < today`); `end_date` is a generated column and "today" is the viewer's date, so the server never decides what is past. Row level security alone decides which plans are listed. The week view and the picker filters are computed in the browser from data the viewer can already read (own ratings, members' diets, visible plans); no new function exposes anyone's ratings or individual plans.
 

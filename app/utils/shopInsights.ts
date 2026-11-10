@@ -1,24 +1,8 @@
 import { z } from "zod";
-import type { ShopInsightRange, ShopInsights, ShopInsightsView } from "~/types/shopInsights.types";
-
-// The ranges the shop insights page offers (I1), as ?range= in its address, and how many days back each looks (null:
-// every recorded purchase). get_shop_insights() refuses a range of more than 3660 days.
-export const SHOP_INSIGHT_RANGES = ["last_30_days", "last_90_days", "last_year", "all_time"] as const;
-export const DEFAULT_SHOP_INSIGHT_RANGE: ShopInsightRange = "last_90_days";
-export const SHOP_INSIGHT_RANGE_DAYS: Readonly<Record<ShopInsightRange, number | null>> = {
-  last_30_days: 30,
-  last_90_days: 90,
-  last_year: 365,
-  all_time: null,
-};
+import type { ShopInsights, ShopInsightsView } from "~/types/shopInsights.types";
 
 // The items get_shop_insights() returns for each shop (top_item_count in supabase/migrations/20261121000000_add_shop_insights.sql).
 const SHOP_INSIGHT_TOP_ITEM_COUNT = 5;
-
-// The range in the address, or the default one for anything else.
-export function parseShopInsightRange(query: unknown): ShopInsightRange {
-  return SHOP_INSIGHT_RANGES.find((range) => range === query) ?? DEFAULT_SHOP_INSIGHT_RANGE;
-}
 
 const countSchema = z.number().int().min(0);
 

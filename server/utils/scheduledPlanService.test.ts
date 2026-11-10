@@ -70,6 +70,7 @@ const makeDependencies = (
     loadParticipants: async () => [{ userId: "ana", diet: "full", ratings: {} }],
     loadHistory: async () => [],
     applyGeneration: vi.fn(async () => "applied" as const),
+    applySwap: vi.fn(async () => "applied" as const),
   };
 
   const shoppingListStore: ShoppingListStore = {

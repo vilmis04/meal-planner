@@ -1,14 +1,8 @@
 import { describe, expect, it } from "vitest";
 import en from "../../i18n/locales/en.json";
 import lt from "../../i18n/locales/lt.json";
-import {
-  DEFAULT_SHOP_INSIGHT_RANGE,
-  SHOP_INSIGHT_RANGES,
-  SHOP_INSIGHT_RANGE_DAYS,
-  getShopInsightsView,
-  parseShopInsightRange,
-  shopInsightsSchema,
-} from "./shopInsights";
+import { INSIGHT_RANGES } from "./insightRange";
+import { getShopInsightsView, shopInsightsSchema } from "./shopInsights";
 
 const lidl = {
   id: "00000000-0000-4000-8000-00000000c001",
@@ -27,25 +21,6 @@ const maxima = {
   item_count: 1,
   top_items: [{ name: "Coffee", purchase_count: 1 }],
 };
-
-describe("parseShopInsightRange", () => {
-  it.each(SHOP_INSIGHT_RANGES)("reads %s from the address", (range) => {
-    expect(parseShopInsightRange(range)).toBe(range);
-  });
-
-  it.each([undefined, null, "", "last_7_days", ["all_time"]])("falls back to the default for %j", (query) => {
-    expect(parseShopInsightRange(query)).toBe(DEFAULT_SHOP_INSIGHT_RANGE);
-  });
-});
-
-describe("SHOP_INSIGHT_RANGE_DAYS", () => {
-  it("looks back a whole number of days get_shop_insights() accepts, or over everything", () => {
-    for (const days of Object.values(SHOP_INSIGHT_RANGE_DAYS)) {
-      expect(days === null || (Number.isInteger(days) && days >= 1 && days <= 3660)).toBe(true);
-    }
-    expect(SHOP_INSIGHT_RANGE_DAYS.all_time).toBeNull();
-  });
-});
 
 describe("shopInsightsSchema", () => {
   it("reads the shops with their most common items", () => {
@@ -130,7 +105,7 @@ describe("shop insights texts", () => {
   });
 
   it.each([
-    ...SHOP_INSIGHT_RANGES.map((range) => `insights.range.options.${range}`),
+    ...INSIGHT_RANGES.map((range) => `insights.range.options.${range}`),
     "profile.shops.title",
     "profile.shops.hint",
   ])("has %s in both languages", (key) => {

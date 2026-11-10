@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { ShopInsightRange } from "~/types/shopInsights.types";
+import type { InsightRange } from "~/types/insightRange.types";
 
-// The range an insight sums up (I1): one of SHOP_INSIGHT_RANGES, always one picked.
-const range = defineModel<ShopInsightRange>({ required: true });
+// The range an insights page sums up (I1, I2): one of INSIGHT_RANGES, always one picked.
+const range = defineModel<InsightRange>({ required: true });
 
 const { t } = useI18n();
 
 const handleUpdate = (picked: unknown): void => {
-  range.value = parseShopInsightRange(picked);
+  range.value = parseInsightRange(picked);
 };
 </script>
 
@@ -22,7 +22,7 @@ const handleUpdate = (picked: unknown): void => {
     @update:model-value="handleUpdate"
   >
     <v-chip
-      v-for="option in SHOP_INSIGHT_RANGES"
+      v-for="option in INSIGHT_RANGES"
       :key="option"
       :value="option"
       :variant="option === range ? 'tonal' : 'outlined'"

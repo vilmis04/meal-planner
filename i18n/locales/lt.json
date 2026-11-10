@@ -607,6 +607,10 @@
       "title": "Kur perkate",
       "hint": "Kas pirkta kiekvienoje parduotuvėje"
     },
+    "meals": {
+      "title": "Mėgstami ir praleisti patiekalai",
+      "hint": "Mėgstamiausi ir dažniausiai pakeičiami patiekalai"
+    },
     "diet": {
       "title": "Mano mityba",
       "hint": "Kiekvienas žingsnis apima viską, kas yra aukščiau.",
@@ -857,6 +861,29 @@
         "action": "Atidaryti pirkinių sąrašą"
       },
       "loadFailed": "Nepavyko įkelti parduotuvių suvestinės. Įkelkite puslapį iš naujo."
+    },
+    "meals": {
+      "pageTitle": "Mėgstami ir praleisti patiekalai",
+      "title": "Mėgstami ir praleisti patiekalai",
+      "intro": "Pagal jūsų įvertinimus ir planus, kuriuose valgote.",
+      "liked": {
+        "title": "Labiausiai mėgstami",
+        "description": "Receptai, kuriuos įvertinote „Mėgstu“, pagal tai, kaip dažnai šiuo laikotarpiu buvo jūsų planuose.",
+        "planned": "Planuose: {count} k. | Planuose: {count} k.",
+        "notPlanned": "Šiuo laikotarpiu planuose nebuvo",
+        "empty": "Dar neįvertinote nė vieno recepto „Mėgstu“.",
+        "browse": "Naršyti receptus",
+        "allEnjoyed": "Visi mėgstami receptai: {count} | Visi mėgstami receptai: {count}",
+        "allRatings": "Visi jūsų įvertinimai"
+      },
+      "skipped": {
+        "title": "Dažniausiai praleisti",
+        "description": "Patiekalai, kurie šiuo laikotarpiu jūsų planuose buvo pakeisti kitu pasiūlymu, pakeisti ranka ar išvalyti.",
+        "times": "Praleista: {count} k. | Praleista: {count} k.",
+        "empty": "Šiuo laikotarpiu nieko nepraleista. Kai plane patiekalas pakeičiamas, jis bus rodomas čia.",
+        "total": "Iš viso praleista šiuo laikotarpiu: {count} k. | Iš viso praleista šiuo laikotarpiu: {count} k."
+      },
+      "loadFailed": "Nepavyko įkelti patiekalų suvestinės. Įkelkite puslapį iš naujo."
     }
   }
 }
