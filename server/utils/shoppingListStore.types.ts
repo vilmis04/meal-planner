@@ -20,7 +20,8 @@ export interface StoredShoppingPlan {
 }
 
 // Where a shopping list build's inputs come from and where the list goes. The service depends on this interface
-// only, so it is tested with an in-memory store. Everything is read and written as the signed-in user.
+// only, so it is tested with an in-memory store. Everything is read and written as the signed-in user, or as the
+// service role for a scheduled plan (H2).
 export interface ShoppingListStore {
   // Null when the plan does not exist or the signed-in user cannot open it.
   loadPlan(planId: string): Promise<StoredShoppingPlan | null>;

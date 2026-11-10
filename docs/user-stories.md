@@ -221,13 +221,14 @@ As a shopper I want to say where I bought an item.
 As a user or household owner I want to set up automatic plan creation.
 - Choose weekday, period length, participants (default all), and whether to enable it.
 - Individual users have their own schedule; households have one.
-- Built as `supabase/migrations/20261118000000_create_plan_schedules.sql` (`plan_schedules`, `plan_schedule_participants`, `save_plan_schedule()`) and the "Automatic plans" screen at `/plans/schedule`, linked from Plans and Household (see README, "Automatic plans"). Besides the weekday to create on (Saturday by default) the screen asks the weekday the plan starts on ("Following Monday" by default) and whether snacks go on the shopping list, as the design shows. Only the household's owner changes the household schedule; members see it. Ticking everyone means everyone, including people who join later. The schedule keeps the time zone of whoever saved it last, for H2. Nothing creates plans until H2.
+- Built as `supabase/migrations/20261118000000_create_plan_schedules.sql` (`plan_schedules`, `plan_schedule_participants`, `save_plan_schedule()`) and the "Automatic plans" screen at `/plans/schedule`, linked from Plans and Household (see README, "Automatic plans"). Besides the weekday to create on (Saturday by default) the screen asks the weekday the plan starts on ("Following Monday" by default) and whether snacks go on the shopping list, as the design shows. Only the household's owner changes the household schedule; members see it. Ticking everyone means everyone, including people who join later. The schedule keeps the time zone of whoever saved it last, for H2.
 
 ### H2. Scheduled plan job (L, Phase 4)
 As a user I want the next plan created for me on my chosen day.
 - A scheduled job (Supabase cron or Coolify scheduled task) creates the plan for the next period on the chosen weekday using the generator (E4) and shopping list (G2).
 - Idempotent: running twice does not create duplicates.
 - Plans are created as editable drafts; failures are logged.
+- Built as `POST /api/cron/create-plans` (`server/utils/scheduledPlanService.ts`), called by a Coolify scheduled task with `NUXT_CRON_SECRET`, and `supabase/migrations/20261119000000_add_scheduled_meal_plans.sql` (`meal_plans.schedule_id` unique with `start_date`, `create_scheduled_meal_plan()`, and service-role `write_meal_plan_generation()` / `write_shopping_list_generation()`); see README, "Scheduled plans". A schedule is due when today on its own time zone is its run day; the plan is generated and its list built with E4's and G2's own code, and shows "Created automatically" in the plan list and on the plan page. A plan an earlier run made is never made or generated again; missed days are not caught up. Each failure is a JSON log line and makes the call answer 500, without stopping the other schedules. The notification is H3.
 
 ### H3. Notification (M, Phase 4)
 As a member I want to know a plan was created.

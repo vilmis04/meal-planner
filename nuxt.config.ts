@@ -12,6 +12,8 @@ export default defineNuxtConfig({
     geminiApiKey: "",
     geminiModel: "gemini-flash-latest",
     geminiBaseUrl: "",
+    // Scheduled jobs (H2), server-only: NUXT_CRON_SECRET, at least 32 characters (`openssl rand -hex 32`).
+    cronSecret: "",
     public: {
       supabaseUrl: "",
       supabaseAnonKey: "",

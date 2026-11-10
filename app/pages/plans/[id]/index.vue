@@ -59,15 +59,20 @@ useHead({ title: () => range.value || t("plan.pageTitle") });
 // A past plan is kept as it was (E6): it is shown, not changed. Current and upcoming plans can be edited.
 const timeline = computed(() => (plan.value ? getPlanTimeline(plan.value.startDate, plan.value.endDate, today.value) : null));
 const isReadOnly = computed(() => timeline.value === "past");
-// "Household plan · 3 people", as in the week plan design; an individual plan is the owner's alone.
+// "Household plan · 3 people", as in the week plan design; an individual plan is the owner's alone. A plan a schedule
+// made adds "Created automatically" (H2), as the home design's draft notice says.
 const kindLabel = computed(() => {
   if (!plan.value) {
     return "";
   }
-  const kind = t(`plan.kind.${plan.value.kind}`);
-  return plan.value.kind === "household"
-    ? `${kind} · ${t("plan.detail.people", getPlanServings(plan.value.participantIds))}`
-    : kind;
+  const parts = [t(`plan.kind.${plan.value.kind}`)];
+  if (plan.value.kind === "household") {
+    parts.push(t("plan.detail.people", getPlanServings(plan.value.participantIds)));
+  }
+  if (plan.value.isCreatedAutomatically) {
+    parts.push(t("plan.createdAutomatically"));
+  }
+  return parts.join(" · ");
 });
 
 const isSaving = ref(false);
