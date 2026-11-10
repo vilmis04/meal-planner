@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ShoppingItem } from "#shared/utils/shoppingList.types";
+import type { ShoppingItemShopHint } from "~/types/shoppingList.types";
 
 const props = defineProps<{
   items: readonly ShoppingItem[];
@@ -8,6 +9,8 @@ const props = defineProps<{
   currentUserId: string | null;
   // Shop id → name, for "Bought at Lidl" (G7).
   shopNames: ReadonlyMap<string, string>;
+  // Line id → where its item is usually or was last bought (I1a); empty while the viewer hides the hints.
+  shopHints: ReadonlyMap<string, ShoppingItemShopHint>;
 }>();
 
 // Tapping a line ticks it bought or back (G5); the rest are in the line's actions menu (G4). Lines at home are not
@@ -67,6 +70,18 @@ const shopLabel = (item: ShoppingItem): string | null => {
   return shopName === undefined ? null : t("shoppingList.shop.boughtAt", { shop: shopName });
 };
 
+// "Usually bought at Lidl" or "Last bought at Lidl" on a line still to buy (I1a). Only a note: tapping the line ticks it
+// as always. Bought lines say where they were bought instead.
+const shopHintLabel = (item: ShoppingItem): string | null => {
+  const hint = item.state === "to_buy" ? props.shopHints.get(item.id) : undefined;
+  if (hint === undefined) {
+    return null;
+  }
+  return hint.kind === "usually"
+    ? t("shoppingList.shopHints.usually", { shop: hint.shopName })
+    : t("shoppingList.shopHints.last", { shop: hint.shopName });
+};
+
 // "Needs 200 g more" on a bought line whose amount went up after it was ticked (G7).
 const shortfallLabel = (item: ShoppingItem): string | null => {
   const shortfall = getBoughtShortfall(item);
@@ -116,6 +131,9 @@ const addedByLabel = (item: ShoppingItem): string | null => {
           </span>
           <span v-if="planAmountLabel(item)" :class="$style.note" data-testid="shopping-item-plan-amount">
             {{ planAmountLabel(item) }}
+          </span>
+          <span v-if="shopHintLabel(item)" :class="$style.note" data-testid="shopping-item-shop-hint">
+            {{ shopHintLabel(item) }}
           </span>
           <span v-if="shopLabel(item)" :class="$style.note" data-testid="shopping-item-shop">
             <v-icon icon="mdi-storefront-outline" size="14" aria-hidden="true" />

@@ -1,8 +1,7 @@
-import type { ShoppingListGroupKey } from "#shared/utils/shoppingList.types";
-import type { StoredGroupExpansion } from "~/types/shoppingList.types";
+import type { ShoppingListPageGroupKey, StoredGroupExpansion } from "~/types/shoppingList.types";
 
 // Groups that start closed: what is at home is out of the way until someone looks (G4).
-const CLOSED_BY_DEFAULT: ReadonlySet<ShoppingListGroupKey> = new Set([HAVE_AT_HOME_GROUP_KEY]);
+const CLOSED_BY_DEFAULT: ReadonlySet<ShoppingListPageGroupKey> = new Set([HAVE_AT_HOME_GROUP_KEY]);
 
 // Which groups of a shopping list are open (G3). Groups start open, except "Have at home"; what the viewer opens or
 // closes is remembered per list in this browser, so a group done in the shop stays closed after leaving the page.
@@ -11,10 +10,10 @@ export function useShoppingListGroupExpansion(listId: MaybeRefOrGetter<string | 
   // Only the groups this viewer changed on this list.
   const changedGroups = ref<Readonly<Record<string, boolean>>>({});
 
-  const isGroupExpanded = (groupKey: ShoppingListGroupKey): boolean =>
+  const isGroupExpanded = (groupKey: ShoppingListPageGroupKey): boolean =>
     changedGroups.value[groupKey] ?? !CLOSED_BY_DEFAULT.has(groupKey);
 
-  const setGroupExpanded = (groupKey: ShoppingListGroupKey, isExpanded: boolean): void => {
+  const setGroupExpanded = (groupKey: ShoppingListPageGroupKey, isExpanded: boolean): void => {
     changedGroups.value = { ...changedGroups.value, [groupKey]: isExpanded };
     const currentListId = toValue(listId);
     if (currentListId === null) {
