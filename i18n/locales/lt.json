@@ -603,6 +603,10 @@
         "loadFailed": "Nepavyko įkelti jūsų vertinimų. Perkraukite puslapį ir bandykite dar kartą."
       }
     },
+    "shops": {
+      "title": "Kur perkate",
+      "hint": "Kas pirkta kiekvienoje parduotuvėje"
+    },
     "diet": {
       "title": "Mano mityba",
       "hint": "Kiekvienas žingsnis apima viską, kas yra aukščiau.",
@@ -811,6 +815,40 @@
       "change": "Keisti parduotuvę",
       "boughtAt": "Pirkta: {shop}",
       "shortfall": "Reikia dar {amount}"
+    }
+  },
+  "insights": {
+    "range": {
+      "label": "Laikotarpis",
+      "options": {
+        "last_30_days": "30 dienų",
+        "last_90_days": "3 mėnesiai",
+        "last_year": "12 mėnesių",
+        "all_time": "Visas laikas"
+      }
+    },
+    "shops": {
+      "pageTitle": "Kur perkate",
+      "title": "Kur perkate",
+      "intro": {
+        "household": "Pagal parduotuves, kurias namų ūkis pasirinko pažymėdamas prekes nupirktomis.",
+        "individual": "Pagal parduotuves, kurias pasirinkote pažymėdami prekes nupirktomis."
+      },
+      "summary": "{purchases}, parduotuvių: {shops}",
+      "purchaseCount": "Nupirkta prekių: {count} | Nupirkta prekių: {count}",
+      "shopCount": "{count} | {count}",
+      "itemCount": "skirtingų prekių: {count} | skirtingų prekių: {count}",
+      "share": "{percent} %",
+      "shareLabel": "{shop}: {percent} % parduotuvėse nupirktų prekių",
+      "topItems": "Dažniausiai perkama",
+      "timesBought": "{count} k. | {count} k.",
+      "withoutShop": "Nupirktų prekių be parduotuvės: {count}. Jos neįskaičiuotos. | Nupirktų prekių be parduotuvės: {count}. Jos neįskaičiuotos.",
+      "empty": {
+        "title": "Šiam laikotarpiui parduotuvių nėra",
+        "hint": "Pirkinių sąraše pažymėdami prekę nupirkta, pasirinkite parduotuvę, kurioje ją pirkote.",
+        "action": "Atidaryti pirkinių sąrašą"
+      },
+      "loadFailed": "Nepavyko įkelti parduotuvių suvestinės. Įkelkite puslapį iš naujo."
     }
   }
 }

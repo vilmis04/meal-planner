@@ -243,6 +243,7 @@ As a member I want to know a plan was created.
 As a user I want to see where I buy things.
 - Items bought per shop over a selectable range, most common items per shop.
 - Only recorded purchases are included.
+- Built as `supabase/migrations/20261121000000_add_shop_insights.sql` (`get_shop_insights(range_days)`, security invoker) and the "Where you shop" screen at `/me/shops`, linked from Me (see README, "Shop insights"). The range is 30 days, 3 months (the default), 12 months or all time, kept in the address (`?range=`). Each shop, most used first, shows its share of the lines bought at a shop, how many lines and different items were bought there, and its five most bought items. Row level security decides what is summed up, as on the list: the household's plans and the viewer's own individual plans, never another member's individual plan. A line ticked bought without a shop is left out and only counted ("2 bought items have no shop recorded"). Items are their canonical ingredient, else their name whatever the case; shops with the same name (a person's own from before they joined, and the household's) are one. There is no design for this screen, so it follows the app's card and chip patterns. Per-item shop hints on the list are I1a.
 
 ### I1a. Store recommendations on the list (M, Phase 5)
 As a shopper I want hints on where I usually buy an item.
