@@ -221,6 +221,7 @@ As a shopper I want to say where I bought an item.
 As a user or household owner I want to set up automatic plan creation.
 - Choose weekday, period length, participants (default all), and whether to enable it.
 - Individual users have their own schedule; households have one.
+- Built as `supabase/migrations/20261118000000_create_plan_schedules.sql` (`plan_schedules`, `plan_schedule_participants`, `save_plan_schedule()`) and the "Automatic plans" screen at `/plans/schedule`, linked from Plans and Household (see README, "Automatic plans"). Besides the weekday to create on (Saturday by default) the screen asks the weekday the plan starts on ("Following Monday" by default) and whether snacks go on the shopping list, as the design shows. Only the household's owner changes the household schedule; members see it. Ticking everyone means everyone, including people who join later. The schedule keeps the time zone of whoever saved it last, for H2. Nothing creates plans until H2.
 
 ### H2. Scheduled plan job (L, Phase 4)
 As a user I want the next plan created for me on my chosen day.
