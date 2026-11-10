@@ -44,6 +44,8 @@ export interface PlanGenerationStore {
   loadRecipes(): Promise<GeneratorRecipe[]>;
   // Recipe id → diets a ready protein swap exists for.
   loadSwapDiets(): Promise<Record<string, Diet[]>>;
+  // Ingredient id → the recipes that use it (G1's aliases), for a plan adjustment's excluded ingredients (I3).
+  loadIngredientRecipeIds(ingredientIds: readonly string[]): Promise<Record<string, string[]>>;
   // Service role: the participants with their diets and every rating they gave.
   loadParticipants(planId: string): Promise<GeneratorParticipant[]>;
   // Service role: the participants' other plans within `lookbackDays` before this one starts.

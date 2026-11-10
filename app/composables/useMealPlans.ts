@@ -1,4 +1,5 @@
 import type { GenerationMode } from "#shared/utils/mealPlan";
+import type { PlanConstraints } from "#shared/utils/planAdjustment.types";
 import type {
   CreateMealPlanResult,
   GeneratePlanResult,
@@ -216,10 +217,19 @@ export function useMealPlans() {
   };
 
   // Fills the plan's empty slots (E4), or replaces every unlocked one (E5), on the server, which reads everyone's
-  // ratings and plan history there.
-  const generate = async (planId: string, mode: GenerationMode = "fill_empty"): Promise<GeneratePlanResult> => {
+  // ratings and plan history there. constraints are a plan adjustment the user confirmed (I3).
+  const generate = async (
+    planId: string,
+    mode: GenerationMode = "fill_empty",
+    constraints?: PlanConstraints,
+  ): Promise<GeneratePlanResult> => {
     const response = await $fetch
-      .raw(`/api/plans/${planId}/generate`, { method: "POST", body: { mode }, ignoreResponseError: true, retry: 0 })
+      .raw(`/api/plans/${planId}/generate`, {
+        method: "POST",
+        body: { mode, constraints },
+        ignoreResponseError: true,
+        retry: 0,
+      })
       .catch((error: unknown) => {
         console.error("Generating the plan failed", error);
         return null;

@@ -41,6 +41,7 @@ const makeStore = (plan: StoredPlan | null, overrides: Partial<PlanGenerationSto
       { id: "snack-1", mealType: "snack", portionDays: 1, mainProteins: ["plant"] },
     ],
     loadSwapDiets: async () => ({}),
+    loadIngredientRecipeIds: async () => ({}),
     loadParticipants: async () => [{ userId: "ana", diet: "vegetarian", ratings: {} }],
     loadHistory: async () => [],
     applyGeneration: async (_planId, writes) => {
@@ -201,6 +202,54 @@ describe("generatePlan", () => {
       },
     });
     await expect(generatePlan(deps(store), { planId: PLAN_ID })).rejects.toThrow("database down");
+  });
+
+  describe("with a plan adjustment (I3)", () => {
+    const MUSHROOM_ID = "00000000-0000-4000-8000-000000000001";
+
+    it("applies the constraints as rules and writes a plain generation, so nothing counts as skipped", async () => {
+      const loadIngredientRecipeIds = vi.fn(async () => ({ [MUSHROOM_ID]: ["breakfast-1"] }));
+      const { store, applied, swapped } = makeStore(makePlan(), {
+        loadParticipants: async () => [{ userId: "ana", diet: "full", ratings: {} }],
+        loadIngredientRecipeIds,
+      });
+      const log = vi.fn();
+      const result = await generatePlan(
+        { store, createSeed: () => 7, log },
+        {
+          planId: PLAN_ID,
+          mode: "regenerate_unlocked",
+          constraints: {
+            excludedProteins: [{ protein: "fish", dayIndexes: [1], mealTypes: null }],
+            excludedIngredients: [
+              { ingredientId: MUSHROOM_ID, ingredientName: "Pievagrybiai", dayIndexes: null, mealTypes: null },
+            ],
+            quickMeals: [],
+          },
+        },
+      );
+
+      expect(loadIngredientRecipeIds).toHaveBeenCalledWith([MUSHROOM_ID]);
+      expect(result).toMatchObject({ status: "generated", emptyCount: 1 });
+      expect(getWrite(applied[0], 0, "dinner")?.recipeId).toBe("dinner-fish");
+      expect(getWrite(applied[0], 1, "dinner")).toMatchObject({ recipeId: null, note: "no_recipe_fits_adjustment" });
+      expect(applied[0]?.filter((write) => write.mealType === "breakfast").map((write) => write.recipeId)).toEqual([
+        "breakfast-2",
+        "breakfast-2",
+      ]);
+      expect(swapped).toHaveLength(0);
+      expect(log).toHaveBeenCalledWith(expect.objectContaining({ event: "meal_plan_generated", isAdjusted: true }));
+    });
+
+    it("reads no ingredients when the adjustment names none", async () => {
+      const loadIngredientRecipeIds = vi.fn(async () => ({}));
+      const { store } = makeStore(makePlan(), { loadIngredientRecipeIds });
+      await generatePlan(deps(store), {
+        planId: PLAN_ID,
+        constraints: { excludedProteins: [], excludedIngredients: [], quickMeals: [{ dayIndexes: null, mealTypes: null }] },
+      });
+      expect(loadIngredientRecipeIds).toHaveBeenCalledWith([]);
+    });
   });
 });
 

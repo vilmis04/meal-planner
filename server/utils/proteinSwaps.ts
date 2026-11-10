@@ -8,11 +8,15 @@ import { createProteinSwapService } from "./proteinSwapService";
 import type { ProteinSwapService } from "./proteinSwapService.types";
 import { createSupabaseSwapStore } from "./proteinSwapStore";
 import { useServiceRoleClient } from "./serviceRoleClient";
-import { createSwapMissLimiter } from "./swapMissLimiter";
+import { createHourlyLimiter } from "./hourlyLimiter";
 
 let service: ProteinSwapService | null = null;
 
-export const allowSwapMiss = createSwapMissLimiter();
+// Swap requests that would call the AI (cache misses), per user and hour. The pairs that can ever miss are few (one
+// per recipe and conflicting diet) anyway.
+const SWAP_MISSES_PER_HOUR = 20;
+
+export const allowSwapMiss = createHourlyLimiter(SWAP_MISSES_PER_HOUR);
 
 export function useProteinSwapService(event: H3Event): ProteinSwapService {
   if (service) return service;

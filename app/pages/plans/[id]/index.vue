@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GenerationMode } from "#shared/utils/mealPlan";
+import type { PlanConstraints } from "#shared/utils/planAdjustment.types";
 import type { MealPlanSlot, SnackSettings } from "~/types/mealPlan.types";
 
 defineOptions({ name: "PlanPage" });
@@ -29,6 +30,7 @@ const {
   load: loadNutrition,
   loadSwapNutrition,
 } = useRecipeNutrition();
+const { loadAvailability: loadAdjustmentAvailability } = usePlanAdjustment();
 const { show } = useAppSnackbar();
 const user = useSupabaseUser();
 const today = useToday();
@@ -36,9 +38,15 @@ const today = useToday();
 const id = String(route.params.id);
 // The household gives the participant picker its members, with their names and diets. The recipe library gives
 // slots their names and the slot picker its choices; who hates what gives the picker its warnings (E3).
-const [{ data: result, refresh: refreshPlan }, { data: hatedResult, refresh: refreshHated }] = await Promise.all([
+// Adjusting by text (I3) is offered only when the server has an AI key.
+const [
+  { data: result, refresh: refreshPlan },
+  { data: hatedResult, refresh: refreshHated },
+  { data: isAdjustmentAvailable },
+] = await Promise.all([
   useAsyncData(`plan-${id}`, () => loadPlan(id)),
   useAsyncData(`plan-hated-${id}`, () => loadHatedRecipes(id)),
+  useAsyncData("plan-adjustment-availability", loadAdjustmentAvailability),
   callOnce("household", loadHousehold, { mode: "navigation" }),
   recipes.value ? undefined : loadRecipes(),
   // Calories and macros are read only for a user who asked to see them (F1).
@@ -387,6 +395,38 @@ const planNutrition = computed(() => {
 });
 const isSwapNutritionFailed = computed(() => swapNutritionResult.value?.status === "failed");
 
+// Adjusting by text (I3): the dialog has the AI turn the request into rules and the user confirm them; they are then
+// applied like "Regenerate unlocked", so locked slots stay and nothing counts as skipped. Offered on a current or
+// upcoming plan while any slot it shows is open to the generator.
+const isAdjustOpen = ref(false);
+const isAdjusting = ref(false);
+const lockedSlotCount = computed(() => visibleSlots.value.filter((slot) => slot.isLocked && slot.recipeId !== null).length);
+const canAdjust = computed(
+  () =>
+    Boolean(isAdjustmentAvailable.value) && !isReadOnly.value && lockedSlotCount.value < visibleSlots.value.length,
+);
+
+async function applyAdjustment(constraints: PlanConstraints) {
+  const current = plan.value;
+  if (!current || isSaving.value) {
+    return;
+  }
+
+  isSaving.value = true;
+  isAdjusting.value = true;
+  const generated = await generate(current.id, "regenerate_unlocked", constraints);
+  await refreshPlan();
+  isAdjusting.value = false;
+  isSaving.value = false;
+
+  if (generated.isGenerated) {
+    isAdjustOpen.value = false;
+    show(getAdjustmentDoneKey(generated.summary), "success");
+  } else {
+    show(generated.errorKey, "error");
+  }
+}
+
 async function generatePlan(mode: GenerationMode) {
   const current = plan.value;
   if (!current || isSaving.value) {
@@ -479,19 +519,34 @@ async function generatePlan(mode: GenerationMode) {
         :is-swap-load-failed="isSwapNutritionFailed"
       />
 
-      <v-btn
-        v-if="hasEmptySlots && !isReadOnly"
-        color="primary"
-        size="large"
-        prepend-icon="mdi-auto-fix"
-        :loading="generatingMode === 'fill_empty'"
-        :disabled="isSaving"
-        :class="$style.generate"
-        data-testid="plan-fill"
-        @click="generatePlan('fill_empty')"
-      >
-        {{ isPlanEmpty ? t("plan.generate.action") : t("plan.generate.fillEmpty") }}
-      </v-btn>
+      <div v-if="(hasEmptySlots && !isReadOnly) || canAdjust" :class="$style.generateActions">
+        <v-btn
+          v-if="hasEmptySlots && !isReadOnly"
+          color="primary"
+          size="large"
+          prepend-icon="mdi-auto-fix"
+          :loading="generatingMode === 'fill_empty'"
+          :disabled="isSaving"
+          :class="$style.generate"
+          data-testid="plan-fill"
+          @click="generatePlan('fill_empty')"
+        >
+          {{ isPlanEmpty ? t("plan.generate.action") : t("plan.generate.fillEmpty") }}
+        </v-btn>
+        <v-btn
+          v-if="canAdjust"
+          color="primary"
+          variant="tonal"
+          size="large"
+          prepend-icon="mdi-creation"
+          :disabled="isSaving"
+          :class="$style.generate"
+          data-testid="plan-adjust"
+          @click="isAdjustOpen = true"
+        >
+          {{ t("plan.adjust.action") }}
+        </v-btn>
+      </div>
 
       <div :class="$style.layout">
         <div :class="$style.settings">
@@ -532,6 +587,16 @@ async function generatePlan(mode: GenerationMode) {
           @toggle-lock="toggleLock"
         />
       </div>
+
+      <PlanAdjustDialog
+        v-if="canAdjust"
+        v-model="isAdjustOpen"
+        :plan-id="plan.id"
+        :plan-days="planDays"
+        :locked-count="lockedSlotCount"
+        :is-applying="isAdjusting"
+        @apply="applyAdjustment"
+      />
 
       <PlanSlotPicker v-if="pickerSlot" v-model="isPickerOpen" :busy="isSaving">
         <PlanSlotPickerPanel
@@ -629,8 +694,13 @@ async function generatePlan(mode: GenerationMode) {
   font-weight: 600;
 }
 
+.generateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .generate {
-  align-self: flex-start;
   text-transform: none;
 }
 

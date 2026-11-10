@@ -50,7 +50,22 @@ export interface PlanGenerationInput {
   cooldownDays: number;
   // Recipes the open slots must not get: a swap (E5) leaves out the recipe it replaces.
   excludedRecipeIds?: readonly string[];
+  // Recipes particular open slots must not get, from a plan adjustment (I3) such as "no fish on Monday". Never relaxed.
+  slotExclusions?: readonly SlotRecipeExclusion[];
+  // Lunches and dinners a plan adjustment (I3) asks to be quick: planned like a workday's, from a batch cooked the day
+  // before where one is left.
+  quickMeals?: readonly PlannedMeal[];
   seed: number;
+}
+
+// One meal of one day of the plan.
+export interface PlannedMeal {
+  dayIndex: number;
+  mealType: MealType;
+}
+
+export interface SlotRecipeExclusion extends PlannedMeal {
+  recipeIds: readonly string[];
 }
 
 export interface SlotAssignment {

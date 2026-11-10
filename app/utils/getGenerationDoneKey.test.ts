@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGenerationDoneKey } from "./getGenerationDoneKey";
+import { getAdjustmentDoneKey, getGenerationDoneKey } from "./getGenerationDoneKey";
 
 describe("getGenerationDoneKey", () => {
   it("is plain when every slot was filled the ideal way", () => {
@@ -16,5 +16,12 @@ describe("getGenerationDoneKey", () => {
     expect(getGenerationDoneKey({ emptyCount: 0, compromisedCount: 1 }, "regenerate_unlocked")).toBe(
       "plan.regenerate.doneWithNotes",
     );
+  });
+});
+
+describe("getAdjustmentDoneKey", () => {
+  it("says the adjustment was applied, pointing to the notes when there are any", () => {
+    expect(getAdjustmentDoneKey({ emptyCount: 0, compromisedCount: 0 })).toBe("plan.adjust.done");
+    expect(getAdjustmentDoneKey({ emptyCount: 1, compromisedCount: 0 })).toBe("plan.adjust.doneWithNotes");
   });
 });

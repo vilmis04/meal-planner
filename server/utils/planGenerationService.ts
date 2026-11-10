@@ -6,7 +6,12 @@
  * A locked slot is always kept (a recipe chosen by hand is locked). "fill_empty" also keeps every slot that holds a
  * recipe; "regenerate_unlocked" replaces the generated ones. A swap runs the generator on one slot, or on the days
  * of its batch, with everything else kept, and without the recipe it replaces.
+ *
+ * A plan adjustment (I3) is constraints the user confirmed, passed to the same generation: they only add rules for the
+ * generator (getGeneratorConstraints()), and the result is written like any generation, so nothing counts as skipped.
  */
+import { getGeneratorConstraints } from "../../shared/utils/planAdjustment";
+import type { GeneratorConstraints, PlanConstraints } from "../../shared/utils/planAdjustment.types";
 import { generateMealPlan } from "../../shared/utils/planGenerator";
 import type { GeneratorSlot, PlanGenerationInput, SlotAssignment } from "../../shared/utils/planGenerator.types";
 import { getVisibleMealTypes } from "../../shared/utils/mealPlan";
@@ -21,7 +26,12 @@ const HISTORY_COOLDOWN_MULTIPLE = 2;
 
 export async function generatePlan(
   { store, createSeed, log = writeJsonLog }: PlanGenerationDeps,
-  { planId, seed = createSeed(), mode = "fill_empty" }: { planId: string; seed?: number; mode?: GenerationMode },
+  {
+    planId,
+    seed = createSeed(),
+    mode = "fill_empty",
+    constraints,
+  }: { planId: string; seed?: number; mode?: GenerationMode; constraints?: PlanConstraints },
 ): Promise<GeneratePlanResult> {
   const plan = await store.loadPlan(planId);
   if (!plan) {
@@ -40,13 +50,14 @@ export async function generatePlan(
     return { status: "no-participants" };
   }
 
-  const assignments = generateMealPlan({ ...inputs, slots, seed });
+  const generatorConstraints = constraints ? await loadGeneratorConstraints(store, constraints, inputs) : null;
+  const assignments = generateMealPlan({ ...inputs, ...generatorConstraints, slots, seed });
   if ((await store.applyGeneration(plan.id, withPreviousRecipes(plan, assignments))) === "plan-changed") {
     return { status: "plan-changed" };
   }
 
   const summary = summarize(assignments, seed);
-  log({ event: "meal_plan_generated", planId, mode, ...summary });
+  log({ event: "meal_plan_generated", planId, mode, isAdjusted: generatorConstraints !== null, ...summary });
   return { status: "generated", ...summary };
 }
 
@@ -115,6 +126,22 @@ const loadGeneratorInputs = async (
     history,
     cooldownDays: plan.cooldownDays,
   };
+};
+
+// The adjustment's constraints in the generator's terms; only its ingredients need another read.
+const loadGeneratorConstraints = async (
+  store: PlanGenerationStore,
+  constraints: PlanConstraints,
+  inputs: Omit<PlanGenerationInput, "slots" | "seed">,
+): Promise<GeneratorConstraints> => {
+  const ingredientIds = [...new Set(constraints.excludedIngredients.map((rule) => rule.ingredientId))];
+  const recipeIdsByIngredient = await store.loadIngredientRecipeIds(ingredientIds);
+  return getGeneratorConstraints(constraints, {
+    dayCount: inputs.dayCount,
+    mealTypes: inputs.mealTypes,
+    recipes: inputs.recipes,
+    recipeIdsByIngredient,
+  });
 };
 
 // Each assignment goes with the recipe its slot held when the plan was read, so a slot changed meanwhile refuses

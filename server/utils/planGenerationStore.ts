@@ -19,8 +19,10 @@ import {
   generationPlanRowSchema,
   generationRecipeRowSchema,
   historyRowsSchema,
+  ingredientAliasRowsSchema,
   participantRowsSchema,
   ratingRowsSchema,
+  recipeIngredientUseRowsSchema,
   swapDietRowSchema,
 } from "./planGeneration.schema";
 import { memoizeAsync } from "./memoizeAsync";
@@ -103,6 +105,32 @@ const createPlanGenerationStore = ({
         }
       }
       return swapDiets;
+    },
+
+    async loadIngredientRecipeIds(ingredientIds) {
+      if (!ingredientIds.length) {
+        return {};
+      }
+      const aliases = await planClient.from("ingredient_aliases").select("item, ingredient_id").in("ingredient_id", ingredientIds);
+      if (aliases.error) throw new Error(`Loading ingredient aliases failed: ${aliases.error.message}`);
+      const ingredientIdByItem = new Map(
+        ingredientAliasRowsSchema.parse(aliases.data).map((row) => [row.item, row.ingredient_id]),
+      );
+      if (!ingredientIdByItem.size) {
+        return {};
+      }
+
+      const uses = await planClient.from("recipe_ingredients").select("recipe_id, item").in("item", [...ingredientIdByItem.keys()]);
+      if (uses.error) throw new Error(`Loading the recipes that use ingredients failed: ${uses.error.message}`);
+      const recipeIdsByIngredient: Record<string, string[]> = {};
+      for (const { recipe_id: recipeId, item } of recipeIngredientUseRowsSchema.parse(uses.data)) {
+        const ingredientId = ingredientIdByItem.get(item);
+        const recipeIds = ingredientId ? (recipeIdsByIngredient[ingredientId] ??= []) : null;
+        if (recipeIds && !recipeIds.includes(recipeId)) {
+          recipeIds.push(recipeId);
+        }
+      }
+      return recipeIdsByIngredient;
     },
 
     async loadParticipants(planId) {

@@ -314,6 +314,49 @@
         "allLocked": "Every slot is locked. Unlock one to regenerate it."
       }
     },
+    "adjust": {
+      "action": "Adjust with text",
+      "title": "Adjust the plan",
+      "intro": "Say what to change, for example “no fish this week, quick dinners on Monday”. You check the rules before anything changes.",
+      "label": "What should change?",
+      "placeholder": "No fish this week, quick dinners on Monday",
+      "privacy": "Your request is sent to an AI service without your name, so leave out personal details.",
+      "cancel": "Cancel",
+      "interpret": "Show rules",
+      "confirmIntro": "The unlocked meals are planned again with these rules:",
+      "nothingToApply": "Nothing in this request can be applied. Try saying it another way.",
+      "unsupportedTitle": "Not applied",
+      "lockedNote": "Nothing is locked, so every meal is planned again. | 1 locked meal stays as it is. | {count} locked meals stay as they are.",
+      "back": "Change request",
+      "apply": "Apply",
+      "removeRule": "Remove “{rule}”",
+      "rule": {
+        "excludedProtein": "No {protein}",
+        "excludedIngredient": "No {ingredient}",
+        "quickMeals": "Quick: from a batch cooked the day before"
+      },
+      "scope": {
+        "wholePlan": "Whole plan",
+        "everyDay": "Every day",
+        "everyMeal": "Every meal"
+      },
+      "protein": {
+        "egg_dairy": "eggs or dairy",
+        "plant": "plant protein",
+        "fish": "fish",
+        "poultry": "poultry",
+        "pork": "pork",
+        "beef": "beef",
+        "other_meat": "other meat"
+      },
+      "done": "Plan adjusted",
+      "doneWithNotes": "Plan adjusted. Some slots have a note, so check them.",
+      "errors": {
+        "failed": "The request could not be read. Try again.",
+        "limited": "That is a lot of requests for now. Try again in an hour.",
+        "unavailable": "Adjusting by text is not available right now. Try again later."
+      }
+    },
     "swap": {
       "action": "Suggest another",
       "suggest": "Suggest one",
@@ -346,7 +389,8 @@
       "all_recipes_hated": "Every recipe that fits is marked as hate",
       "recently_planned": "Planned recently: few other recipes fit",
       "repeated_in_plan": "Repeated: too few recipes for this plan",
-      "no_batch_recipe": "No batch recipe left for this workday"
+      "no_batch_recipe": "No batch recipe left for this workday",
+      "no_recipe_fits_adjustment": "No recipe fits your adjustment"
     },
     "status": {
       "current": "Current",
