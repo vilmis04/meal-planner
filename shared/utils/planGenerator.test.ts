@@ -488,4 +488,67 @@ describe("generateMealPlan", () => {
       expect(assignments).toHaveLength(21);
     });
   });
+
+  describe("plan adjustment (I3)", () => {
+    const dinnerIds = LIBRARY.filter((recipe) => recipe.mealType === "dinner").map((recipe) => recipe.id);
+    const fishDinnerIds = LIBRARY.filter((recipe) => recipe.mainProteins.includes("fish")).map((recipe) => recipe.id);
+
+    it("never puts an excluded recipe in its slots, whatever the seed", () => {
+      const slotExclusions = Array.from({ length: 7 }, (_, dayIndex) => ({
+        dayIndex,
+        mealType: "dinner" as const,
+        recipeIds: fishDinnerIds,
+      }));
+      for (let seed = 1; seed <= 50; seed++) {
+        const dinners = recipesOf(generateMealPlan(makeInput({ seed, slotExclusions })), "dinner");
+        expect(dinners.some((recipeId) => recipeId !== null && fishDinnerIds.includes(recipeId))).toBe(false);
+      }
+    });
+
+    it("leaves out a recipe only where the exclusion says", () => {
+      const slotExclusions = [{ dayIndex: 0, mealType: "breakfast" as const, recipeIds: ["breakfast-01"] }];
+      const counts = { onDay: 0, elsewhere: 0 };
+      for (let seed = 1; seed <= 200; seed++) {
+        const breakfasts = recipesOf(generateMealPlan(makeInput({ seed, slotExclusions })), "breakfast");
+        counts.onDay += Number(breakfasts[0] === "breakfast-01");
+        counts.elsewhere += Number(breakfasts.slice(1).includes("breakfast-01"));
+      }
+      expect(counts.onDay).toBe(0);
+      expect(counts.elsewhere).toBeGreaterThan(0);
+    });
+
+    it("leaves a slot empty with a note when the adjustment excludes everything left, and never relaxes it", () => {
+      const slotExclusions = [{ dayIndex: 2, mealType: "dinner" as const, recipeIds: dinnerIds }];
+      const assignments = generateMealPlan(makeInput({ slotExclusions }));
+      const wednesday = assignments.find((assignment) => assignment.dayIndex === 2 && assignment.mealType === "dinner");
+      expect(wednesday).toEqual({ dayIndex: 2, mealType: "dinner", recipeId: null, note: "no_recipe_fits_adjustment" });
+      expect(recipesOf(assignments, "dinner").filter((recipeId) => recipeId === null)).toHaveLength(1);
+    });
+
+    it("keeps diet and hate notes first", () => {
+      const slotExclusions = [{ dayIndex: 0, mealType: "dinner" as const, recipeIds: dinnerIds }];
+      const assignments = generateMealPlan(
+        makeInput({
+          slotExclusions,
+          participants: [makeParticipant("ana", "vegetarian")],
+          recipes: LIBRARY.filter((recipe) => !recipe.id.startsWith("dinner-batch-")),
+        }),
+      );
+      const monday = assignments.find((assignment) => assignment.dayIndex === 0 && assignment.mealType === "dinner");
+      expect(monday?.note).toBe("no_recipe_fits_diets");
+    });
+
+    it("plans a quick meal like a workday's: from a batch cooked the day before", () => {
+      const weekend = { workdays: [], startDate: MONDAY };
+      const plain = recipesOf(generateMealPlan(makeInput(weekend)), "dinner");
+      expect(plain.every((recipeId) => !isBatchRecipe(recipeId))).toBe(true);
+
+      const quick = recipesOf(
+        generateMealPlan(makeInput({ ...weekend, quickMeals: [{ dayIndex: 6, mealType: "dinner" }] })),
+        "dinner",
+      );
+      expect(isBatchRecipe(quick[6])).toBe(true);
+      expect(quick[5]).toBe(quick[6]);
+    });
+  });
 });

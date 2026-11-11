@@ -19,6 +19,9 @@
  * workdays come first; it never repeats a batch within the plan, and becomes two single days instead. Diet and
  * hate never relax: a slot with no recipe left is left empty. Every relaxed or empty slot carries a note that
  * says why.
+ *
+ * A plan adjustment (I3, shared/utils/planAdjustment.ts) only adds input: recipes some slots must not get, which never
+ * relax either, and lunches and dinners planned as a workday's.
  */
 
 import { isRecipeCompatible } from "./diet";
@@ -46,13 +49,24 @@ export const SLOT_FILL_NOTES = [
   "repeated_in_plan",
   // A workday that should have had a batch recipe got a single-day one: none was left.
   "no_batch_recipe",
+  // Empty: every recipe that fits the diets and nobody hates is left out by the plan adjustment (I3).
+  "no_recipe_fits_adjustment",
 ] as const;
+
+// Only lunch and dinner are cooked in batches (all seeded 2-day recipes are one of them).
+export const BATCH_MEAL_TYPES = ["lunch", "dinner"] as const satisfies readonly MealType[];
 
 export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
   const random = createSeededRandom(input.seed);
   const recipeById = new Map(input.recipes.map((recipe) => [recipe.id, recipe]));
   const workdays = new Set(input.workdays);
-  const isWorkday = (dayIndex: number): boolean => workdays.has(getIsoWeekday(addDays(input.startDate, dayIndex)));
+  const quickMeals = new Set((input.quickMeals ?? []).map((meal) => getSlotKey(meal.dayIndex, meal.mealType)));
+  // A workday's lunch and dinner, or one the adjustment asks to be quick, come from a batch cooked the day before.
+  const isWorkMeal = (dayIndex: number, mealType: MealType): boolean =>
+    workdays.has(getIsoWeekday(addDays(input.startDate, dayIndex))) || quickMeals.has(getSlotKey(dayIndex, mealType));
+  const excludedBySlot = getExcludedRecipesBySlot(input);
+  const isExcludedAt = (recipeId: string, dayIndex: number, mealType: MealType): boolean =>
+    excludedBySlot.get(getSlotKey(dayIndex, mealType))?.has(recipeId) ?? false;
   const maxUses = MAX_USES_PER_WEEK * Math.ceil(input.dayCount / 7);
   const daysSinceUse = getDaysSinceUse(input);
 
@@ -147,14 +161,18 @@ export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
     if (!pool.allowed.length) {
       return { candidate: null, note: "all_recipes_hated" };
     }
+    const allowed = pool.allowed.filter((candidate) => !isExcludedAt(candidate.recipe.id, dayIndex, mealType));
+    if (!allowed.length) {
+      return { candidate: null, note: "no_recipe_fits_adjustment" };
+    }
     const days = [dayIndex];
 
-    const fresh = pool.allowed.filter((candidate) => isFresh(candidate, mealType, days));
+    const fresh = allowed.filter((candidate) => isFresh(candidate, mealType, days));
     if (fresh.length) {
       return { candidate: pick(fresh, days), note: null };
     }
 
-    const resting = pool.allowed.filter(
+    const resting = allowed.filter(
       (candidate) =>
         isResting(candidate.recipe.id) &&
         (uses.get(candidate.recipe.id) ?? 0) < maxUses &&
@@ -164,8 +182,8 @@ export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
       return { candidate: pick(getLeastRecent(resting), days), note: "recently_planned" };
     }
 
-    const apart = pool.allowed.filter((candidate) => !isNextToItself(candidate.recipe.id, mealType, days));
-    const repeatable = apart.length ? apart : pool.allowed;
+    const apart = allowed.filter((candidate) => !isNextToItself(candidate.recipe.id, mealType, days));
+    const repeatable = apart.length ? apart : allowed;
     const fewestUses = Math.min(...repeatable.map((candidate) => uses.get(candidate.recipe.id) ?? 0));
     const leastUsed = repeatable.filter((candidate) => (uses.get(candidate.recipe.id) ?? 0) === fewestUses);
     return { candidate: pick(leastUsed, days), note: "repeated_in_plan" };
@@ -187,7 +205,9 @@ export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
   const singles: Single[] = [];
   for (const mealType of input.mealTypes) {
     const openDays = openSlots.filter((slot) => slot.mealType === mealType).map((slot) => slot.dayIndex);
-    const spans = BATCH_MEAL_TYPES.has(mealType) ? planSpans(openDays, isWorkday) : openDays.map((day) => [day]);
+    const spans = BATCH_MEAL_TYPE_SET.has(mealType)
+      ? planSpans(openDays, (dayIndex) => isWorkMeal(dayIndex, mealType))
+      : openDays.map((day) => [day]);
     for (const days of spans) {
       if (days.length > 1) {
         batchSpans.push({ mealType, days });
@@ -204,6 +224,7 @@ export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
     const batchCandidates = (pools.get(span.mealType)?.allowed ?? []).filter(
       (candidate) =>
         candidate.recipe.portionDays >= span.days.length &&
+        span.days.every((dayIndex) => !isExcludedAt(candidate.recipe.id, dayIndex, span.mealType)) &&
         (uses.get(candidate.recipe.id) ?? 0) < maxUses &&
         !isNextToItself(candidate.recipe.id, span.mealType, span.days),
     );
@@ -225,7 +246,7 @@ export function generateMealPlan(input: PlanGenerationInput): SlotAssignment[] {
     if (candidate) {
       countUse(candidate.recipe.id);
     }
-    const missedBatch = single.isSplitBatch && isWorkday(single.dayIndex) ? "no_batch_recipe" : null;
+    const missedBatch = single.isSplitBatch && isWorkMeal(single.dayIndex, single.mealType) ? "no_batch_recipe" : null;
     assign(single.dayIndex, single.mealType, candidate?.recipe.id ?? null, note ?? missedBatch);
   }
 
@@ -275,8 +296,7 @@ const REPEAT_FACTOR = 0.5;
 // `cooldownDays` days.
 const COOLDOWN_RECOVERY_START = 0.5;
 
-// Only lunch and dinner are cooked in batches (all seeded 2-day recipes are one of them).
-const BATCH_MEAL_TYPES: ReadonlySet<MealType> = new Set(["lunch", "dinner"]);
+const BATCH_MEAL_TYPE_SET: ReadonlySet<MealType> = new Set(BATCH_MEAL_TYPES);
 // Egg, dairy and plants are in most meals, so only meat and fish count for "the same protein twice a day".
 const VARIETY_PROTEINS: ReadonlySet<Protein> = new Set(["fish", "poultry", "pork", "beef", "other_meat"]);
 
@@ -296,6 +316,18 @@ const compareSlots = (
 
 const compareSpans = (first: Span, second: Span): number =>
   compareSlots({ dayIndex: first.days[0] ?? 0, mealType: first.mealType }, { dayIndex: second.days[0] ?? 0, mealType: second.mealType });
+
+// Slot → the recipes the plan adjustment leaves out of it.
+function getExcludedRecipesBySlot({ slotExclusions = [] }: PlanGenerationInput): Map<string, Set<string>> {
+  const excludedBySlot = new Map<string, Set<string>>();
+  for (const { dayIndex, mealType, recipeIds } of slotExclusions) {
+    const key = getSlotKey(dayIndex, mealType);
+    const excluded = excludedBySlot.get(key) ?? new Set<string>();
+    recipeIds.forEach((recipeId) => excluded.add(recipeId));
+    excludedBySlot.set(key, excluded);
+  }
+  return excludedBySlot;
+}
 
 // Days since each recipe was last planned before this plan starts. Uses on or after the start date do not count.
 function getDaysSinceUse({ history, startDate }: PlanGenerationInput): Map<string, number> {

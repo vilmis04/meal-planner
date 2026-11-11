@@ -314,6 +314,49 @@
         "allLocked": "Visi patiekalai užrakinti. Atrakinkite, ką norite perplanuoti."
       }
     },
+    "adjust": {
+      "action": "Koreguoti tekstu",
+      "title": "Pakoreguoti planą",
+      "intro": "Parašykite, ką pakeisti, pavyzdžiui, „šią savaitę be žuvies, pirmadienį greitos vakarienės“. Prieš keičiant planą taisykles patikrinsite.",
+      "label": "Ką pakeisti?",
+      "placeholder": "Šią savaitę be žuvies, pirmadienį greitos vakarienės",
+      "privacy": "Prašymas siunčiamas dirbtinio intelekto paslaugai be jūsų vardo, todėl nerašykite asmeninių duomenų.",
+      "cancel": "Atšaukti",
+      "interpret": "Rodyti taisykles",
+      "confirmIntro": "Neužrakinti patiekalai bus suplanuoti iš naujo pagal šias taisykles:",
+      "nothingToApply": "Nieko iš šio prašymo pritaikyti negalima. Pabandykite parašyti kitaip.",
+      "unsupportedTitle": "Nepritaikyta",
+      "lockedNote": "Nieko neužrakinta, todėl visi patiekalai suplanuojami iš naujo. | Užrakintas patiekalas lieka toks pat. | Užrakintų patiekalų: {count}. Jie lieka tokie patys.",
+      "back": "Keisti prašymą",
+      "apply": "Pritaikyti",
+      "removeRule": "Pašalinti „{rule}“",
+      "rule": {
+        "excludedProtein": "Be {protein}",
+        "excludedIngredient": "Be: {ingredient}",
+        "quickMeals": "Greitai: iš dieną prieš pagaminto kelių dienų patiekalo"
+      },
+      "scope": {
+        "wholePlan": "Visas planas",
+        "everyDay": "Kiekvieną dieną",
+        "everyMeal": "Visi valgymai"
+      },
+      "protein": {
+        "egg_dairy": "kiaušinių ar pieno produktų",
+        "plant": "augalinių baltymų",
+        "fish": "žuvies",
+        "poultry": "paukštienos",
+        "pork": "kiaulienos",
+        "beef": "jautienos",
+        "other_meat": "kitos mėsos"
+      },
+      "done": "Planas pakoreguotas",
+      "doneWithNotes": "Planas pakoreguotas. Prie kai kurių patiekalų yra pastabų, peržiūrėkite jas.",
+      "errors": {
+        "failed": "Prašymo nepavyko perskaityti. Bandykite dar kartą.",
+        "limited": "Šiuo metu prašymų per daug. Bandykite po valandos.",
+        "unavailable": "Koreguoti tekstu šiuo metu negalima. Bandykite vėliau."
+      }
+    },
     "swap": {
       "action": "Pasiūlyti kitą",
       "suggest": "Pasiūlyti",
@@ -346,7 +389,8 @@
       "all_recipes_hated": "Visus tinkamus receptus kažkas pažymėjo kaip nemėgstamus",
       "recently_planned": "Neseniai planuotas: tinka mažai kitų receptų",
       "repeated_in_plan": "Kartojasi: šiam planui receptų per mažai",
-      "no_batch_recipe": "Šiai darbo dienai neliko kelių dienų patiekalų"
+      "no_batch_recipe": "Šiai darbo dienai neliko kelių dienų patiekalų",
+      "no_recipe_fits_adjustment": "Jokio recepto, atitinkančio jūsų pakeitimus"
     },
     "status": {
       "current": "Vyksta",

@@ -96,6 +96,7 @@ Rules:
   - Preferences: owner only; the generator reads participants' preferences on the server after verifying the caller is in the household.
   - Purchases and shops: shops are household scoped (or the person's own without a household); a purchase is readable with its shopping list (G7).
   - Skips (I2): a `meal_plan_skips` row is readable with its plan; written only by `set_meal_plan_slot()` and `apply_meal_plan_swap()`.
+  - Plan adjustment interpretations (I3): `plan_adjustment_interpretations` has no policy; only the service role reads and writes it.
 - **Service role key** is used only in server code, never exposed to the client, and only after an explicit authorisation check.
 - **Invites:** random single-use tokens stored hashed, with expiry; accepting is a server function.
 - **Secrets:** only in Coolify env vars. `.env.example` lists names without values.
@@ -106,6 +107,8 @@ Rules:
 **Generate a plan (E4).** Client calls `POST /api/plans/:id/generate` -> server verifies membership -> loads participants, their diets and preferences, recipes with protein metadata and swaps, and recent plan history (for cooldown) -> pure `planner` returns slot assignments -> server writes slots -> shopping list is built by the pure `shopping` module and stored -> client shows the result. Same code is used by the scheduled job.
 
 **Lock, swap, regenerate (E5).** Locks are a slot column changed through `set_meal_plan_slots_locked()` (a recipe chosen by hand is locked). "Regenerate unlocked" is the same generate call with `mode: "regenerate_unlocked"`; a swap (`POST /api/plans/:id/slots/:slotId/swap`) runs the same pure planner on one slot (or its batch) with every other slot kept and the current recipe excluded. Every write names the recipe each slot held when it was read, so a change made meanwhile refuses the write (`plan_changed`) instead of being overwritten.
+
+**Plan adjustments (I3).** `POST /api/plans/:id/adjustment` sends the request text with the plan's dates, meal types and canonical ingredient names (never a person) to Gemini, validates the structured answer against the plan (`validatePlanAdjustment()`), and caches it in `plan_adjustment_interpretations` by prompt hash (service role only). The answer is shown for confirmation; applying it is the ordinary generate call with `constraints` (excluded proteins and ingredients per day and meal, quick lunches and dinners), which the pure planner applies as extra rules. The AI never writes slots or nutrition, the write goes through `apply_meal_plan_generation()` (no skips), and without an AI key the page does not offer it.
 
 **Preference insights (I2).** "Liked" is the viewer's own `enjoy` ratings, ranked by how many meals of each are on the plans they eat from (participant) in the range. "Skipped" needed a record, since a replaced slot kept no history: `meal_plan_skips` gets a row whenever a person takes a recipe out of a slot (a swap, through `apply_meal_plan_swap()`, which the swap route now writes with; or replacing or clearing it in the picker, through `set_meal_plan_slot()`), in the same transaction as the change. A generation or "regenerate unlocked" records nothing. `get_preference_insights(range_days)` is security invoker and sums both up for the page.
 

@@ -4,8 +4,10 @@ import { generateRequestBodySchema, generateRouteParamsSchema } from "../../../u
 
 /*
  * POST /api/plans/:id/generate: fills the plan by the generator's rules (E4). No AI is called.
- * Body (optional): { mode, seed }. mode "fill_empty" (the default) fills the empty slots; "regenerate_unlocked" (E5)
- * replaces every slot that is not locked. seed reproduces a logged generation.
+ * Body (optional): { mode, seed, constraints }. mode "fill_empty" (the default) fills the empty slots;
+ * "regenerate_unlocked" (E5) replaces every slot that is not locked. seed reproduces a logged generation. constraints
+ * are a plan adjustment the user confirmed (I3, POST /api/plans/:id/adjustment interprets the text): the generator
+ * applies them as extra rules; no AI is called here either.
  *
  *   200 { status: "generated", filledCount, emptyCount, compromisedCount, seed }
  *   409 { status: "nothing-to-fill" | "all-locked" | "no-participants" | "plan-changed" }
@@ -28,7 +30,7 @@ export default defineEventHandler(async (event) => {
   });
   const result = await generatePlan(
     { store, createSeed: () => randomInt(SEED_LIMIT) },
-    { planId: params.data.id, seed: body.data.seed, mode: body.data.mode },
+    { planId: params.data.id, seed: body.data.seed, mode: body.data.mode, constraints: body.data.constraints },
   );
 
   switch (result.status) {

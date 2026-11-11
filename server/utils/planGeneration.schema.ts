@@ -13,6 +13,7 @@ import {
   WEEKDAYS,
   isIsoDate,
 } from "../../shared/utils/mealPlan";
+import { planConstraintsSchema } from "../../shared/utils/planAdjustment.schema";
 import { RECIPE_RATINGS } from "../../shared/utils/recipeRating";
 import { SEED_LIMIT } from "../../shared/utils/seededRandom";
 import type { StoredPlan } from "./planGenerationStore.types";
@@ -87,6 +88,10 @@ export const historyRowsSchema = z
   .array(z.object({ recipe_id: z.guid(), last_planned_on: isoDateSchema }))
   .transform((rows) => rows.map((row) => ({ recipeId: row.recipe_id, lastPlannedOn: row.last_planned_on })));
 
+export const ingredientAliasRowsSchema = z.array(z.object({ item: z.string(), ingredient_id: z.guid() }));
+
+export const recipeIngredientUseRowsSchema = z.array(z.object({ recipe_id: z.guid(), item: z.string() }));
+
 // POST /api/plans/:id/generate and POST /api/plans/:id/slots/:slotId/swap. Kept here because every file under
 // server/api is a route.
 export const generateRouteParamsSchema = z.object({ id: z.guid() });
@@ -95,9 +100,9 @@ export const slotSwapRouteParamsSchema = z.object({ id: z.guid(), slotId: z.guid
 // A seed reproduces a generation (it is logged with every one); without it the server picks one.
 const seedSchema = z.number().int().min(0).max(SEED_LIMIT - 1).optional();
 
-// Without a mode only the empty slots are filled, as in E4.
+// Without a mode only the empty slots are filled, as in E4. constraints are a plan adjustment the user confirmed (I3).
 export const generateRequestBodySchema = z
-  .object({ seed: seedSchema, mode: z.enum(GENERATION_MODES).optional() })
+  .object({ seed: seedSchema, mode: z.enum(GENERATION_MODES).optional(), constraints: planConstraintsSchema.optional() })
   .nullish()
   .transform((body) => body ?? {});
 export const slotSwapRequestBodySchema = z

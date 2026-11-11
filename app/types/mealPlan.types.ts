@@ -42,6 +42,8 @@ export type PastMealPlansResult = { status: "loaded"; plans: MealPlanSummary[]; 
 
 // Generating a plan (E4): the counts for the message, or the translation key of why nothing was filled.
 export type GenerationSummary = Extract<z.output<typeof generatePlanResponseSchema>, { status: "generated" }>;
+// What the message after a generation goes by.
+export type GenerationCounts = Pick<GenerationSummary, "emptyCount" | "compromisedCount">;
 export type GeneratePlanResult = { isGenerated: true; summary: GenerationSummary } | { isGenerated: false; errorKey: string };
 
 // Swapping a slot (E5), or the translation key of why nothing changed.

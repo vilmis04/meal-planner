@@ -67,6 +67,7 @@ const makeDependencies = (
     loadPlan: async (planId) => plans.get(planId) ?? null,
     loadRecipes: async () => [{ id: "stew", mealType: "dinner", portionDays: 1, mainProteins: ["plant"] }],
     loadSwapDiets: async () => ({}),
+    loadIngredientRecipeIds: async () => ({}),
     loadParticipants: async () => [{ userId: "ana", diet: "full", ratings: {} }],
     loadHistory: async () => [],
     applyGeneration: vi.fn(async () => "applied" as const),
