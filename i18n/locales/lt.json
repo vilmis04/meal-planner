@@ -815,6 +815,14 @@
       "change": "Keisti parduotuvę",
       "boughtAt": "Pirkta: {shop}",
       "shortfall": "Reikia dar {amount}"
+    },
+    "shopHints": {
+      "toggle": "Parduotuvių užuominos",
+      "groupByShop": "Pagal parduotuvę",
+      "usually": "Dažniausiai perkama: {shop}",
+      "last": "Paskutinį kartą pirkta: {shop}",
+      "noHintGroup": "Be užuominos",
+      "noHintGroupHint": "Anksčiau nurodytoje parduotuvėje pirkta mažiau nei 3 kartus."
     }
   },
   "insights": {

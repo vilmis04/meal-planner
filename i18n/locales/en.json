@@ -815,6 +815,14 @@
       "change": "Change shop",
       "boughtAt": "Bought at {shop}",
       "shortfall": "Needs {amount} more"
+    },
+    "shopHints": {
+      "toggle": "Shop hints",
+      "groupByShop": "By shop",
+      "usually": "Usually bought at {shop}",
+      "last": "Last bought at {shop}",
+      "noHintGroup": "No shop hint",
+      "noHintGroupHint": "Bought at a recorded shop fewer than 3 times before."
     }
   },
   "insights": {

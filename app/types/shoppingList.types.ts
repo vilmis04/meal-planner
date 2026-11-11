@@ -1,4 +1,6 @@
-import type { ShoppingItem } from "#shared/utils/shoppingList.types";
+import type { HAVE_AT_HOME_GROUP_KEY } from "#shared/utils/shoppingList";
+import type { ShoppingItem, ShoppingListGroupKey } from "#shared/utils/shoppingList.types";
+import type { NO_SHOP_HINT_GROUP_KEY, SHOP_HINT_KINDS } from "~/utils/shoppingListShopHints";
 
 interface ShoppingList {
   id: string;
@@ -60,3 +62,29 @@ export interface ShoppingListLiveHandlers {
   // Changes may have been missed (just subscribed, reconnected, back to the tab, or a change could not be read).
   onCatchUp: () => void;
 }
+
+// Where a line's item is usually bought, or was last bought (I1a), as get_shopping_list_shop_hints() works it out from
+// the viewer's purchases on other lists.
+export type ShoppingItemShopHintKind = (typeof SHOP_HINT_KINDS)[number];
+
+export interface ShoppingItemShopHint {
+  kind: ShoppingItemShopHintKind;
+  shopId: string;
+  shopName: string;
+}
+
+// A group of the list when it is grouped by recommended shop (I1a): one per shop the hints name, the lines without a
+// hint, and what is at home.
+export type ShoppingListShopGroupKey = `shop:${string}` | typeof NO_SHOP_HINT_GROUP_KEY | typeof HAVE_AT_HOME_GROUP_KEY;
+
+export interface ShoppingListShopGroup {
+  key: ShoppingListShopGroupKey;
+  // The shop's name; null for the lines without a hint and those at home.
+  shopName: string | null;
+  items: ShoppingItem[];
+  itemCount: number;
+  boughtCount: number;
+}
+
+// A group the list page shows: a category's (G3) or a recommended shop's (I1a).
+export type ShoppingListPageGroupKey = ShoppingListGroupKey | ShoppingListShopGroupKey;

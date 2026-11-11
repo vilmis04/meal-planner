@@ -2,7 +2,12 @@
 import type { Shop } from "#shared/utils/shop.types";
 import type { NewShoppingItem, ShoppingItemAmountChange } from "#shared/utils/shoppingItemEdit.types";
 import type { ShoppingItem, ShoppingListGroupKey } from "#shared/utils/shoppingList.types";
-import type { ShoppingItemEditResult } from "~/types/shoppingList.types";
+import type {
+  ShoppingItemEditResult,
+  ShoppingItemShopHint,
+  ShoppingListPageGroupKey,
+  ShoppingListShopGroup,
+} from "~/types/shoppingList.types";
 
 defineOptions({ name: "ShoppingListPage" });
 
@@ -80,6 +85,19 @@ const view = computed(() =>
 );
 const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
 
+// Store recommendations (I1a): "Usually bought at Lidl" on lines to buy, read after the list and never in the way of a
+// tick. The viewer can hide them, or group the list by recommended shop, the shop they are shopping at first. The chips
+// show only once there is a hint.
+const { hints: shopHints } = useShoppingListShopHints(
+  () => list.value?.id ?? null,
+  () => items.value.map((item) => item.id),
+);
+const { areHintsShown, isGroupedByShop, setHintsShown, setGroupedByShop } = useShoppingListShopHintPreferences();
+const NO_SHOP_HINTS: ReadonlyMap<string, ShoppingItemShopHint> = new Map();
+const hasShopHints = computed(() => shopHints.value.size > 0);
+const shownShopHints = computed(() => (areHintsShown.value ? shopHints.value : NO_SHOP_HINTS));
+const isShopView = computed(() => isGroupedByShop.value && areHintsShown.value && hasShopHints.value);
+
 // Catching up after changes may have been missed (G6): the lines are read again, and when the plan changed meanwhile
 // the list is first brought up to date, as on opening it. Losing access (left the household) shows "not found".
 const catchUp = createCoalescedRunner(async () => {
@@ -148,8 +166,18 @@ const getGroupHeading = (key: ShoppingListGroupKey) => {
   }
   return { title: t(`shoppingList.category.${key}`), hint: undefined, icon: undefined };
 };
+// The groups by recommended shop (I1a): each shop by its name, then the lines without a hint, then "Have at home".
+const getShopGroupHeading = (group: ShoppingListShopGroup) => {
+  if (group.key === HAVE_AT_HOME_GROUP_KEY) {
+    return getGroupHeading(HAVE_AT_HOME_GROUP_KEY);
+  }
+  if (group.shopName === null) {
+    return { title: t("shoppingList.shopHints.noHintGroup"), hint: t("shoppingList.shopHints.noHintGroupHint"), icon: undefined };
+  }
+  return { title: group.shopName, hint: undefined, icon: "mdi-storefront-outline" };
+};
 // Groups to shop from count "3 of 7" bought (G5); "Have at home" counts its lines, as nothing there is bought.
-const getGroupCount = (key: ShoppingListGroupKey, boughtCount: number, itemCount: number) => {
+const getGroupCount = (key: ShoppingListPageGroupKey, boughtCount: number, itemCount: number) => {
   if (key === HAVE_AT_HOME_GROUP_KEY) {
     return { countLabel: String(itemCount), countDescription: t("shoppingList.itemCount", itemCount) };
   }
@@ -158,10 +186,22 @@ const getGroupCount = (key: ShoppingListGroupKey, boughtCount: number, itemCount
     countDescription: t("shoppingList.groupProgressDescription", { bought: boughtCount, count: itemCount }),
   };
 };
+const shownGroups = computed(() => {
+  if (view.value === null) {
+    return [];
+  }
+  if (isShopView.value) {
+    const shopGroups = getShoppingListShopGroups(view.value, shopHints.value, {
+      isBoughtLast: isBoughtLast.value,
+      firstShopName: defaultShopName.value,
+    });
+    return shopGroups.map((group) => ({ ...group, ...getShopGroupHeading(group) }));
+  }
+  return view.value.groups.map((group) => ({ ...group, ...getGroupHeading(group.key) }));
+});
 const groups = computed(() =>
-  (view.value?.groups ?? []).map((group) => ({
+  shownGroups.value.map((group) => ({
     ...group,
-    ...getGroupHeading(group.key),
     ...getGroupCount(group.key, group.boughtCount, group.itemCount),
     isExpanded: isGroupExpanded(group.key),
   })),
@@ -208,9 +248,10 @@ async function handleAdd(newItem: NewShoppingItem) {
   if (listId === undefined) {
     return;
   }
-  // The new line shows in its group, which opens if it was closed.
-  if (!isGroupExpanded(newItem.category)) {
-    setGroupExpanded(newItem.category, true);
+  // The new line shows in its group, which opens if it was closed; by shop, it has no hint yet.
+  const groupKey = isShopView.value ? NO_SHOP_HINT_GROUP_KEY : newItem.category;
+  if (!isGroupExpanded(groupKey)) {
+    setGroupExpanded(groupKey, true);
   }
   reportFailure(await addItem(listId, newItem));
 }
@@ -467,6 +508,28 @@ const participantNames = computed(() => {
           <v-icon :icon="isBoughtLast ? 'mdi-check' : 'mdi-sort'" size="16" aria-hidden="true" />
           {{ t("shoppingList.boughtLast") }}
         </button>
+        <button
+          v-if="hasShopHints"
+          type="button"
+          :class="$style.chip"
+          :aria-pressed="areHintsShown"
+          data-testid="shopping-list-shop-hints"
+          @click="setHintsShown(!areHintsShown)"
+        >
+          <v-icon :icon="areHintsShown ? 'mdi-check' : 'mdi-lightbulb-outline'" size="16" aria-hidden="true" />
+          {{ t("shoppingList.shopHints.toggle") }}
+        </button>
+        <button
+          v-if="hasShopHints && areHintsShown"
+          type="button"
+          :class="$style.chip"
+          :aria-pressed="isGroupedByShop"
+          data-testid="shopping-list-by-shop"
+          @click="setGroupedByShop(!isGroupedByShop)"
+        >
+          <v-icon :icon="isGroupedByShop ? 'mdi-check' : 'mdi-storefront-outline'" size="16" aria-hidden="true" />
+          {{ t("shoppingList.shopHints.groupByShop") }}
+        </button>
       </div>
 
       <button type="button" :class="$style.addInline" data-testid="shopping-add-open" @click="isAddOpen = true">
@@ -492,6 +555,7 @@ const participantNames = computed(() => {
             :participant-names="participantNames"
             :current-user-id="user?.id ?? null"
             :shop-names="shopNames"
+            :shop-hints="shownShopHints"
             @toggle-bought="handleToggleBought"
             @toggle-at-home="handleToggleAtHome"
             @edit-amount="openAmount"
