@@ -607,6 +607,10 @@
       "title": "Where you shop",
       "hint": "Items bought per shop"
     },
+    "meals": {
+      "title": "Liked and skipped meals",
+      "hint": "Your favourites and the meals swapped out"
+    },
     "diet": {
       "title": "My diet",
       "hint": "Each step includes everything above it.",
@@ -857,6 +861,29 @@
         "action": "Open the shopping list"
       },
       "loadFailed": "Your shop insights could not be loaded. Reload the page to try again."
+    },
+    "meals": {
+      "pageTitle": "Liked and skipped meals",
+      "title": "Liked and skipped meals",
+      "intro": "From your own ratings and the plans you eat from.",
+      "liked": {
+        "title": "Most liked",
+        "description": "Recipes you rated Enjoy, by how often they were on your plans in this time.",
+        "planned": "On your plans once | On your plans {count} times",
+        "notPlanned": "Not on your plans in this time",
+        "empty": "You have not rated any recipe Enjoy yet.",
+        "browse": "Browse recipes",
+        "allEnjoyed": "See your {count} enjoyed recipe | See all {count} enjoyed recipes",
+        "allRatings": "All your ratings"
+      },
+      "skipped": {
+        "title": "Most skipped",
+        "description": "Meals swapped for another suggestion, replaced or cleared on your plans in this time.",
+        "times": "Skipped once | Skipped {count} times",
+        "empty": "Nothing skipped in this time. When a meal on your plan is swapped or replaced, it shows here.",
+        "total": "{count} skip in this time | {count} skips in this time"
+      },
+      "loadFailed": "Your meal insights could not be loaded. Reload the page to try again."
     }
   }
 }

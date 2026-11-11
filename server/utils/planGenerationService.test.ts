@@ -26,10 +26,11 @@ const withSlots = (changes: Record<string, Partial<StoredSlot>>, overrides: Part
 
 /*
  * An in-memory store: one plan the user can open and a small library. What would be written is collected; the
- * rules of apply_meal_plan_generation() themselves are tested in supabase/tests.
+ * rules of apply_meal_plan_generation() and apply_meal_plan_swap() themselves are tested in supabase/tests.
  */
 const makeStore = (plan: StoredPlan | null, overrides: Partial<PlanGenerationStore> = {}) => {
   const applied: SlotWrite[][] = [];
+  const swapped: SlotWrite[][] = [];
   const store: PlanGenerationStore = {
     loadPlan: async (planId) => (planId === plan?.id ? plan : null),
     loadRecipes: async () => [
@@ -46,9 +47,13 @@ const makeStore = (plan: StoredPlan | null, overrides: Partial<PlanGenerationSto
       applied.push([...writes]);
       return "applied";
     },
+    applySwap: async (_planId, writes) => {
+      swapped.push([...writes]);
+      return "applied";
+    },
     ...overrides,
   };
-  return { store, applied };
+  return { store, applied, swapped };
 };
 
 // Two vegetarian dinners and a 2-day lunch, so a swap has somewhere to go.
@@ -67,10 +72,12 @@ const deps = (store: PlanGenerationStore) => ({ store, createSeed: () => 7, log:
 
 describe("generatePlan", () => {
   it("fills the empty visible slots and summarises the result", async () => {
-    const { store, applied } = makeStore(makePlan());
+    const { store, applied, swapped } = makeStore(makePlan());
     const result = await generatePlan(deps(store), { planId: PLAN_ID });
 
     expect(result).toEqual({ status: "generated", filledCount: 4, emptyCount: 2, compromisedCount: 0, seed: 7 });
+    // A generation is not a swap: nothing it replaces counts as skipped.
+    expect(swapped).toHaveLength(0);
     const [assignments] = applied;
     // Snacks are skipped in this plan, so they are not touched.
     expect(assignments?.some((assignment) => assignment.mealType === "snack")).toBe(false);
@@ -203,46 +210,54 @@ describe("swapPlanSlot", () => {
 
   it("replaces the slot with another recipe and leaves every other slot alone", async () => {
     const plan = withSlots({ "0-dinner": { recipeId: "dinner-pasta" }, "1-breakfast": { recipeId: "breakfast-1" } });
-    const { store, applied } = swapStore(plan);
+    const { store, swapped } = swapStore(plan);
     const result = await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "0-dinner" });
 
     expect(result).toEqual({ status: "swapped", filledCount: 1, emptyCount: 0, compromisedCount: 0, seed: 7 });
-    expect(applied).toEqual([
+    expect(swapped).toEqual([
       [{ dayIndex: 0, mealType: "dinner", recipeId: "dinner-curry", note: null, previousRecipeId: "dinner-pasta" }],
     ]);
   });
 
+  it("writes as a swap, so the replaced recipe is recorded as skipped (I2)", async () => {
+    const { store, applied, swapped } = swapStore(withSlots({ "0-dinner": { recipeId: "dinner-pasta" } }));
+    await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "0-dinner" });
+
+    expect(swapped).toHaveLength(1);
+    expect(applied).toHaveLength(0);
+  });
+
   it("swaps both days of a batch together", async () => {
     const plan = withSlots({ "0-lunch": { recipeId: "lunch-batch" }, "1-lunch": { recipeId: "lunch-batch" } });
-    const { store, applied } = swapStore(plan);
+    const { store, swapped } = swapStore(plan);
     await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "1-lunch" });
 
-    expect(applied[0]?.map((write) => [write.dayIndex, write.recipeId, write.previousRecipeId])).toEqual([
+    expect(swapped[0]?.map((write) => [write.dayIndex, write.recipeId, write.previousRecipeId])).toEqual([
       [0, "lunch-batch-2", "lunch-batch"],
       [1, "lunch-batch-2", "lunch-batch"],
     ]);
   });
 
   it("suggests a recipe for an empty slot", async () => {
-    const { store, applied } = swapStore(makePlan());
+    const { store, swapped } = swapStore(makePlan());
     expect(await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "1-breakfast" })).toMatchObject({ status: "swapped" });
-    expect(applied[0]).toEqual([
+    expect(swapped[0]).toEqual([
       { dayIndex: 1, mealType: "breakfast", recipeId: "breakfast-1", note: null, previousRecipeId: null },
     ]);
   });
 
   it("refuses a locked slot", async () => {
-    const { store, applied } = swapStore(withSlots({ "0-dinner": { recipeId: "dinner-pasta", isLocked: true } }));
+    const { store, swapped } = swapStore(withSlots({ "0-dinner": { recipeId: "dinner-pasta", isLocked: true } }));
     expect(await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "0-dinner" })).toEqual({ status: "slot-locked" });
-    expect(applied).toHaveLength(0);
+    expect(swapped).toHaveLength(0);
   });
 
   it("says when no other recipe fits, and writes nothing", async () => {
-    const { store, applied } = swapStore(withSlots({ "0-breakfast": { recipeId: "breakfast-1" } }));
+    const { store, swapped } = swapStore(withSlots({ "0-breakfast": { recipeId: "breakfast-1" } }));
     expect(await swapPlanSlot(deps(store), { planId: PLAN_ID, slotId: "0-breakfast" })).toEqual({
       status: "no-alternative",
     });
-    expect(applied).toHaveLength(0);
+    expect(swapped).toHaveLength(0);
   });
 
   it("says when the slot or the plan cannot be found", async () => {
@@ -257,7 +272,7 @@ describe("swapPlanSlot", () => {
     expect(await swapPlanSlot(deps(empty.store), { planId: PLAN_ID, slotId: "0-dinner" })).toEqual({
       status: "no-participants",
     });
-    const changed = swapStore(makePlan(), { applyGeneration: async () => "plan-changed" });
+    const changed = swapStore(makePlan(), { applySwap: async () => "plan-changed" });
     expect(await swapPlanSlot(deps(changed.store), { planId: PLAN_ID, slotId: "0-dinner" })).toEqual({
       status: "plan-changed",
     });

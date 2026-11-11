@@ -51,4 +51,7 @@ export interface PlanGenerationStore {
   // As the signed-in user (the service role for a scheduled plan). "plan-changed" when a slot no longer holds its previous recipe, or was locked meanwhile;
   // nothing is written then.
   applyGeneration(planId: string, writes: readonly SlotWrite[]): Promise<"applied" | "plan-changed">;
+  // A swap (E5) as the signed-in user: written as applyGeneration() writes, and the recipes it replaced are recorded as
+  // skipped (I2, apply_meal_plan_swap()).
+  applySwap(planId: string, writes: readonly SlotWrite[]): Promise<"applied" | "plan-changed">;
 }

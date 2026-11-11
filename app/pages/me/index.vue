@@ -40,6 +40,14 @@ async function handleSignOut() {
           append-icon="mdi-chevron-right"
         />
       </v-card>
+      <v-card to="/me/meals" variant="flat" border :class="$style.row" data-testid="profile-preference-insights">
+        <v-list-item
+          :title="t('profile.meals.title')"
+          :subtitle="t('profile.meals.hint')"
+          prepend-icon="mdi-heart-outline"
+          append-icon="mdi-chevron-right"
+        />
+      </v-card>
       <v-card to="/household" variant="flat" border :class="$style.row">
         <v-list-item
           :title="t('profile.household.title')"

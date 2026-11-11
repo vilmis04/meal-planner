@@ -1,8 +1,3 @@
-import type { SHOP_INSIGHT_RANGES } from "~/utils/shopInsights";
-
-// A range the shop insights page (I1) sums up purchases over.
-export type ShopInsightRange = (typeof SHOP_INSIGHT_RANGES)[number];
-
 interface ShopInsightItem {
   name: string;
   // How many bought lines of this item were bought at the shop.
