@@ -5,8 +5,9 @@ const { t } = useI18n();
 <template>
   <v-app>
     <v-app-bar flat border>
+      <!-- The title takes the free space itself; a v-spacer would split it and cut the title short on phones. -->
       <v-app-bar-title>{{ t("app.name") }}</v-app-bar-title>
-      <v-spacer />
+      <AppLanguageSwitcher />
       <AppThemeToggle />
       <v-btn icon="mdi-account-circle" variant="text" to="/me" :aria-label="t('profile.open')" />
     </v-app-bar>

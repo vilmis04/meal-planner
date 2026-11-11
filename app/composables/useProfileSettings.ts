@@ -7,6 +7,7 @@ export function useProfileSettings() {
   const { profile, update } = useProfile();
   const { preference, setPreference } = useAppTheme();
   const { locale, setLocale } = useI18n();
+  const { hasUnsavedChoice, markUnsaved, clear: clearUnsavedLocale } = useUnsavedLocaleChoice();
 
   const changeTheme = async (next: ThemePreference): Promise<boolean> => {
     const previous = preference.value;
@@ -19,13 +20,21 @@ export function useProfileSettings() {
     return isSaved;
   };
 
+  // setLocale also writes the `locale` cookie. Signed out, the choice is saved to the profile at the next sign-in.
   const changeLanguage = async (next: LocaleCode): Promise<boolean> => {
     const previous = locale.value;
     await setLocale(next);
 
-    const isSaved = !profile.value || (await update({ locale: next }));
+    if (!profile.value) {
+      markUnsaved();
+      return true;
+    }
+
+    const isSaved = await update({ locale: next });
     if (!isSaved) {
       await setLocale(previous);
+    } else if (hasUnsavedChoice.value) {
+      clearUnsavedLocale();
     }
     return isSaved;
   };

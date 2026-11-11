@@ -6,6 +6,9 @@
     "switchToLight": "Switch to light theme",
     "switchToDark": "Switch to dark theme"
   },
+  "language": {
+    "switcher": "Language: {language}"
+  },
   "nav": {
     "label": "Main navigation",
     "home": "Home",

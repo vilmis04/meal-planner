@@ -7,6 +7,7 @@ const { t } = useI18n();
     <v-main>
       <header :class="$style.hero">
         <div :class="$style.toolbar">
+          <AppLanguageSwitcher is-on-hero />
           <AppThemeToggle />
         </div>
         <div :class="$style.brand">
@@ -34,7 +35,9 @@ const { t } = useI18n();
 
 .toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-1);
   max-width: var(--auth-max-width);
   margin-inline: auto;
 }
