@@ -6,6 +6,8 @@
  * (0.5 in English, 0,5 in Lithuanian), as the i18n story asks.
  */
 
+import { formatNumber } from "./localeFormat";
+
 const MAX_FRACTION_DIGITS = 2;
 
 // Null means "to taste": the caller shows its own translated label instead of a number.
@@ -14,5 +16,5 @@ export function formatAmount(amount: number | null, locale: string): string | nu
     return null;
   }
 
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: MAX_FRACTION_DIGITS }).format(amount);
+  return formatNumber(amount, locale, { maximumFractionDigits: MAX_FRACTION_DIGITS });
 }

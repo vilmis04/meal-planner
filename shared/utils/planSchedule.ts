@@ -32,6 +32,8 @@ export function getScheduleRun(
 // The calendar date on a time zone's clock at `instant`, as "YYYY-MM-DD": the scheduled job (H2) asks for each
 // schedule's own "today". Throws a RangeError for a zone the runtime does not know.
 export function getDateInTimeZone(timeZone: string, instant: Date): string {
+  // Date arithmetic, not text for the user: the parts are read as numbers.
+  // eslint-disable-next-line no-restricted-syntax
   const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
     .formatToParts(instant);
   const getPart = (type: Intl.DateTimeFormatPartTypes): string => parts.find((part) => part.type === type)?.value ?? "";

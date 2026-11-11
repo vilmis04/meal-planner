@@ -198,7 +198,8 @@
       "hate": {
         "line": "{who} marked this as hate",
         "you": "You",
-        "someone": "someone | {count} people",
+        "someone": "someone",
+        "people": "{count} person | {count} people",
         "icon": "A participant marked this recipe as hate",
         "loadFailed": "Dislikes could not be checked, so no hate warnings are shown."
       },
@@ -326,6 +327,7 @@
       "confirmIntro": "The unlocked meals are planned again with these rules:",
       "nothingToApply": "Nothing in this request can be applied. Try saying it another way.",
       "unsupportedTitle": "Not applied",
+      "unsupportedPart": "“{part}”",
       "lockedNote": "Nothing is locked, so every meal is planned again. | 1 locked meal stays as it is. | {count} locked meals stay as they are.",
       "back": "Change request",
       "apply": "Apply",

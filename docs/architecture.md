@@ -62,8 +62,10 @@ app/
   components/       UI, grouped by feature
   composables/      client state and data access (useRecipes, usePlan, useShoppingList...)
   layouts/          responsive shell (bottom nav on phones, side nav on desktop)
-  locales/          lt.json, en.json (all UI strings by key)
   middleware/       auth guard
+i18n/
+  locales/          lt.json, en.json (all UI strings by key)
+  i18n.config.ts    vue-i18n options: EN fallback, Lithuanian plural rule, Vuetify texts
 server/
   api/              thin HTTP handlers: validate input, call domain code, return JSON
   middleware/       Supabase session per request
@@ -140,11 +142,11 @@ Rules:
 
 **AI protein swaps (D2).** On demand: the first request for a recipe and diet (`GET /api/recipes/:id/swaps/:diet`, or E4 on the server) claims the pair in `recipe_protein_swaps`, calls the Gemini API once, validates the structured output (ingredient exists, replacement fits the diet) and stores it per language. Every later request reads the stored row, so each pair costs one AI call; concurrent first requests make one call between them, and failed pairs retry after a growing wait. An optional backfill script (`npm run swaps:generate`) fills all pairs ahead of time through the same service.
 
-**Translations (X1, X1b).** UI strings come from `locales/*.json` through the i18n module; recipe content is read from translation tables joined on the active locale with LT fallback.
+**Translations (X1, X1b).** UI strings come from `i18n/locales/*.json` through the i18n module; numbers, dates and lists are formatted by `shared/utils/localeFormat.ts` only. Recipe content is read from translation tables joined on the active locale with LT fallback.
 
 ## 7. Cross-cutting concerns
 
-- **i18n:** Nuxt i18n module, LT and EN, locale in cookie then profile. CI check for missing keys.
+- **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it with X2.
 - **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash.
 - **Responsive/mobile-first:** shared layout shell and breakpoints; consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.

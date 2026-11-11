@@ -25,7 +25,7 @@ const SUCCESS_KEY: Partial<Record<DialogKind, string>> = {
 
 const props = defineProps<{ household: DeepReadonly<Household> }>();
 
-const { t, d } = useI18n();
+const { t, locale } = useI18n();
 const user = useSupabaseUser();
 const { isOwner, removeMember, transferOwnership, leave, deleteHousehold } = useHousehold();
 const { show } = useAppSnackbar();
@@ -47,7 +47,7 @@ const memberSubtitle = (member: DeepReadonly<HouseholdMember>): string =>
     role: t(member.role === "owner" ? "household.overview.roleOwner" : "household.overview.roleMember"),
     detail:
       (isCurrentUser(member) && user.value?.email) ||
-      t("household.overview.joined", { date: d(new Date(member.joinedAt), { day: "numeric", month: "short" }) }),
+      t("household.overview.joined", { date: formatDateTime(new Date(member.joinedAt), locale.value, { day: "numeric", month: "short" }) }),
   });
 
 // The dialog keeps its kind and member while it closes, so its text does not change as it fades out.

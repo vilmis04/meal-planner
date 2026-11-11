@@ -180,7 +180,7 @@ const rules = computed(() =>
         >
           <p :class="$style.unsupportedTitle">{{ t("plan.adjust.unsupportedTitle") }}</p>
           <ul :class="$style.unsupported">
-            <li v-for="part in adjustment.unsupported" :key="part">“{{ part }}”</li>
+            <li v-for="part in adjustment.unsupported" :key="part">{{ t("plan.adjust.unsupportedPart", { part }) }}</li>
           </ul>
         </v-alert>
         <p v-if="rules.length" :class="$style.hint">

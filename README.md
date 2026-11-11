@@ -22,11 +22,12 @@ Runs on `http://localhost:3000`.
 ## Linting
 
 ```bash
-npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs)
+npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs), then the translation check
 npm run lint:fix   # apply auto-fixes
+npm run i18n:check # the translation check alone (see Translations)
 ```
 
-Vue single-file components put `<script>` first, then `<template>`, then `<style>` (`vue/block-order`).
+Vue single-file components put `<script>` first, then `<template>`, then `<style>` (`vue/block-order`). Templates may not hold literal text (`vue/no-bare-strings-in-template`, see Translations).
 
 ## Production
 
@@ -335,4 +336,9 @@ supabase test db
 
 ## Translations
 
-UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language, falls back to English, and is remembered in a `locale` cookie. Once signed in, the language saved on the profile wins. Every key must exist in both files.
+UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language (`Accept-Language` on the first request), falls back to English, and is remembered in a `locale` cookie. Once signed in, the language saved on the profile wins. `<html lang>` follows the active language. vue-i18n's own options are in `i18n/i18n.config.ts`: English as the fallback for a missing message, the Lithuanian plural rule, and Vuetify's own texts (`$vuetify.*`, from `vuetify/locale`).
+
+- **No literal text.** ESLint's `vue/no-bare-strings-in-template` refuses text in templates and in user-facing attributes and Vuetify props (`title`, `label`, `text`, `hint`, `placeholder`, `aria-label` and others, listed in `eslint.config.mjs`). Punctuation such as `·` is allowed. Quotation marks are language-specific, so they are messages too (`plan.adjust.unsupportedPart`).
+- **Translation check.** `npm run i18n:check` (also run by `npm run lint`; `scripts/check-locales.ts`, logic and tests in `scripts/localeCheck.ts`) fails when a key is missing from a locale or empty, a message does not compile, placeholders differ between the locales, a plural message has a number of forms its language does not take, or the code (`app/`, `server/`, `shared/`, tests excluded) names a key, or the start of a `` `key.${…}` `` template, that no locale has.
+- **Plurals.** Pass the number as the plural argument: `t("household.overview.memberCount", { count }, count)` or `t("shoppingList.itemCount", count)`. English takes `one | other` or `zero | one | other`. Lithuanian takes `one | few | other` (1, 21, 31 · 2–9, 22–29 · 0, 10–20, 30), or `zero | one | few | other` where English has a zero form (`i18n/pluralRules.ts`, from `Intl.PluralRules`). Its `one` form must show `{count}`, because 21 uses it too; a message that reads the same for every number ("Prekių: {count}") has one form. A word that only fits exactly one ("someone", "once" in Lithuanian) is its own key, chosen in the code.
+- **Numbers, dates and lists.** Format them through `shared/utils/localeFormat.ts` (`formatNumber`, `formatList`, `formatDateTime`, `formatDateTimeRange`; plan dates through `app/utils/formatPlanDate.ts`, which uses it) with the active `locale`. English formats as `en-GB` (day first, "9 Nov"), Lithuanian as `lt-LT` with month names instead of "11-09"; Node's and the browser's different spaces are made plain, so server and browser render the same text. ESLint refuses `new Intl.NumberFormat/DateTimeFormat/ListFormat/PluralRules/…` and `toLocaleString()` elsewhere.
