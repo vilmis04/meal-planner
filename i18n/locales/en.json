@@ -603,6 +603,10 @@
         "loadFailed": "Your ratings could not be loaded. Reload the page to try again."
       }
     },
+    "shops": {
+      "title": "Where you shop",
+      "hint": "Items bought per shop"
+    },
     "diet": {
       "title": "My diet",
       "hint": "Each step includes everything above it.",
@@ -811,6 +815,40 @@
       "change": "Change shop",
       "boughtAt": "Bought at {shop}",
       "shortfall": "Needs {amount} more"
+    }
+  },
+  "insights": {
+    "range": {
+      "label": "Time range",
+      "options": {
+        "last_30_days": "30 days",
+        "last_90_days": "3 months",
+        "last_year": "12 months",
+        "all_time": "All time"
+      }
+    },
+    "shops": {
+      "pageTitle": "Where you shop",
+      "title": "Where you shop",
+      "intro": {
+        "household": "From the shops your household picked when ticking items bought.",
+        "individual": "From the shops you picked when ticking items bought."
+      },
+      "summary": "{purchases} at {shops}",
+      "purchaseCount": "{count} item bought | {count} items bought",
+      "shopCount": "{count} shop | {count} shops",
+      "itemCount": "{count} different item | {count} different items",
+      "share": "{percent}%",
+      "shareLabel": "{percent}% of the items bought at a shop were bought at {shop}",
+      "topItems": "Bought most often",
+      "timesBought": "once | {count} times",
+      "withoutShop": "{count} bought item has no shop recorded and is not counted. | {count} bought items have no shop recorded and are not counted.",
+      "empty": {
+        "title": "No shops recorded for this time",
+        "hint": "When you tick an item bought on the shopping list, pick the shop you bought it at.",
+        "action": "Open the shopping list"
+      },
+      "loadFailed": "Your shop insights could not be loaded. Reload the page to try again."
     }
   }
 }

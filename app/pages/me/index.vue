@@ -32,6 +32,14 @@ async function handleSignOut() {
           append-icon="mdi-chevron-right"
         />
       </v-card>
+      <v-card to="/me/shops" variant="flat" border :class="$style.row" data-testid="profile-shop-insights">
+        <v-list-item
+          :title="t('profile.shops.title')"
+          :subtitle="t('profile.shops.hint')"
+          prepend-icon="mdi-storefront-outline"
+          append-icon="mdi-chevron-right"
+        />
+      </v-card>
       <v-card to="/household" variant="flat" border :class="$style.row">
         <v-list-item
           :title="t('profile.household.title')"
