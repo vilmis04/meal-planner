@@ -6,6 +6,9 @@
     "switchToLight": "Įjungti šviesią temą",
     "switchToDark": "Įjungti tamsią temą"
   },
+  "language": {
+    "switcher": "Kalba: {language}"
+  },
   "nav": {
     "label": "Pagrindinis meniu",
     "home": "Pradžia",

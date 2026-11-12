@@ -1,7 +1,8 @@
 import type { Profile } from "~/types/profile.types";
 
 // Keeps the signed-in user's profile loaded and makes its theme and language win over
-// the cookies, so settings follow the user to a new device or browser.
+// the cookies, so settings follow the user to a new device or browser. A language chosen
+// while signed out is the exception: it is saved to the profile instead (resolveProfileLocale).
 export default defineNuxtPlugin({
   name: "profile",
   dependsOn: ["supabase", "theme"],
@@ -10,16 +11,24 @@ export default defineNuxtPlugin({
     const { profile, load, update, clear } = useProfile();
     const { clear: clearRatings } = useRecipeRatings();
     const { setPreference } = useAppTheme();
+    const { hasUnsavedChoice, clear: clearUnsavedLocale } = useUnsavedLocaleChoice();
     const i18n = nuxtApp.$i18n;
 
     const applyProfile = async ({ theme, locale }: Readonly<Profile>): Promise<void> => {
       setPreference(theme);
 
-      // A new profile has no language yet: keep the one the user is browsing in.
-      if (locale === null) {
-        await update({ locale: i18n.locale.value });
-      } else if (locale !== i18n.locale.value) {
-        await i18n.setLocale(locale);
+      const { locale: nextLocale, isSaveNeeded } = resolveProfileLocale({
+        profileLocale: locale,
+        activeLocale: i18n.locale.value,
+        hasUnsavedChoice: hasUnsavedChoice.value,
+      });
+      if (nextLocale !== i18n.locale.value) {
+        await i18n.setLocale(nextLocale);
+      }
+      // A failed save keeps the mark, so the next sign-in or page load tries again.
+      const isSaved = !isSaveNeeded || (await update({ locale: nextLocale }));
+      if (isSaved && hasUnsavedChoice.value) {
+        clearUnsavedLocale();
       }
     };
 

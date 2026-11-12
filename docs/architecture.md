@@ -146,7 +146,7 @@ Rules:
 
 ## 7. Cross-cutting concerns
 
-- **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it with X2.
+- **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback; a language picked while signed out is saved to the profile at the next sign-in instead (X1a). The switcher is in the app bar of both layouts. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it with X2.
 - **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash.
 - **Responsive/mobile-first:** shared layout shell and breakpoints; consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.

@@ -282,6 +282,7 @@ As a developer I want all UI text behind translation keys so no string is hard-c
 As a user I want to switch between LT and EN.
 - Switcher is visible on every page, including login; the change applies immediately without reload.
 - Choice persists (cookie; saved to profile once signed in, see A3) and is used on the next visit.
+- Built as `AppLanguageSwitcher.vue` in the app bar of both layouts (the auth one covers login, sign-up and password reset): an "EN"/"LT" pill, with the translate icon on the login hero as in the mock-up, opening a menu of the language names. It switches through `useProfileSettings().changeLanguage()` (X1's `setLocale`, the `locale` cookie, saved to the profile when signed in), with no reload. Precedence is the latest explicit choice: the profile's language wins when it loads and updates the cookie, except that a language picked while signed out (session cookie `locale-unsaved`) is kept at the next sign-in and saved to the profile (`resolveProfileLocale()`, see README, "Translations"). The app bar title now takes the free space itself, so the extra button does not cut it short on phones. The mock-up shows only the closed pill, so the menu follows Vuetify's list menu.
 
 ### X1b. Translatable recipe content (L, Phase 2)
 As a user I want recipes and tips in my language.
