@@ -57,7 +57,7 @@ async function toggle() {
 
 .textButton {
   flex: 0 0 auto;
-  min-height: 44px;
+  min-height: var(--touch-target);
   text-transform: none;
 }
 

@@ -36,7 +36,7 @@ const { t } = useI18n();
 <style module>
 /* A touch target of at least 44 px. */
 .trigger {
-  width: 44px;
-  height: 44px;
+  width: var(--touch-target);
+  height: var(--touch-target);
 }
 </style>

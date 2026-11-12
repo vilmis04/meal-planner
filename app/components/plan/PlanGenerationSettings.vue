@@ -91,8 +91,8 @@ const cooldownOptions = computed(() =>
 /* Seven 44px circles fit one row on a 360px phone. */
 .chip {
   justify-content: center;
-  width: 44px;
-  height: 44px !important;
+  width: var(--touch-target);
+  height: var(--touch-target) !important;
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 999px;

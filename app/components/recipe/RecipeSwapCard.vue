@@ -107,7 +107,7 @@ const dietLabel = computed(() => t(`profile.diet.options.${props.diet}.label`).t
 /* A text link in the design, with a full 44px tap target that doesn't push the card taller. */
 .toggle {
   flex: none;
-  height: 44px !important;
+  height: var(--touch-target) !important;
   margin-block: -10px;
   margin-inline-end: -8px;
   padding-inline: var(--space-2) !important;

@@ -23,6 +23,7 @@
   },
   "nav": {
     "label": "Pagrindinis meniu",
+    "brand": "Meal Planner pradžia",
     "home": "Pradžia",
     "plan": "Planas",
     "list": "Sąrašas",
@@ -43,6 +44,10 @@
       "tab": "Sukurti paskyrą",
       "submit": "Sukurti paskyrą",
       "signInToContinue": "Paskyra sukurta. Prisijunkite, kad galėtumėte tęsti."
+    },
+    "password": {
+      "show": "Rodyti slaptažodį",
+      "hide": "Slėpti slaptažodį"
     },
     "forgotPassword": {
       "pageTitle": "Slaptažodžio atkūrimas",
@@ -225,6 +230,11 @@
         "only": "Tik {day}",
         "both": "{first} + {last}",
         "range": "{first} – {last}"
+      },
+      "preview": {
+        "label": "Pasirinktas receptas",
+        "choose": "Pasirinkite receptą sąraše, kad jį čia pamatytumėte.",
+        "use": "Naudoti: {day}"
       },
       "saved": "Receptas pridėtas",
       "savedBatch": "Receptas pridėtas abiem dienoms",
@@ -753,6 +763,7 @@
     "pageTitle": "Pirkinių sąrašas",
     "title": "Pirkinių sąrašas",
     "open": "Pirkinių sąrašas",
+    "openFull": "Atidaryti pirkinių sąrašą atskirame puslapyje",
     "back": "Atgal į planą",
     "itemCount": "Prekių nėra | {count} prekė | {count} prekės | {count} prekių",
     "groupProgress": "{bought} iš {count}",
@@ -803,7 +814,8 @@
       "amount": "Kiekis (nebūtina)",
       "unit": "Vienetas",
       "save": "Pridėti",
-      "cancel": "Atšaukti"
+      "cancel": "Atšaukti",
+      "done": "Baigti"
     },
     "item": {
       "actions": "Veiksmai: {name}",

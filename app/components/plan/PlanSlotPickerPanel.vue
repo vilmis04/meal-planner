@@ -3,7 +3,7 @@ import type { DeepReadonly } from "vue";
 import type { HatedRecipes, MealPlanSlot } from "~/types/mealPlan.types";
 import type { RecipeSummary } from "~/types/recipe.types";
 import type { Diet } from "#shared/utils/diet";
-import type { PlanMemberRef } from "#shared/utils/slotPicker";
+import type { BatchTarget, PlanMemberRef } from "#shared/utils/slotPicker";
 import type { RecipeFilter } from "#shared/utils/slotPicker.types";
 
 const props = defineProps<{
@@ -29,6 +29,8 @@ const props = defineProps<{
   participantDiets: readonly Diet[] | null;
   // Recipe id → the day it was last planned shortly before this plan.
   recentRecipes: ReadonlyMap<string, string> | null;
+  // From 960px (X4): a tap selects a recipe and shows it in full beside the list, where it is then chosen.
+  isWide?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -150,17 +152,53 @@ const pendingTarget = computed(() => (pendingRecipe.value ? batchTargetOf(pendin
 const recipeName = (recipeId: string | null): string =>
   props.recipes?.find((recipe) => recipe.id === recipeId)?.name ?? t("plan.slot.unknownRecipe");
 
-const spanLabel = computed(() => {
-  const target = pendingTarget.value;
-  const last = target?.slots.at(-1);
-  if (!target || !last) {
+// "Tue + Wed" for one more day, "Tue – Thu" for more.
+const getSpanLabel = (target: BatchTarget<MealPlanSlot>): string => {
+  const last = target.slots.at(-1);
+  if (!last) {
     return "";
   }
   const first = weekday(props.target.dayIndex);
   return target.slots.length === 1
     ? t("plan.slot.offer.both", { first, last: weekday(last.dayIndex) })
     : t("plan.slot.offer.range", { first, last: weekday(last.dayIndex) });
+};
+const spanLabel = computed(() => (pendingTarget.value ? getSpanLabel(pendingTarget.value) : ""));
+
+// The wide picker's selected recipe, shown beside the list: the slot's own recipe until another is tapped.
+const previewRecipeId = ref<string | null>(props.target.recipeId);
+const previewRecipe = computed(() => props.recipes?.find((recipe) => recipe.id === previewRecipeId.value) ?? null);
+const previewTarget = computed(() => (previewRecipe.value ? batchTargetOf(previewRecipe.value) : null));
+const getReplacesLine = (target: BatchTarget<MealPlanSlot>): string =>
+  t("plan.slot.offer.replaces", {
+    names: formatNames(target.replaced.map((replaced) => `${weekday(replaced.dayIndex)}: ${recipeName(replaced.recipeId)}`)),
+  });
+// "Use for Tue", or "Use for Tue + Wed" when the same batch already fills the next days and stays whole.
+const previewUseLabel = computed(() => {
+  const target = previewTarget.value;
+  if (!target || target.fillDays <= 1) {
+    return t("plan.slot.preview.use", { day: weekday(props.target.dayIndex) });
+  }
+  return t("plan.slot.preview.use", { day: getSpanLabel(target) });
 });
+
+function choosePreview(fillAll: boolean) {
+  const recipe = previewRecipe.value;
+  const target = previewTarget.value;
+  if (!recipe || !target || props.disabled) {
+    return;
+  }
+  emit("choose", recipe.id, fillAll ? target.fillDays : 1);
+}
+
+function select(recipe: DeepReadonly<RecipeSummary>) {
+  if (props.isWide) {
+    previewRecipeId.value = recipe.id;
+    pendingRecipeId.value = null;
+    return;
+  }
+  pick(recipe);
+}
 
 function pick(recipe: DeepReadonly<RecipeSummary>) {
   if (props.disabled) {
@@ -193,13 +231,15 @@ watch(
     query.value = "";
     selectedFilters.value = [];
     pendingRecipeId.value = null;
+    previewRecipeId.value = props.target.recipeId;
     list.value?.scrollTo({ top: 0 });
   },
 );
 </script>
 
 <template>
-  <div :class="$style.panel" data-testid="slot-picker">
+  <div :class="[$style.panel, isWide && $style.wide]" data-testid="slot-picker">
+    <div :class="$style.chooser">
     <header :class="$style.header">
       <div :class="$style.heading">
         <span :class="$style.context" data-testid="slot-picker-context">{{ header }}</span>
@@ -255,6 +295,7 @@ watch(
           filter
           variant="outlined"
           size="small"
+          :class="$style.filterChip"
           :data-testid="`slot-picker-filter-${filter}`"
         >
           {{ t(`plan.slot.filters.${filter}`) }}
@@ -272,12 +313,18 @@ watch(
             type="button"
             :class="[
               $style.row,
-              { [$style.current]: recipe.id === target.recipeId, [$style.pending]: recipe.id === pendingRecipeId },
+              {
+                [$style.current]: recipe.id === target.recipeId,
+                [$style.pending]: recipe.id === pendingRecipeId,
+                [$style.previewed]: isWide && recipe.id === previewRecipeId,
+              },
             ]"
             :disabled="disabled"
-            :aria-pressed="recipe.id === target.recipeId"
+            :aria-pressed="isWide ? undefined : recipe.id === target.recipeId"
+            :aria-current="isWide && recipe.id === previewRecipeId ? 'true' : undefined"
+            :aria-controls="isWide ? 'slot-picker-preview' : undefined"
             data-testid="slot-picker-recipe"
-            @click="pick(recipe)"
+            @click="select(recipe)"
           >
             <span :class="$style.tile" aria-hidden="true">
               <v-icon icon="mdi-silverware-fork-knife" size="20" />
@@ -302,6 +349,13 @@ watch(
             <v-icon
               v-if="recipe.id === target.recipeId"
               icon="mdi-check-circle"
+              color="primary"
+              :class="$style.check"
+              aria-hidden="true"
+            />
+            <v-icon
+              v-else-if="isWide && recipe.id === previewRecipeId"
+              icon="mdi-chevron-right"
               color="primary"
               :class="$style.check"
               aria-hidden="true"
@@ -335,20 +389,17 @@ watch(
           }}
         </span>
         <span v-if="pendingTarget.replaced.length" :class="$style.replaces" data-testid="slot-picker-offer-replaces">
-          {{
-            t("plan.slot.offer.replaces", {
-              names: formatNames(pendingTarget.replaced.map((replaced) => `${weekday(replaced.dayIndex)}: ${recipeName(replaced.recipeId)}`)),
-            })
-          }}
+          {{ getReplacesLine(pendingTarget) }}
         </span>
       </div>
       <div :class="$style.offerActions">
-        <v-btn variant="outlined" :disabled="disabled" data-testid="slot-picker-offer-one" @click="confirmPending(false)">
+        <v-btn variant="outlined" size="large" :disabled="disabled" data-testid="slot-picker-offer-one" @click="confirmPending(false)">
           {{ t("plan.slot.offer.only", { day: weekday(target.dayIndex) }) }}
         </v-btn>
         <v-btn
           color="primary"
           variant="flat"
+          size="large"
           prepend-icon="mdi-calendar-range"
           :disabled="disabled"
           :loading="disabled"
@@ -365,6 +416,7 @@ watch(
         variant="text"
         color="error"
         prepend-icon="mdi-close-circle-outline"
+        size="large"
         :disabled="disabled"
         data-testid="slot-picker-clear"
         @click="emit('clear')"
@@ -381,6 +433,7 @@ watch(
         variant="tonal"
         color="primary"
         prepend-icon="mdi-shuffle-variant"
+        size="large"
         :disabled="disabled"
         :loading="isSwapping"
         :class="$style.swap"
@@ -391,6 +444,51 @@ watch(
       </v-btn>
     </footer>
   </div>
+
+    <PlanSlotRecipePreview v-if="isWide" :recipe-id="previewRecipeId">
+      <template #actions>
+        <span v-if="previewRecipeId === target.recipeId" :class="$style.previewCurrent" data-testid="slot-picker-preview-current">
+          <v-icon icon="mdi-check-circle" color="primary" size="18" aria-hidden="true" />
+          {{ t("plan.slot.current") }}
+        </span>
+        <template v-else-if="previewRecipe && previewTarget">
+          <span v-if="previewTarget.isOffered && previewTarget.replaced.length" :class="$style.replaces" data-testid="slot-picker-preview-replaces">
+            {{ getReplacesLine(previewTarget) }}
+          </span>
+          <template v-if="previewTarget.isOffered">
+            <v-btn variant="outlined" size="large" :disabled="disabled" data-testid="slot-picker-preview-one" @click="choosePreview(false)">
+              {{ t("plan.slot.offer.only", { day: weekday(target.dayIndex) }) }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="large"
+              prepend-icon="mdi-calendar-range"
+              :disabled="disabled"
+              :loading="disabled"
+              data-testid="slot-picker-preview-all"
+              @click="choosePreview(true)"
+            >
+              {{ t("plan.slot.preview.use", { day: getSpanLabel(previewTarget) }) }}
+            </v-btn>
+          </template>
+          <v-btn
+            v-else
+            color="primary"
+            variant="flat"
+            size="large"
+            prepend-icon="mdi-calendar-check"
+            :disabled="disabled"
+            :loading="disabled"
+            data-testid="slot-picker-preview-use"
+            @click="choosePreview(true)"
+          >
+            {{ previewUseLabel }}
+          </v-btn>
+        </template>
+      </template>
+    </PlanSlotRecipePreview>
+  </div>
 </template>
 
 <style module>
@@ -400,6 +498,35 @@ watch(
   min-height: 0;
   max-height: 100%;
   background: rgb(var(--v-theme-surface));
+}
+
+.chooser {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Wide: the list on the left, the selected recipe beside it, as in the desktop design. */
+.wide {
+  display: grid;
+  grid-template-columns: var(--pane-picker-width) minmax(0, 1fr);
+  height: 100%;
+}
+
+.previewed {
+  box-shadow: inset 0 0 0 2px rgba(var(--v-theme-primary), 0.5);
+}
+
+.previewCurrent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  margin-right: auto;
+  color: var(--color-muted);
+  font-size: 14px;
 }
 
 .header {
@@ -434,6 +561,11 @@ watch(
 
 .search {
   padding: 0 var(--space-3) var(--space-2);
+}
+
+/* Small chips, as tall as a touch target. */
+.filterChip {
+  min-height: var(--touch-target);
 }
 
 /* Kept whole above the scrolling list. */

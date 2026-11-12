@@ -33,7 +33,7 @@ const view = computed(() => (result.value?.status === "loaded" ? getShopInsights
 </script>
 
 <template>
-  <div :class="$style.page">
+  <LayoutPage width="medium" is-compact>
     <header :class="$style.header">
       <h1 :class="$style.title">{{ t("insights.shops.title") }}</h1>
       <p :class="$style.intro">{{ household ? t("insights.shops.intro.household") : t("insights.shops.intro.individual") }}</p>
@@ -64,24 +64,16 @@ const view = computed(() => (result.value?.status === "loaded" ? getShopInsights
         </v-btn>
       </v-card>
 
-      <InsightsShopCard v-for="shop in view.shops" :key="shop.id" :shop="shop" />
+      <InsightsShopCard v-for="shop in view.shops" :key="shop.id" :shop="shop" :class="$style.shopCard" />
 
       <p v-if="view.withoutShopCount > 0" :class="$style.hint" data-testid="insights-without-shop">
         {{ t("insights.shops.withoutShop", { count: view.withoutShopCount }, view.withoutShopCount) }}
       </p>
     </div>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
 .header {
   display: flex;
   flex-direction: column;
@@ -104,6 +96,19 @@ const view = computed(() => (result.value?.status === "loaded" ? getShopInsights
   flex-direction: column;
   gap: var(--space-3);
   transition: opacity 0.2s;
+}
+
+/* Side by side from 960px, where there is room. */
+@media (min-width: 960px) {
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
+  }
+
+  .results > :not(.shopCard) {
+    grid-column: 1 / -1;
+  }
 }
 
 /* The previous range stays on screen, dimmed, while the next one loads. */
@@ -131,6 +136,10 @@ const view = computed(() => (result.value?.status === "loaded" ? getShopInsights
 .hint {
   margin: 0;
   color: var(--color-muted);
+}
+
+.shopCard {
+  min-width: 0;
 }
 
 .action {

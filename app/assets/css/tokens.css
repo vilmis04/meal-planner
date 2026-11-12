@@ -10,13 +10,31 @@
   --radius-md: 8px;
   --radius-lg: 16px;
 
+  /*
+   * Layout breakpoints (X4): Vuetify's display thresholds, defined in shared/utils/layoutBreakpoints.ts. Media queries
+   * cannot read these, so they write the number (`(min-width: 960px)`, `(max-width: 959.98px)`); `npm run
+   * layout:check` keeps both in step.
+   */
   --breakpoint-sm: 600px;
   --breakpoint-md: 960px;
   --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1920px;
 
-  --layout-max-width: 1120px;
-  --auth-max-width: 440px;
+  /* Page widths for LayoutPage (X4): forms and settings, lists to read, two panes, and the plan's full week. */
+  --page-narrow-width: 440px;
+  --page-medium-width: 720px;
+  --page-wide-width: 1120px;
+  --page-full-width: 1680px;
+  --page-gutter: var(--space-3);
 
+  /* Side panes of LayoutSplit: the recipe list, a plan's shopping list, the slot picker's recipes. */
+  --pane-list-width: 320px;
+  --pane-picker-width: 400px;
+
+  /* The smallest touch target on every screen size. */
+  --touch-target: 44px;
+
+  --app-bar-height: 64px;
   --nav-height: 72px;
   --nav-rail-width: 88px;
 }

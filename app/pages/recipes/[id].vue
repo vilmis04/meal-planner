@@ -23,16 +23,7 @@ const listLocation = computed(() => ({ path: "/recipes", query: route.query }));
 
 <template>
   <div :class="$style.page">
-    <v-btn
-      :to="listLocation"
-      :class="$style.back"
-      exact
-      variant="text"
-      prepend-icon="mdi-arrow-left"
-      data-testid="recipe-back"
-    >
-      {{ t("recipes.detail.back") }}
-    </v-btn>
+    <LayoutBackButton :to="listLocation" :label="t('recipes.detail.back')" :class="$style.back" data-testid="recipe-back" />
 
     <RecipeDetail v-if="recipe" :recipe="recipe" />
     <v-alert v-else-if="result?.status === 'not-found'" type="warning" variant="tonal" data-testid="recipe-not-found">
@@ -52,11 +43,6 @@ const listLocation = computed(() => ({ path: "/recipes", query: route.query }));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.back {
-  align-self: flex-start;
-  min-height: 44px;
 }
 
 /* Two panes show the list beside the recipe, so there is nothing to go back to. */

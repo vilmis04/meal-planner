@@ -134,7 +134,7 @@ function usePlanAmount() {
 
 .reset {
   align-self: flex-start;
-  min-height: 44px;
+  min-height: var(--touch-target);
 }
 
 .actions {

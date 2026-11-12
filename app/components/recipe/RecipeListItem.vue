@@ -92,8 +92,8 @@ const kcal = computed(() => {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   border-radius: 10px;
   background-color: color-mix(in srgb, var(--color-muted) 14%, transparent);
   color: var(--color-muted);

@@ -230,7 +230,7 @@ const addedByLabel = (item: ShoppingItem): string | null => {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: 0 4px 0 14px;
   border: none;
   border-radius: var(--radius-md);
@@ -315,7 +315,7 @@ button.line:focus-visible {
 /* A touch target of at least 44 px. */
 .trigger {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: var(--touch-target);
+  height: var(--touch-target);
 }
 </style>

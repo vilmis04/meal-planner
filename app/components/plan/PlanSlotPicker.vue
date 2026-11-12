@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { useDisplay } from "vuetify";
-
-// The frame for choosing a recipe for a slot (E3): a bottom sheet on phones, a dialog from 960px
-// (--breakpoint-md). The page puts PlanSlotPickerPanel inside it.
+// The frame for choosing a recipe for a slot (E3): a bottom sheet on phones, and from 960px (md) a wide dialog with
+// the list beside the selected recipe (X4). The page puts PlanSlotPickerPanel inside it, wide from the same width.
 const isOpen = defineModel<boolean>({ required: true });
 const props = defineProps<{ busy?: boolean }>();
 
-const { mdAndUp } = useDisplay();
+const mdAndUp = useBreakpointUp("md");
 </script>
 
 <template>
-  <v-dialog v-if="mdAndUp" v-model="isOpen" max-width="560" height="min(720px, 85vh)" :persistent="props.busy">
+  <v-dialog v-if="mdAndUp" v-model="isOpen" max-width="1200" height="min(820px, 90vh)" :persistent="props.busy">
     <v-card :class="$style.card" rounded="lg">
       <slot />
     </v-card>

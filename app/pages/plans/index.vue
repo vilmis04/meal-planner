@@ -59,10 +59,10 @@ async function showOlderPlans() {
 </script>
 
 <template>
-  <div :class="$style.page">
+  <LayoutPage width="medium">
     <header :class="$style.header">
       <h1 :class="$style.title">{{ t("plan.title") }}</h1>
-      <v-btn to="/plans/new" color="primary" prepend-icon="mdi-plus" :class="$style.new" data-testid="plans-new">
+      <v-btn to="/plans/new" color="primary" size="large" prepend-icon="mdi-plus" :class="$style.new" data-testid="plans-new">
         {{ t("plan.list.new") }}
       </v-btn>
     </header>
@@ -125,18 +125,10 @@ async function showOlderPlans() {
         </v-btn>
       </section>
     </template>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
 .header {
   display: flex;
   align-items: center;

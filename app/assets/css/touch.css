@@ -1,0 +1,7 @@
+/*
+ * Touch targets (X4): every control is at least --touch-target (44 px) in both directions on every screen. Vuetify's
+ * switches, checkboxes and radios default to 40 px; this makes their control 44 px without changing how they look.
+ */
+.v-selection-control.v-selection-control {
+  --v-selection-control-size: var(--touch-target);
+}

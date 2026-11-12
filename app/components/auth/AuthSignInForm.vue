@@ -66,10 +66,14 @@ async function handleSubmit(event: SubmitEventPromise) {
 .forgotPassword {
   display: flex;
   justify-content: flex-end;
-  margin-top: calc(-1 * var(--space-3));
+  margin-top: calc(-1 * var(--space-4));
 }
 
+/* A text link with a full touch target. */
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
   color: var(--color-primary);
   font-size: 14px;
   font-weight: 600;

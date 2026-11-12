@@ -23,6 +23,7 @@
   },
   "nav": {
     "label": "Main navigation",
+    "brand": "Meal Planner home",
     "home": "Home",
     "plan": "Plan",
     "list": "List",
@@ -43,6 +44,10 @@
       "tab": "Create account",
       "submit": "Create account",
       "signInToContinue": "Your account was created. Sign in to continue."
+    },
+    "password": {
+      "show": "Show password",
+      "hide": "Hide password"
     },
     "forgotPassword": {
       "pageTitle": "Reset password",
@@ -225,6 +230,11 @@
         "only": "Only {day}",
         "both": "{first} + {last}",
         "range": "{first} – {last}"
+      },
+      "preview": {
+        "label": "Selected recipe",
+        "choose": "Select a recipe in the list to see it here.",
+        "use": "Use for {day}"
       },
       "saved": "Recipe added",
       "savedBatch": "Recipe added to both days",
@@ -753,6 +763,7 @@
     "pageTitle": "Shopping list",
     "title": "Shopping list",
     "open": "Shopping list",
+    "openFull": "Open the shopping list on its own page",
     "back": "Back to plan",
     "itemCount": "no items | 1 item | {count} items",
     "groupProgress": "{bought} of {count}",
@@ -803,7 +814,8 @@
       "amount": "Amount (optional)",
       "unit": "Unit",
       "save": "Add",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "done": "Done"
     },
     "item": {
       "actions": "Actions for {name}",

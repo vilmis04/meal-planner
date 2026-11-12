@@ -36,7 +36,7 @@ Components:
 | Component | Role | Notes |
 |---|---|---|
 | Nuxt 4 / Nitro (`node-server` preset) | SSR, UI, server API routes | Exists. Built by the repo `Dockerfile` (multi-stage, Node 22 alpine, non-root). |
-| Vuetify + CSS Modules | UI components and layout | Exists. Mobile-first breakpoints; themes light/dark via tokens. |
+| Vuetify + CSS Modules | UI components and layout | Exists. Mobile-first breakpoints (Vuetify's display thresholds, `shared/utils/layoutBreakpoints.ts`) and shared layout components (X4); themes light/dark via tokens. |
 | Supabase Postgres | All data, RLS, migrations | Exists (recipes, ingredients, tips). |
 | Supabase Auth | Email/password login, sessions | Exists; server middleware reads the session via `@supabase/ssr`. |
 | Supabase Realtime | Live updates of shared shopping lists | New (G6). |
@@ -61,7 +61,8 @@ app/
   pages/            routes (plans, lists, recipes, household, settings)
   components/       UI, grouped by feature
   composables/      client state and data access (useRecipes, usePlan, useShoppingList...)
-  layouts/          responsive shell (bottom nav on phones, side nav on desktop)
+  layouts/          responsive shell (top bar and bottom nav on phones, navigation rail from 960px)
+  components/layout/ page container, two-pane split, action bar (X4)
   middleware/       auth guard
 i18n/
   locales/          lt.json, en.json (all UI strings by key)
@@ -148,7 +149,7 @@ Rules:
 
 - **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback; a language picked while signed out is saved to the profile at the next sign-in instead (X1a). The switcher is in the app bar of both layouts. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it (X2).
 - **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash. "System" (the default) is rendered from the `Sec-CH-Prefers-Color-Scheme` client hint or the last reported OS theme, and an inline head script reloads once, hidden, when that guess is wrong (X1d). A signed-out choice is saved to the profile at sign-in, as for the language. `npm run theme:check` (in `npm run lint`) refuses colors that are not theme tokens.
-- **Responsive/mobile-first:** shared layout shell and breakpoints; consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
+- **Responsive/mobile-first:** shared layout shell, breakpoints and layout components (X4, README "Responsive layout"); consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.
 - **Accessibility:** Vuetify defaults, 44 px targets, contrast checked in both themes.
 - **Observability:** structured logs, health endpoint, error tracking (optional self-hosted tool such as GlitchTip or Sentry on Coolify).
@@ -160,7 +161,7 @@ Rules:
 - **Database tests** for RLS (pgTAP or SQL scripts through the Supabase CLI): a member sees household data, an outsider does not, individual plans stay private.
 - **Component/e2e tests (Playwright)** for the main journeys: login, create household, create plan, tick items on the list, at phone and desktop widths and in both themes.
 - **CI** (GitHub Actions, `.github/workflows/ci.yml`, X2): on every pull request and push to `main`, install, lint (with the translation and theme checks), type check, unit tests with coverage (a floor for `shared/`), build, and the pgTAP tests on a fresh PostgreSQL 16 database with every migration applied, which is also the migration dry run (README, "Testing and CI"). Playwright journeys are not in CI yet. Coolify deploys on merge to `main`; migrations are applied before or as part of the deploy (decision in section 9).
-- **Definition of done** adds: translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table; unit tests for new pure logic, and CI green (X2).
+- **Definition of done** adds: translation keys in both languages; colors only from theme tokens (`npm run theme:check`); layout only at the defined breakpoints with the shared layout components (`npm run layout:check`, README "Responsive layout"); every new or changed screen checked in both themes, at phone and desktop widths, in both languages, and accepted only once it is: no sideways scrolling at 320 px and every control at least 44 px, at 320, 390, 768, 1024 and 1280 px (X4); RLS policy for any new table; unit tests for new pure logic, and CI green (X2).
 
 ## 9. Decisions and open questions
 

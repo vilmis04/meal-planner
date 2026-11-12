@@ -89,7 +89,7 @@ async function handleAccept(isLeavingCurrent: boolean) {
 </script>
 
 <template>
-  <div :class="$style.page">
+  <LayoutPage width="narrow">
     <v-alert v-if="view === 'failed'" type="error" variant="tonal">
       {{ t("household.join.errors.loadFailed") }}
       <template #append>
@@ -131,12 +131,5 @@ async function handleAccept(isLeavingCurrent: boolean) {
       :is-joining="isJoining"
       @accept="handleAccept(false)"
     />
-  </div>
+  </LayoutPage>
 </template>
-
-<style module>
-.page {
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-</style>
