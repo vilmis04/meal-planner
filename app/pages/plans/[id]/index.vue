@@ -565,6 +565,9 @@ async function generatePlan(mode: GenerationMode) {
         </v-btn>
       </div>
 
+      <!-- A planning tip (X3) just above the week; the viewer can hide it. -->
+      <TipPlanCard :plan-id="plan.id" :participant-count="plan.participantIds.length" />
+
       <div :class="$style.layout">
         <div :class="$style.settings">
           <!-- Individual plans have one participant, their owner, so they show no picker. -->

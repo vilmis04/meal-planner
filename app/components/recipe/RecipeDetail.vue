@@ -51,6 +51,9 @@ const ingredients = computed(() =>
       <h3 :class="$style.sectionTitle">{{ t("recipes.detail.instructions") }}</h3>
       <p :class="$style.instructions" data-testid="recipe-instructions">{{ recipe.instructions }}</p>
     </section>
+
+    <!-- Tips about the recipe's ingredients (X3), out of the way after the method. -->
+    <TipRecipeSection :items="recipe.sourceItems" />
   </article>
 </template>
 

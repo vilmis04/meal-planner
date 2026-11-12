@@ -116,6 +116,7 @@ export const localizeRecipe = (content: RecipeContent, locale: string): Recipe =
     instructions: (texts.instructions || content.source.instructions).trim(),
     portionDays: content.portionDays,
     mainProteins: content.mainProteins,
+    sourceItems: content.ingredients.map((ingredient) => ingredient.item),
     ingredients: content.ingredients.map((ingredient) => {
       const translation = pickTranslation(ingredient.texts, locale);
       return {

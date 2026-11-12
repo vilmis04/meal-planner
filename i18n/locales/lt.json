@@ -966,5 +966,15 @@
       },
       "loadFailed": "Nepavyko įkelti patiekalų suvestinės. Įkelkite puslapį iš naujo."
     }
+  },
+  "tips": {
+    "planTitle": "Patarimas",
+    "recipeTitle": "Patarimai ({count})",
+    "about": "Apie: {names}",
+    "position": "{current} iš {total}",
+    "next": "Kitas patarimas",
+    "hide": "Slėpti patarimus",
+    "show": "Rodyti patarimus",
+    "itemToggle": "Patarimai: {name}"
   }
 }

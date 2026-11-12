@@ -334,6 +334,17 @@ Recipes (name, instructions), their ingredient lines, canonical ingredients and 
 - Missing translations: `public.missing_content_translations` lists every recipe, line, ingredient and tip without a row in a language, and recipes whose row lacks the instructions the source has (service role and SQL editor only). The report is [docs/missing-translations-report.md](docs/missing-translations-report.md); regenerate it with `DATABASE_URL=<connection string> npm run translations:report` (needs `psql`). It currently lists none, and `supabase/tests/content_translations.test.sql` fails while a seed has no English row, so a seed migration that adds content must add its English rows.
 - AI protein swaps are stored in both languages since X1c (see "Protein swaps"). The AI prompts of swaps and plan adjustments still use the Lithuanian names, the source language.
 
+## Tips in context
+
+The seeded tips (`public.tips`, 15, with free-form `tags` and their English in `tip_translations`) show next to what they are about (X3). What a tag is matched against comes from `supabase/migrations/20261127000000_add_tip_matching.sql`, and the rules are `shared/utils/tips.ts`:
+
+- **Ingredient tips.** A canonical ingredient has `tip_tags` (new column on `ingredients`, a GIN index; 31 ingredients tagged, e.g. avocado `{avocado, alternatives}`, tortillas `{tortillas}`, breads `{bread}`, chicken `{freezing, alternatives}`, buckwheat `{grains, side_dishes}`). A tip matches an ingredient when they share a tag (`tips.tags && ingredients.tip_tags`).
+  - A **shopping list line** with an ingredient has a lightbulb button (beside its actions menu) that opens the tips under the line, e.g. how to keep half an avocado or tortillas. Manual lines and lines without an ingredient have none. This is in `ShoppingListPanel`, so on the list page and in the pane beside the plan.
+  - A **recipe** (its page and the slot picker's preview) ends with a "Tips (n)" section: the tips about the ingredients its lines map to (by their Lithuanian item, through `ingredient_aliases`), the ones about more of its ingredients first, each saying what it is about ("About: Avocado"). The heading folds the section away.
+- **Plan tips.** A tip tagged `plan` (a context tag the migration adds to the five planning tips: swapping meals, meal times, progress, family portions, weighing) is shown on the plan page, one at a time with "Next tip", just above the week. One also tagged `family` shows only on a plan for more than one person. Each plan starts at a different tip (`getTipStartIndex()`), so they take turns. Hiding folds the card into a small "Show tips" button.
+- Every tip is shown somewhere: each has the `plan` tag or shares a tag with an ingredient (`supabase/tests/tips.test.sql` checks it). To place a new tip, give it a tag an ingredient has, add the tag to `ingredients.tip_tags` in a migration, or tag it `plan`; tags are lower-case words joined by underscores.
+- The tips and the tagged ingredients (with their names and aliases) are read once per visit, in the browser after the page is up (`useTips()`), in every language, so a language switch shows them at once without a new read; when they cannot be read, no tips show. Whether the plan card or the recipe section is folded is remembered in this browser only (`useTipsCollapsed()`); which line's tips are open is not remembered.
+
 ## Testing and CI
 
 Node 22 (`.node-version`, `engines` in `package.json`, the `Dockerfile`), as Nuxt 4 and Vitest 5 require.

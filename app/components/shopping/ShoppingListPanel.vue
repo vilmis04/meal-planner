@@ -116,6 +116,17 @@ const view = computed(() =>
     ? getShoppingListView(shownItems.value, { isBoughtLast: isBoughtLast.value, locale: locale.value })
     : null,
 );
+// Tips about the lines' ingredients (X3), such as how to keep an avocado or tortillas; read once the page is up.
+const { getShoppingItemTips } = useTips();
+const itemTips = computed(
+  () =>
+    new Map(
+      items.value.flatMap((item) => {
+        const tips = getShoppingItemTips(item.ingredientId);
+        return tips.length === 0 ? [] : [[item.id, tips] as const];
+      }),
+    ),
+);
 const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
 
 // Store recommendations (I1a): "Usually bought at Lidl" on lines to buy, read after the list and never in the way of a
@@ -616,6 +627,7 @@ const participantNames = computed(() => {
             :current-user-id="user?.id ?? null"
             :shop-names="shopNames"
             :shop-hints="shownShopHints"
+            :tips="itemTips"
             @toggle-bought="handleToggleBought"
             @toggle-at-home="handleToggleAtHome"
             @edit-amount="openAmount"

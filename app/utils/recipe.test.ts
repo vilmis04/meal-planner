@@ -92,6 +92,7 @@ describe("localizeRecipe", () => {
         { position: 1, item: "Česnakas", amount: 2, unit: "skiltelė" },
         { position: 2, item: "Lime", amount: 1, unit: "wedge" },
       ],
+      sourceItems: ["Česnakas", "Laimas"],
     });
   });
 
