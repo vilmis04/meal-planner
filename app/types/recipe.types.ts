@@ -35,15 +35,15 @@ export type RecipeLoadResult =
   | { status: "not-found" }
   | { status: "failed" };
 
-// GET /api/recipes/:id/swaps/:diet (D2); D3 shows it. "pending" comes with a Retry-After header.
+// GET /api/recipes/:id/swaps/:diet (D2); D3 shows it. "missing" (404): not generated yet, and never made at view time.
 export type RecipeProteinSwap = ProteinSwapView;
 export type RecipeProteinSwapResponse =
   | { status: "ready"; swap: RecipeProteinSwap }
-  | { status: "pending" }
-  | { status: "unavailable"; retryAfter: string }
+  | { status: "missing" }
   | { status: "not-needed" };
 
-// What recipe detail shows about a swap (D3): nothing, a "preparing" card, the swap, or a notice that it isn't ready.
+// What recipe detail shows about a swap (D3): nothing, a loading card, the swap (in the viewer's language, X1c), or a
+// notice that it isn't ready.
 export type RecipeSwapState =
   | { status: "none" }
   | { status: "loading" }

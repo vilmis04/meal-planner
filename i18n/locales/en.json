@@ -597,7 +597,7 @@
       "showSwap": "Show swap",
       "sameAmount": "{item}, same amount",
       "swappedLine": "swapped for your diet",
-      "preparing": "Preparing a swap for your diet ({diet})…",
+      "loading": "Loading the swap for your diet ({diet})…",
       "unavailable": "A swap for your diet ({diet}) isn't ready yet. Showing the original recipe."
     },
     "rating": {

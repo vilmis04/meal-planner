@@ -39,6 +39,7 @@ const {
 } = useShoppingItemEdits(items);
 const { shops, loadShops, reloadShops, addShop } = useShops();
 const { load: loadIngredientNames, getIngredientName } = useIngredientNames();
+const { load: loadSwapItemNames, getSwapItemName } = useSwapItemNames();
 const { defaultShopName, setDefaultShopName } = useShoppingDefaultShop();
 
 // The list is brought up to date with the plan first (the server rebuilds it only when the plan changed), then read.
@@ -83,12 +84,23 @@ watch(
   { immediate: true },
 );
 const { isBoughtLast, setBoughtLast } = useShoppingListBoughtLast();
-// The lines as shown: a generated line named in the viewer's language through its ingredient (X1b), following a switch
-// of language at once; manual lines and items without an ingredient keep their own name. Changes still go to items.
+// A generated line without an ingredient is a protein swap's replacement (G1 maps every recipe item); its name in the
+// viewer's language comes from the swap's translations (X1c), read in the browser once the page is up.
+const isUnmatchedGeneratedLine = (item: Pick<ShoppingItem, "source" | "ingredientId">) =>
+  item.source === "generated" && item.ingredientId === null;
+const unmatchedNames = computed(() => items.value.filter(isUnmatchedGeneratedLine).map((item) => item.name));
+onMounted(() => {
+  watch(unmatchedNames, (names) => loadSwapItemNames(names), { immediate: true });
+});
+// The lines as shown: a generated line named in the viewer's language through its ingredient (X1b) or its swap's
+// translation (X1c), following a switch of language at once; manual lines keep their own name. Changes still go to items.
 const shownItems = computed(() =>
-  items.value.map((item) =>
-    item.ingredientId === null ? item : { ...item, name: getIngredientName(item.ingredientId, item.name) },
-  ),
+  items.value.map((item) => {
+    if (item.ingredientId !== null) {
+      return { ...item, name: getIngredientName(item.ingredientId, item.name) };
+    }
+    return isUnmatchedGeneratedLine(item) ? { ...item, name: getSwapItemName(item.name) } : item;
+  }),
 );
 const view = computed(() =>
   list.value

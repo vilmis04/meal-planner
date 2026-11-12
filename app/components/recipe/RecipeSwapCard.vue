@@ -49,7 +49,7 @@ const dietLabel = computed(() => t(`profile.diet.options.${props.diet}.label`).t
   <section v-else-if="state.status === 'loading'" :class="$style.card" aria-busy="true" data-testid="recipe-swap-loading">
     <div :class="$style.header">
       <v-icon icon="mdi-swap-horizontal-circle" :class="$style.icon" size="24" />
-      <p :class="$style.message">{{ t("recipes.swap.preparing", { diet: dietLabel }) }}</p>
+      <p :class="$style.message">{{ t("recipes.swap.loading", { diet: dietLabel }) }}</p>
     </div>
     <v-progress-linear indeterminate rounded color="primary" :class="$style.progress" />
   </section>

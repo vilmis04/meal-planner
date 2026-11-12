@@ -1,5 +1,5 @@
 /*
- * Rows of recipes and recipe_protein_swaps as the service-role Supabase client returns them, parsed into the
+ * Rows of recipes, recipe_protein_swaps and their translations as the service-role Supabase client returns them, parsed into the
  * shapes the swap service works with.
  */
 import { z } from "zod";
@@ -48,6 +48,11 @@ export const swapRecipeRowSchema = z
     }),
   );
 
+// recipe_ingredient_translations rows of one recipe and language (X1b), by ingredient id.
+export const recipeLineTranslationRowsSchema = z
+  .array(z.object({ recipe_ingredient_id: z.string(), item: z.string() }))
+  .transform((rows) => new Map(rows.map((row) => [row.recipe_ingredient_id, row.item])));
+
 export const storedSwapRowSchema = z
   .object({
     status: z.enum(["pending", "ready", "failed", "rejected"]),
@@ -62,6 +67,7 @@ export const storedSwapRowSchema = z
     protein: nullableNumber,
     fat: nullableNumber,
     generated_at: timestamp,
+    recipe_protein_swap_translations: z.array(z.object({ locale: z.string(), note: z.string().nullable() })),
     recipe_protein_swap_items: z.array(
       z.object({
         recipe_ingredient_id: z.string(),
@@ -69,6 +75,7 @@ export const storedSwapRowSchema = z
         amount: nullableNumber,
         unit: z.string().nullable(),
         replacement_protein: proteinSchema,
+        recipe_protein_swap_item_translations: z.array(z.object({ locale: z.string(), item: z.string() })),
       }),
     ),
   })
@@ -86,9 +93,11 @@ export const storedSwapRowSchema = z
       protein: row.protein,
       fat: row.fat,
       generatedAt: row.generated_at,
+      translations: row.recipe_protein_swap_translations,
       items: row.recipe_protein_swap_items.map((item) => ({
         recipeIngredientId: item.recipe_ingredient_id,
         item: item.item,
+        texts: item.recipe_protein_swap_item_translations,
         amount: item.amount,
         unit: item.unit,
         replacementProtein: item.replacement_protein,

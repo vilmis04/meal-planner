@@ -63,3 +63,25 @@ export const SWAP_RESPONSE_JSON_SCHEMA = {
   },
   required: ["swaps", "note", "nutrition"],
 } as const;
+
+// A swap's translation as the AI returns it (X1c): each replacement by its recipe position, and the note.
+export const swapTranslationResponseSchema = z.object({
+  items: z.array(z.object({ position: z.number().int(), item: z.string() })),
+  note: z.string().nullable(),
+});
+
+export const SWAP_TRANSLATION_RESPONSE_JSON_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    items: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: { position: { type: "INTEGER" }, item: { type: "STRING" } },
+        required: ["position", "item"],
+      },
+    },
+    note: { type: "STRING", nullable: true },
+  },
+  required: ["items", "note"],
+} as const;
