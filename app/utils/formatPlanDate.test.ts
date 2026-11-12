@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ODD_SPACES, formatPlanDay, formatPlanRange, formatShortWeekday } from "./formatPlanDate";
+import { ODD_SPACES } from "#shared/utils/localeFormat";
+import { formatPlanDay, formatPlanRange, formatShortWeekday } from "./formatPlanDate";
 
 // ODD_SPACES is global, so search() is used: it ignores lastIndex.
 const hasOddSpaces = (text: string): boolean => text.search(ODD_SPACES) !== -1;

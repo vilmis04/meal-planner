@@ -8,6 +8,7 @@
  * line's own unit and stays when the plan later needs more or less (getPlanAmount() shows what the plan says).
  */
 import { getUnitsWithBase, toBaseQuantity, toDisplayQuantity } from "./ingredientUnit";
+import { formatNumber } from "./localeFormat";
 import type { AmountInput, AmountInputResult, ShoppingItemAmountChange } from "./shoppingItemEdit.types";
 import type { ShoppingItem } from "./shoppingList.types";
 
@@ -127,4 +128,4 @@ const roundToStoredAmount = (amount: number): number => {
 
 // 1.5 in English, 1,5 in Lithuanian, without grouping, so what is shown can be typed back.
 const formatAmountInput = (amount: number, locale: string): string =>
-  new Intl.NumberFormat(locale, { maximumFractionDigits: 3, useGrouping: false }).format(amount);
+  formatNumber(amount, locale, { maximumFractionDigits: 3, useGrouping: false });

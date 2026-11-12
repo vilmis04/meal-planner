@@ -54,12 +54,11 @@ const header = computed(() => {
   const date = props.planDays[props.target.dayIndex] ?? "";
   const day = formatPlanDay(date, locale.value, { weekday: "short", day: "numeric", month: "short" });
   return props.participantNames.length
-    ? t("plan.slot.headerFor", { day, names: formatList(props.participantNames) })
+    ? t("plan.slot.headerFor", { day, names: formatNames(props.participantNames) })
     : day;
 });
 
-const formatList = (items: readonly string[]): string =>
-  new Intl.ListFormat(locale.value, { style: "long", type: "conjunction" }).format(items);
+const formatNames = (items: readonly string[]): string => formatList(items, locale.value);
 
 const total = computed(() => countSlotRecipes(props.recipes ?? [], props.target.mealType));
 
@@ -119,6 +118,10 @@ const batchLabel = (recipe: DeepReadonly<RecipeSummary>): string | null => {
     : t("recipes.batch.multi", { count: recipe.portionDays });
 };
 
+// "someone" only for exactly one person: Lithuanian also uses its "one" form for 21, 31 and so on.
+const unnamedPeople = (count: number): string =>
+  count === 1 ? t("plan.slot.hate.someone") : t("plan.slot.hate.people", { count }, count);
+
 const hateLine = (recipeId: string): string | null => {
   if (!props.hated) {
     return null;
@@ -130,9 +133,9 @@ const hateLine = (recipeId: string): string | null => {
   const who = [
     ...(warning.includesViewer ? [t("plan.slot.hate.you")] : []),
     ...warning.names,
-    ...(warning.unnamedCount ? [t("plan.slot.hate.someone", warning.unnamedCount)] : []),
+    ...(warning.unnamedCount ? [unnamedPeople(warning.unnamedCount)] : []),
   ];
-  return t("plan.slot.hate.line", { who: formatList(who) });
+  return t("plan.slot.hate.line", { who: formatNames(who) });
 };
 
 const emptyMessage = computed(() => {
@@ -334,7 +337,7 @@ watch(
         <span v-if="pendingTarget.replaced.length" :class="$style.replaces" data-testid="slot-picker-offer-replaces">
           {{
             t("plan.slot.offer.replaces", {
-              names: formatList(pendingTarget.replaced.map((replaced) => `${weekday(replaced.dayIndex)}: ${recipeName(replaced.recipeId)}`)),
+              names: formatNames(pendingTarget.replaced.map((replaced) => `${weekday(replaced.dayIndex)}: ${recipeName(replaced.recipeId)}`)),
             })
           }}
         </span>

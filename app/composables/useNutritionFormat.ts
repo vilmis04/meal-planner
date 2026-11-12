@@ -1,3 +1,4 @@
+import { formatNumber as formatLocaleNumber } from "#shared/utils/localeFormat";
 import type { MealNutrition, Nutrition } from "#shared/utils/nutrition.types";
 
 // Calories and grams as the screens show them (F1): whole numbers in the viewer's language ("1,920" or "1 920"),
@@ -5,10 +6,8 @@ import type { MealNutrition, Nutrition } from "#shared/utils/nutrition.types";
 export function useNutritionFormat() {
   const { t, locale } = useI18n();
 
-  const numberFormat = computed(() => new Intl.NumberFormat(locale.value, { maximumFractionDigits: 0 }));
-
   const formatNumber = (value: number | null): string =>
-    value === null ? t("nutrition.missingValue") : numberFormat.value.format(value);
+    value === null ? t("nutrition.missingValue") : formatLocaleNumber(value, locale.value, { maximumFractionDigits: 0 });
 
   const formatKcal = (value: number | null): string =>
     value === null ? t("nutrition.missingValue") : t("nutrition.kcalValue", { value: formatNumber(value) });

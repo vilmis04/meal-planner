@@ -276,6 +276,7 @@ As a developer I want all UI text behind translation keys so no string is hard-c
 - Existing pages (login, home, layout) are migrated to keys.
 - A lint rule or CI check flags missing keys between locales and literal text in templates.
 - Plurals, dates and numbers use locale formatting.
+- Built as `i18n/i18n.config.ts` (English fallback, the Lithuanian plural rule `i18n/pluralRules.ts`, Vuetify's own texts), `<html lang>` from the active language, `shared/utils/localeFormat.ts` for every number, date and list (ESLint refuses `Intl` formatters elsewhere), `vue/no-bare-strings-in-template` with Vuetify's text props, and `npm run i18n:check` (`scripts/check-locales.ts`, also run by `npm run lint`): missing or empty keys, messages that do not compile, differing placeholders, plural forms per language and keys named in the code (see README, "Translations"). Browser-language detection with the English fallback was already in place and is kept. Lithuanian plurals were written in the English two-form style, so 21 read like 2; they now take `one | few | other`, or a single form where the text does not change. The last literal text (quotation marks in "Adjust with text") became a key. The CI workflow is X2.
 
 ### X1a. Language switcher (S, Phase 1)
 As a user I want to switch between LT and EN.

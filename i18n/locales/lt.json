@@ -84,7 +84,7 @@
       "household": "Namų ūkio planas",
       "individual": "Tik man"
     },
-    "dayCount": "Dienų: {count} | Dienų: {count}",
+    "dayCount": "{count} diena | {count} dienos | {count} dienų",
     "createdAutomatically": "Sukurtas automatiškai",
     "homeCard": {
       "title": "Suplanuokite savaitę",
@@ -162,7 +162,7 @@
       "notOnList": "ne sąraše",
       "range": "{start} – {end}",
       "workday": "Darbo diena",
-      "people": "{count} žm. | {count} žm.",
+      "people": "{count} žmogus | {count} žmonės | {count} žmonių",
       "today": "Šiandien",
       "cookTonight": "Vakare gaminti",
       "pastNotice": "Šis planas pasibaigė. Ankstesni planai lieka tokie, kokie buvo, todėl jo keisti nebegalima.",
@@ -198,7 +198,8 @@
       "hate": {
         "line": "Nemėgsta: {who}",
         "you": "jūs",
-        "someone": "kažkas | {count} žm.",
+        "someone": "kažkas",
+        "people": "{count} žmogus | {count} žmonės | {count} žmonių",
         "icon": "Dalyvis pažymėjo šį receptą kaip nemėgstamą",
         "loadFailed": "Nepavyko patikrinti, kas ko nemėgsta, todėl įspėjimai nerodomi."
       },
@@ -250,7 +251,7 @@
       "cooldown": "Neplanuoti tų pačių receptų",
       "cooldownHint": "Neseniai planuoti receptai, net ir mėgstami, tiek laiko nebus siūlomi iš naujo.",
       "cooldownOff": "Planuoti bet kada",
-      "cooldownDays": "{count} d. | {count} d."
+      "cooldownDays": "{count} d."
     },
     "schedule": {
       "pageTitle": "Automatiniai planai",
@@ -326,7 +327,8 @@
       "confirmIntro": "Neužrakinti patiekalai bus suplanuoti iš naujo pagal šias taisykles:",
       "nothingToApply": "Nieko iš šio prašymo pritaikyti negalima. Pabandykite parašyti kitaip.",
       "unsupportedTitle": "Nepritaikyta",
-      "lockedNote": "Nieko neužrakinta, todėl visi patiekalai suplanuojami iš naujo. | Užrakintas patiekalas lieka toks pat. | Užrakintų patiekalų: {count}. Jie lieka tokie patys.",
+      "unsupportedPart": "„{part}“",
+      "lockedNote": "Nieko neužrakinta, todėl visi patiekalai suplanuojami iš naujo. | {count} užrakintas patiekalas lieka toks pat. | {count} užrakinti patiekalai lieka tokie patys. | {count} užrakintų patiekalų lieka tokie patys.",
       "back": "Keisti prašymą",
       "apply": "Pritaikyti",
       "removeRule": "Pašalinti „{rule}“",
@@ -411,7 +413,7 @@
     "overview": {
       "heroLabel": "Jūsų namų ūkis",
       "members": "Nariai",
-      "memberCount": "{count} narys | {count} nariai",
+      "memberCount": "{count} narys | {count} nariai | {count} narių",
       "you": "{name} (jūs)",
       "roleOwner": "Savininkas",
       "roleMember": "Narys",
@@ -499,7 +501,7 @@
       "copy": "Kopijuoti",
       "copied": "Nuoroda nukopijuota",
       "activeHint": "Nuoroda aktyvi. Saugumo sumetimais ją galima parodyti tik ką sukūrus. Norėdami nukopijuoti dar kartą, sukurkite naują.",
-      "expiresIn": "Nuoroda galios {count} dieną | Nuoroda galios {count} dienas",
+      "expiresIn": "Nuoroda galios {count} dieną | Nuoroda galios {count} dienas | Nuoroda galios {count} dienų",
       "replace": "Nauja nuoroda",
       "revoke": "Atšaukti nuorodą",
       "revoked": "Nuoroda atšaukta",
@@ -717,12 +719,12 @@
     "plan": {
       "showingFor": "Rodoma",
       "dailyAverage": "Dienos vidurkis",
-      "averageOver": "dienų: {count} | dienų: {count}",
+      "averageOver": "dienų: {count}",
       "noAverage": "Kol kas nesuplanuota nieko su maistinės vertės duomenimis.",
       "dayTotal": "Dienos suma",
       "dayTotalShort": "Suma",
-      "excluded": "Patiekalų be maistinės vertės duomenų: {count}. Jie į sumas neįskaičiuoti. | Patiekalų be maistinės vertės duomenų: {count}. Jie į sumas neįskaičiuoti.",
-      "dayExcluded": "Neįskaičiuota patiekalų: {count} | Neįskaičiuota patiekalų: {count}",
+      "excluded": "Patiekalų be maistinės vertės duomenų: {count}. Jie į sumas neįskaičiuoti.",
+      "dayExcluded": "Neįskaičiuota patiekalų: {count}",
       "swapsFailed": "Nepavyko įkelti pakaitalų įverčių, todėl patiekalams su pakaitalais rodomos originalaus recepto vertės."
     },
     "recipe": {
@@ -737,7 +739,7 @@
     "title": "Pirkinių sąrašas",
     "open": "Pirkinių sąrašas",
     "back": "Atgal į planą",
-    "itemCount": "Prekių nėra | Prekių: {count} | Prekių: {count}",
+    "itemCount": "Prekių nėra | {count} prekė | {count} prekės | {count} prekių",
     "groupProgress": "{bought} iš {count}",
     "groupProgressDescription": "nupirkta {bought} iš {count}",
     "progress": {
@@ -891,14 +893,14 @@
         "individual": "Pagal parduotuves, kurias pasirinkote pažymėdami prekes nupirktomis."
       },
       "summary": "{purchases}, parduotuvių: {shops}",
-      "purchaseCount": "Nupirkta prekių: {count} | Nupirkta prekių: {count}",
-      "shopCount": "{count} | {count}",
-      "itemCount": "skirtingų prekių: {count} | skirtingų prekių: {count}",
+      "purchaseCount": "Nupirkta prekių: {count}",
+      "shopCount": "{count}",
+      "itemCount": "skirtingų prekių: {count}",
       "share": "{percent} %",
       "shareLabel": "{shop}: {percent} % parduotuvėse nupirktų prekių",
       "topItems": "Dažniausiai perkama",
-      "timesBought": "{count} k. | {count} k.",
-      "withoutShop": "Nupirktų prekių be parduotuvės: {count}. Jos neįskaičiuotos. | Nupirktų prekių be parduotuvės: {count}. Jos neįskaičiuotos.",
+      "timesBought": "{count} k.",
+      "withoutShop": "Nupirktų prekių be parduotuvės: {count}. Jos neįskaičiuotos.",
       "empty": {
         "title": "Šiam laikotarpiui parduotuvių nėra",
         "hint": "Pirkinių sąraše pažymėdami prekę nupirkta, pasirinkite parduotuvę, kurioje ją pirkote.",
@@ -913,19 +915,19 @@
       "liked": {
         "title": "Labiausiai mėgstami",
         "description": "Receptai, kuriuos įvertinote „Mėgstu“, pagal tai, kaip dažnai šiuo laikotarpiu buvo jūsų planuose.",
-        "planned": "Planuose: {count} k. | Planuose: {count} k.",
+        "planned": "Planuose: {count} k.",
         "notPlanned": "Šiuo laikotarpiu planuose nebuvo",
         "empty": "Dar neįvertinote nė vieno recepto „Mėgstu“.",
         "browse": "Naršyti receptus",
-        "allEnjoyed": "Visi mėgstami receptai: {count} | Visi mėgstami receptai: {count}",
+        "allEnjoyed": "Visi mėgstami receptai: {count}",
         "allRatings": "Visi jūsų įvertinimai"
       },
       "skipped": {
         "title": "Dažniausiai praleisti",
         "description": "Patiekalai, kurie šiuo laikotarpiu jūsų planuose buvo pakeisti kitu pasiūlymu, pakeisti ranka ar išvalyti.",
-        "times": "Praleista: {count} k. | Praleista: {count} k.",
+        "times": "Praleista: {count} k.",
         "empty": "Šiuo laikotarpiu nieko nepraleista. Kai plane patiekalas pakeičiamas, jis bus rodomas čia.",
-        "total": "Iš viso praleista šiuo laikotarpiu: {count} k. | Iš viso praleista šiuo laikotarpiu: {count} k."
+        "total": "Iš viso praleista šiuo laikotarpiu: {count} k."
       },
       "loadFailed": "Nepavyko įkelti patiekalų suvestinės. Įkelkite puslapį iš naujo."
     }
