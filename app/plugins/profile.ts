@@ -1,8 +1,8 @@
-import type { Profile } from "~/types/profile.types";
+import type { Profile, ProfileChanges } from "~/types/profile.types";
 
 // Keeps the signed-in user's profile loaded and makes its theme and language win over
-// the cookies, so settings follow the user to a new device or browser. A language chosen
-// while signed out is the exception: it is saved to the profile instead (resolveProfileLocale).
+// the cookies, so settings follow the user to a new device or browser. A theme or language
+// chosen while signed out is the exception: it is saved to the profile instead (resolveProfileChoice).
 export default defineNuxtPlugin({
   name: "profile",
   dependsOn: ["supabase", "theme"],
@@ -10,25 +10,41 @@ export default defineNuxtPlugin({
     const user = useSupabaseUser();
     const { profile, load, update, clear } = useProfile();
     const { clear: clearRatings } = useRecipeRatings();
-    const { setPreference } = useAppTheme();
-    const { hasUnsavedChoice, clear: clearUnsavedLocale } = useUnsavedLocaleChoice();
+    const { preference, setPreference } = useAppTheme();
+    const unsavedLocale = useUnsavedProfileChoice("locale");
+    const unsavedTheme = useUnsavedProfileChoice("theme");
     const i18n = nuxtApp.$i18n;
 
     const applyProfile = async ({ theme, locale }: Readonly<Profile>): Promise<void> => {
-      setPreference(theme);
-
-      const { locale: nextLocale, isSaveNeeded } = resolveProfileLocale({
-        profileLocale: locale,
-        activeLocale: i18n.locale.value,
-        hasUnsavedChoice: hasUnsavedChoice.value,
+      const themeChoice = resolveProfileChoice({
+        profileValue: theme,
+        activeValue: preference.value,
+        hasUnsavedChoice: unsavedTheme.hasUnsavedChoice.value,
       });
-      if (nextLocale !== i18n.locale.value) {
-        await i18n.setLocale(nextLocale);
+      setPreference(themeChoice.value);
+
+      const localeChoice = resolveProfileChoice({
+        profileValue: locale,
+        activeValue: i18n.locale.value,
+        hasUnsavedChoice: unsavedLocale.hasUnsavedChoice.value,
+      });
+      if (localeChoice.value !== i18n.locale.value) {
+        await i18n.setLocale(localeChoice.value);
       }
-      // A failed save keeps the mark, so the next sign-in or page load tries again.
-      const isSaved = !isSaveNeeded || (await update({ locale: nextLocale }));
-      if (isSaved && hasUnsavedChoice.value) {
-        clearUnsavedLocale();
+
+      const changes: ProfileChanges = {
+        ...(themeChoice.isSaveNeeded && { theme: themeChoice.value }),
+        ...(localeChoice.isSaveNeeded && { locale: localeChoice.value }),
+      };
+      // A failed save keeps the marks, so the next sign-in or page load tries again.
+      const isSaved = Object.keys(changes).length === 0 || (await update(changes));
+      if (!isSaved) {
+        return;
+      }
+      for (const { hasUnsavedChoice, clear: clearUnsavedChoice } of [unsavedTheme, unsavedLocale]) {
+        if (hasUnsavedChoice.value) {
+          clearUnsavedChoice();
+        }
       }
     };
 

@@ -9,6 +9,18 @@
   "language": {
     "switcher": "Language: {language}"
   },
+  "error": {
+    "notFound": {
+      "title": "Page not found",
+      "text": "This page does not exist or has moved."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "text": "Please try again in a moment."
+    },
+    "home": "Go to home",
+    "pageTitle": "Error"
+  },
   "nav": {
     "label": "Main navigation",
     "home": "Home",

@@ -71,6 +71,6 @@ async function handleSelect(next: LocaleCode) {
 
 .onHero {
   padding-inline: 12px;
-  border-color: rgb(255 255 255 / 30%);
+  border-color: rgba(var(--v-theme-on-hero), 0.3);
 }
 </style>

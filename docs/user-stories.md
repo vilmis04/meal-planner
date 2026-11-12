@@ -4,6 +4,8 @@ Stories are grouped by epic and ordered roughly by implementation sequence. Each
 
 Conventions: every screen is designed mobile-first, then enhanced for tablet and desktop to show more at once (see product description); all user-visible text uses translation keys with LT and EN values (X1), and every screen must work in light and dark themes. "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
 
+Definition of done (also in [architecture.md](architecture.md), section 8): translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table.
+
 ---
 
 ## Epic A: Accounts
@@ -302,6 +304,7 @@ As a user I want light/dark mode to be reliable.
 - The existing toggle works on every page, including login, and persists across reloads without a flash of the wrong theme.
 - Default follows the OS preference until the user chooses; the choice is saved to the profile when signed in.
 - All new components use theme tokens; acceptance checked in both themes for each new screen (add to the definition of done).
+- Built as the theme rules of X1a's language: the toggle (`AppThemeToggle.vue`) was already in both layouts' app bars and is now also on the error page (`app/error.vue`, new, with the auth layout and the language switcher; Nuxt's own error page had neither), and a theme picked while signed out (session cookie `theme-unsaved`) is kept at the next sign-in and saved to the profile, where before the profile's theme replaced it. The rule and the mark are now shared by both settings (`resolveProfileChoice()` in `app/utils/profileChoice.ts`, `useUnsavedProfileChoice()`, replacing `resolveProfileLocale()` and `useUnsavedLocaleChoice()`). The default stays `system`; the server already rendered the cookie's theme, and now renders "system" from the `Sec-CH-Prefers-Color-Scheme` client hint (asked for with `Accept-CH` and `Critical-CH`) or the last OS theme the browser reported, and an inline head script (`app/utils/systemTheme.ts`) reloads once, hidden, when that is not the OS theme (a browser without the hint on its first visit, or after the OS setting changed), so no frame paints in the wrong theme (checked with Playwright's `colorScheme` and reloads); see README, "Styling conventions". The audit found two hard-coded colors (the white tints on the login hero), now `--v-theme-on-hero`; `npm run theme:check` (in `npm run lint`) refuses new ones, and the definition of done above now names both themes, phone and desktop widths and both languages. There is no design beyond the existing toggle.
 
 ### X2. Tests and CI (M, Phase 1)
 Unit tests for the generator, scaling and merging logic; CI runs lint, type check, and tests on pull requests.

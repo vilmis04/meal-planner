@@ -147,7 +147,7 @@ Rules:
 ## 7. Cross-cutting concerns
 
 - **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback; a language picked while signed out is saved to the profile at the next sign-in instead (X1a). The switcher is in the app bar of both layouts. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it with X2.
-- **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash.
+- **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash. "System" (the default) is rendered from the `Sec-CH-Prefers-Color-Scheme` client hint or the last reported OS theme, and an inline head script reloads once, hidden, when that guess is wrong (X1d). A signed-out choice is saved to the profile at sign-in, as for the language. `npm run theme:check` (in `npm run lint`) refuses colors that are not theme tokens.
 - **Responsive/mobile-first:** shared layout shell and breakpoints; consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.
 - **Accessibility:** Vuetify defaults, 44 px targets, contrast checked in both themes.
@@ -160,7 +160,7 @@ Rules:
 - **Database tests** for RLS (pgTAP or SQL scripts through the Supabase CLI): a member sees household data, an outsider does not, individual plans stay private.
 - **Component/e2e tests (Playwright)** for the main journeys: login, create household, create plan, tick items on the list, at phone and desktop widths and in both themes.
 - **CI** (GitHub Actions): install, lint, type check, unit tests, build and a migration dry run on pull requests. Coolify deploys on merge to `main`; migrations are applied before or as part of the deploy (decision in section 9).
-- **Definition of done** adds: translation keys in both languages, both themes, phone and desktop checked, RLS policy for any new table.
+- **Definition of done** adds: translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table.
 
 ## 9. Decisions and open questions
 
