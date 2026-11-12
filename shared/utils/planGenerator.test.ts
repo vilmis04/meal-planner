@@ -551,4 +551,86 @@ describe("generateMealPlan", () => {
       expect(quick[5]).toBe(quick[6]);
     });
   });
+
+  describe("edge cases (X2)", () => {
+    it("counts a locked 2-day batch as one use, whatever order the locked slots come in", () => {
+      // Two dinners for 14 days allow each recipe twice. The locked Monday–Tuesday batch is one use, so the batch recipe
+      // may come once more; counted twice, it could not, and the third open day would already repeat.
+      const recipes = [makeRecipe("dinner-batch", "dinner", { portionDays: 2 }), makeRecipe("dinner-single", "dinner")];
+      const slots = makeSlots(14, ["dinner"])
+        .map((slot) => (slot.dayIndex < 2 ? { ...slot, recipeId: "dinner-batch", isLocked: true } : slot))
+        .reverse();
+      for (const seed of [1, 2, 3]) {
+        const assignments = generateMealPlan(
+          makeInput({ dayCount: 14, mealTypes: ["dinner"], slots, recipes, workdays: [], seed }),
+        );
+        expect(assignments.slice(0, 4).map(({ recipeId, note }) => [recipeId, note])).toEqual([
+          ["dinner-single", null],
+          ["dinner-batch", null],
+          ["dinner-single", null],
+          ["dinner-batch", "repeated_in_plan"],
+        ]);
+      }
+    });
+
+    it("rests a recipe by its most recent use when the history lists it more than once", () => {
+      const recipes = makeRecipes("breakfast-", "breakfast", 10);
+      const uses = [
+        { recipeId: "breakfast-01", lastPlannedOn: "2026-09-01" },
+        { recipeId: "breakfast-01", lastPlannedOn: "2026-11-05" },
+      ];
+      for (const history of [uses, [...uses].reverse()]) {
+        for (const seed of [1, 2, 3, 4, 5]) {
+          const breakfasts = recipesOf(
+            generateMealPlan(
+              makeInput({ mealTypes: ["breakfast"], slots: makeSlots(7, ["breakfast"]), recipes, history, seed }),
+            ),
+            "breakfast",
+          );
+          expect(breakfasts).not.toContain("breakfast-01");
+        }
+      }
+    });
+
+    it("ignores slots beyond the plan's days", () => {
+      const assignments = generateMealPlan(makeInput({ dayCount: 5, slots: makeSlots(7) }));
+      expect(Math.max(...assignments.map((assignment) => assignment.dayIndex))).toBe(4);
+      expect(assignments).toHaveLength(20);
+    });
+
+    it("returns nothing when every slot is locked", () => {
+      const slots = makeSlots(2, ["breakfast"]).map((slot) => ({ ...slot, recipeId: "breakfast-01", isLocked: true }));
+      expect(generateMealPlan(makeInput({ dayCount: 2, mealTypes: ["breakfast"], slots }))).toEqual([]);
+    });
+
+    it("gives a 2-day batch a recipe that lasts longer", () => {
+      const recipes = [
+        ...LIBRARY.filter((recipe) => recipe.mealType !== "dinner"),
+        ...makeRecipes("dinner-", "dinner", 8),
+        ...makeRecipes("dinner-batch-", "dinner", 3, { portionDays: 3 }),
+      ];
+      const [mon, tue, wed, thu, fri, sat] = recipesOf(generateMealPlan(makeInput({ recipes })), "dinner");
+      expect([tue, thu, sat]).toEqual([mon, wed, fri]);
+      expect([mon, wed, fri].every(isBatchRecipe)).toBe(true);
+    });
+
+    it("repeats the one allowed recipe on consecutive days rather than plan a hated one", () => {
+      const recipes = makeRecipes("breakfast-", "breakfast", 2);
+      const participants = [makeParticipant("ana"), makeParticipant("monika", "full", { "breakfast-02": "hate" })];
+      const assignments = generateMealPlan(
+        makeInput({ dayCount: 3, mealTypes: ["breakfast"], slots: makeSlots(3, ["breakfast"]), recipes, participants }),
+      );
+      expect(assignments.map(({ recipeId, note }) => [recipeId, note])).toEqual([
+        ["breakfast-01", null],
+        ["breakfast-01", "repeated_in_plan"],
+        ["breakfast-01", "repeated_in_plan"],
+      ]);
+    });
+
+    it("fills a plan without participants from the whole library", () => {
+      const assignments = generateMealPlan(makeInput({ participants: [] }));
+      expect(assignments).toHaveLength(28);
+      expect(assignments.every((assignment) => assignment.recipeId !== null && assignment.note === null)).toBe(true);
+    });
+  });
 });

@@ -1,6 +1,9 @@
 {
   "name": "meal-planner",
   "type": "module",
+  "engines": {
+    "node": "^22.19.0 || ^24.11.0 || >=26.0.0"
+  },
   "private": true,
   "scripts": {
     "build": "nuxt build",
@@ -12,7 +15,10 @@
     "lint:fix": "eslint . --fix",
     "i18n:check": "tsx scripts/check-locales.ts",
     "theme:check": "tsx scripts/check-theme-colors.ts",
+    "typecheck": "nuxi typecheck",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:db": "bash scripts/test-db.sh",
     "swaps:generate": "tsx scripts/generate-protein-swaps.ts",
     "ingredients:report": "psql \"${DATABASE_URL:?Set DATABASE_URL to the database connection string}\" -X -q -v ON_ERROR_STOP=1 -f supabase/reports/ingredient-mapping-report.sql -o docs/ingredient-mapping-report.md",
     "translations:report": "psql \"${DATABASE_URL:?Set DATABASE_URL to the database connection string}\" -X -q -v ON_ERROR_STOP=1 -f supabase/reports/missing-translations-report.sql -o docs/missing-translations-report.md"
@@ -30,9 +36,12 @@
     "@intlify/message-compiler": "^11.4.16",
     "@nuxt/eslint": "^1.17.0",
     "@types/node": "^26.6.3",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
     "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.14",
     "vuetify": "^4.2.2",
     "vuetify-nuxt-module": "^1.0.0-rc.6"
   }

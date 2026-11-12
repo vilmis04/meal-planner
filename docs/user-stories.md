@@ -4,7 +4,7 @@ Stories are grouped by epic and ordered roughly by implementation sequence. Each
 
 Conventions: every screen is designed mobile-first, then enhanced for tablet and desktop to show more at once (see product description); all user-visible text uses translation keys with LT and EN values (X1), and every screen must work in light and dark themes. "member" = signed-in user in a household; "participant" = a person included in a plan. Quantities are per person's portion unless said otherwise. RLS must be enabled on every new table.
 
-Definition of done (also in [architecture.md](architecture.md), section 8): translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table.
+Definition of done (also in [architecture.md](architecture.md), section 8): translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table; unit tests for new pure logic, and CI green (X2).
 
 ---
 
@@ -308,6 +308,7 @@ As a user I want light/dark mode to be reliable.
 
 ### X2. Tests and CI (M, Phase 1)
 Unit tests for the generator, scaling and merging logic; CI runs lint, type check, and tests on pull requests.
+- Built as `.github/workflows/ci.yml` (GitHub Actions, on every pull request whatever its base, since stories are stacked, and on pushes to `main`; a new push cancels the older run): one job runs `npm ci`, `npm run lint` (ESLint, `i18n:check`, `theme:check`), `npm run typecheck` (`nuxi typecheck`; `typescript` and `vue-tsc` are now dev dependencies, and `tsconfig.scripts.json` adds `scripts/` and the Vitest config, which no Nuxt project covered), `npm run test:coverage` and `npm run build`; another runs the pgTAP tests on PostgreSQL 16 with every migration applied to a fresh database (`npm run test:db`, `scripts/test-db.sh` with the Supabase stub `supabase/ci/supabase-stub.sql`). The existing tests already covered the generator, scaling and merging well; the gaps filled are a locked batch counted once, a history listing a recipe twice, slots past the plan's days, an all-locked plan, a longer batch recipe in a 2-day span, a hated recipe never relaxed even when the only other one repeats, a plan without participants, negative and rounding-edge weights, and on the shopping list a recipe no longer in the library, unit and spelling merging of unmapped items, 3-day recipes, the 0.01 floor, swaps merging into the same ingredient's line, to-taste replacements and the missing-swap count. Coverage (`@vitest/coverage-v8`) has a floor for `shared/` only (95 % statements, functions and lines, 90 % branches). Node is 22 everywhere (`.node-version`, `engines`, `Dockerfile`), as Nuxt 4 and Vitest 5 require; it was 20. See README, "Testing and CI".
 
 ### X4. Mobile-first responsive layout (M, Phase 1)
 As a user I want the app to work well on my phone and use space well on larger screens.

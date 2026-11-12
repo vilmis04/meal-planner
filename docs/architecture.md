@@ -35,7 +35,7 @@ Components:
 
 | Component | Role | Notes |
 |---|---|---|
-| Nuxt 4 / Nitro (`node-server` preset) | SSR, UI, server API routes | Exists. Built by the repo `Dockerfile` (multi-stage, node 20 alpine, non-root). |
+| Nuxt 4 / Nitro (`node-server` preset) | SSR, UI, server API routes | Exists. Built by the repo `Dockerfile` (multi-stage, Node 22 alpine, non-root). |
 | Vuetify + CSS Modules | UI components and layout | Exists. Mobile-first breakpoints; themes light/dark via tokens. |
 | Supabase Postgres | All data, RLS, migrations | Exists (recipes, ingredients, tips). |
 | Supabase Auth | Email/password login, sessions | Exists; server middleware reads the session via `@supabase/ssr`. |
@@ -146,7 +146,7 @@ Rules:
 
 ## 7. Cross-cutting concerns
 
-- **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback; a language picked while signed out is saved to the profile at the next sign-in instead (X1a). The switcher is in the app bar of both layouts. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it with X2.
+- **i18n:** Nuxt i18n module, LT and EN, browser language then cookie then profile, EN fallback; a language picked while signed out is saved to the profile at the next sign-in instead (X1a). The switcher is in the app bar of both layouts. `npm run lint` refuses literal template text and runs `npm run i18n:check` (missing keys, placeholders, plural forms, keys the code names); CI runs it (X2).
 - **Theming:** existing Vuetify themes plus CSS tokens; cookie read during SSR to avoid a flash. "System" (the default) is rendered from the `Sec-CH-Prefers-Color-Scheme` client hint or the last reported OS theme, and an inline head script reloads once, hidden, when that guess is wrong (X1d). A signed-out choice is saved to the profile at sign-in, as for the language. `npm run theme:check` (in `npm run lint`) refuses colors that are not theme tokens.
 - **Responsive/mobile-first:** shared layout shell and breakpoints; consider making the app installable (PWA manifest, offline-tolerant shopping list view) as a later improvement, since shopping happens in stores with weak signal.
 - **Performance:** recipes are static-ish, so cache reads (HTTP cache headers or in-memory with short TTL); paginate and index by `meal_type`; generation loads only candidate recipes.
@@ -159,8 +159,8 @@ Rules:
 - **Unit tests (Vitest)** for the pure modules: planner (fixed seeds), cooldown, scaling and merging, diet compatibility, nutrition averages.
 - **Database tests** for RLS (pgTAP or SQL scripts through the Supabase CLI): a member sees household data, an outsider does not, individual plans stay private.
 - **Component/e2e tests (Playwright)** for the main journeys: login, create household, create plan, tick items on the list, at phone and desktop widths and in both themes.
-- **CI** (GitHub Actions): install, lint, type check, unit tests, build and a migration dry run on pull requests. Coolify deploys on merge to `main`; migrations are applied before or as part of the deploy (decision in section 9).
-- **Definition of done** adds: translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table.
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`, X2): on every pull request and push to `main`, install, lint (with the translation and theme checks), type check, unit tests with coverage (a floor for `shared/`), build, and the pgTAP tests on a fresh PostgreSQL 16 database with every migration applied, which is also the migration dry run (README, "Testing and CI"). Playwright journeys are not in CI yet. Coolify deploys on merge to `main`; migrations are applied before or as part of the deploy (decision in section 9).
+- **Definition of done** adds: translation keys in both languages; colors only from theme tokens (`npm run theme:check`); every new or changed screen checked in both themes, at phone and desktop widths, in both languages; RLS policy for any new table; unit tests for new pure logic, and CI green (X2).
 
 ## 9. Decisions and open questions
 

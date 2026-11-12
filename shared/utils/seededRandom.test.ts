@@ -46,6 +46,20 @@ describe("pickWeighted", () => {
     expect(pickWeighted(["a", "b"], (item) => weights[item] ?? 0, () => 0.9999999999)).toBe("a");
   });
 
+  it("treats a negative weight as none, so it neither gets picked nor shrinks the others' share", () => {
+    const weights: Record<string, number> = { a: 1, b: -5, c: 1 };
+    const getWeight = (item: string) => weights[item] ?? 0;
+    expect(pickWeighted(["b"], getWeight, () => 0.5)).toBeNull();
+    expect(pickWeighted(["a", "b", "c"], getWeight, () => 0.49)).toBe("a");
+    expect(pickWeighted(["a", "b", "c"], getWeight, () => 0.51)).toBe("c");
+  });
+
+  it("returns the last weighted item when rounding leaves a sliver past the total", () => {
+    const weights: Record<string, number> = { a: 0.1, b: 0.2, c: 0 };
+    // A draw at the very top of the range is left a hair above zero after every weight (0.1 + 0.2 rounds up).
+    expect(pickWeighted(["a", "b", "c"], (item) => weights[item] ?? 0, () => 1)).toBe("b");
+  });
+
   it("follows the weights over many draws", () => {
     const random = createSeededRandom(7);
     const counts = { light: 0, heavy: 0 };
