@@ -22,9 +22,10 @@ Runs on `http://localhost:3000`.
 ## Linting
 
 ```bash
-npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs), then the translation check
+npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs), then the translation and theme color checks
 npm run lint:fix   # apply auto-fixes
 npm run i18n:check # the translation check alone (see Translations)
+npm run theme:check # the theme color check alone (see Styling conventions)
 ```
 
 Vue single-file components put `<script>` first, then `<template>`, then `<style>` (`vue/block-order`). Templates may not hold literal text (`vue/no-bare-strings-in-template`, see Translations).
@@ -60,32 +61,15 @@ Keep every schema change as SQL in `supabase/migrations/` so the database can be
 - **Vuetify** components (`v-btn`, `v-card`, form inputs, etc.) own look and feel.
 - **CSS Modules** (`<style module>` in SFCs, or `Component.module.css` files) own page/layout structure — grids, containers, spacing wrappers.
 - Shared design tokens live in `app/assets/css/tokens.css` (spacing, radii, breakpoints) and `app/assets/css/theme.css` (color custom properties). Colors are defined only in the `vuetify.vuetifyOptions.theme` block in `nuxt.config.ts`; Vuetify writes the active theme to `--v-theme-*` variables on `:root`, and `theme.css` aliases them as `--color-*` for CSS-Modules layout code. Add a new color to both themes in `nuxt.config.ts`, then alias it in `theme.css`.
-- The theme preference is `light`, `dark` or `system`. Change it through `useProfileSettings().changeTheme()` (saves to the profile when signed in). `useAppTheme()` keeps it in a `theme` cookie that `app/plugins/theme.ts` applies during the server render; for `system` the server uses the OS theme the browser last reported (`theme-system` cookie), so Vuetify's `:root` variables already match and there is no flash of the wrong theme.
-
-## Auth
-
-Auth uses Supabase's `@supabase/ssr` cookie-based session pattern:
-
-- `server/middleware/supabase.ts` creates a per-request Supabase server client, refreshes the session, and exposes it via `event.context.supabase` / `event.context.supabaseUser`.
-- `app/plugins/supabase.client.ts` creates the browser client and keeps `useSupabaseUser()` in sync via `onAuthStateChange`.
-- `app/middleware/auth.global.ts` runs on every route: signed-out users go to `/login`, signed-in users visiting `/login` go to `/`.
-- `app/middleware/auth.global.ts` also treats `/forgot-password` as guest-only, and sends signed-out visitors of `/reset-password` to `/forgot-password`.
-- `/login` has Sign in and Create account tabs (email + password), a "Forgot password?" link and a "Continue with Google" button. Supabase errors are mapped to translation keys in `app/utils/getAuthErrorKey.ts`.
-- `/forgot-password` sends a Supabase reset email; `/reset-password` sets the new password once the reset link has signed the user in.
-- Every auth screen honours `?next=<same-origin path>` (validated by `shared/utils/getSafeNextPath.ts`): the auth guard sends signed-out visitors of `/join/<token>` to `/login?next=/join/<token>`, and sign-in, sign-up and Google sign-in all return to it.
-- `server/routes/auth/callback.get.ts` finishes Google sign-in and reset links by exchanging the PKCE code for a session cookie, then redirects to the `next` path (same-origin only; default `/`).
-
-Supabase project settings this app expects:
-
-- **Confirm email must stay off** (Authentication → Sign In / Providers → Email). Sign-up then returns a session and the user lands on the home page straight away.
-- **Google provider** must be configured before "Continue with Google" works; see [docs/google-sign-in-setup.md](docs/google-sign-in-setup.md).
-- **Password reset** needs `/auth/callback**` redirect URLs, the bilingual reset email template and, for production, Mailgun as custom SMTP; see [docs/password-reset-setup.md](docs/password-reset-setup.md).
+- **Only theme colors (X1d).** Every color comes from the theme, so it works in both: `var(--color-*)` or `rgb(var(--v-theme-*))` (with an alpha: `rgba(var(--v-theme-on-hero), 0.14)`) in CSS, theme names (`primary`, `muted`, `error`) in Vuetify `color` props. `npm run theme:check` (also run by `npm run lint`; `scripts/check-theme-colors.ts`, logic and tests in `scripts/themeColorCheck.ts`) refuses hex colors, `rgb()`/`hsl()` without a theme variable, named CSS colors in color properties and Vuetify's material palette names (`red`, `grey-lighten-2`) anywhere in `app/`.
+- **Theme (X1d).** The preference is `light`, `dark` or `system`, and is `system` (follow the OS) until the user picks one. The sun/moon toggle (`AppThemeToggle.vue`) is in the app bar of both layouts and on the error page (`app/error.vue`, which uses the auth layout), so it is on every page; it switches between light and dark, and Me also offers System. Both go through `useProfileSettings().changeTheme()`: applied at once, kept in the `theme` cookie (one year), and saved to the profile when signed in. Which value wins at sign-in follows the language's rule (see Translations, "Which language wins"): a theme picked while signed out is marked with the session cookie `theme-unsaved` and saved to the profile at the next sign-in; otherwise the profile's theme wins over the cookie.
+- **No flash of the wrong theme.** `app/plugins/theme.ts` applies the cookie during the server render, so Vuetify's `:root` variables and classes are right in the HTML, and `<html>` carries `data-theme`, `data-theme-preference` and its `color-scheme`. For `system` the server needs the OS setting: it asks for the `Sec-CH-Prefers-Color-Scheme` client hint (`Accept-CH`, with `Critical-CH` so Chromium retries a first visit with it) and otherwise uses the theme the browser last reported (`theme-system` cookie). Browsers without the hint (Firefox, Safari) run a small inline `<head>` script (`SYSTEM_THEME_SCRIPT`, `app/utils/systemTheme.ts`) before the body is parsed: when the rendered theme is not the OS theme (first visit, or the OS setting changed since) it saves the OS theme in the cookie and reloads once with the page hidden, so the wrong theme never paints. After hydration Vuetify follows OS changes live.
 
 ## Profile
 
 - `profiles` has one row per auth user, created by the `on_auth_user_created` trigger (`supabase/migrations/20261021000000_create_profiles.sql`). The display name comes from Google's `full_name`/`name`, else the part of the email before `@`. `locale` starts empty and is set to the language the user first browses in.
 - RLS: a user reads and updates only their own row (`display_name`, `locale`, `theme`, `diet` columns only); members of the same household can read it through `shares_household()`, so they can see each other's diet. Inserts happen only through the trigger, deletes through the `auth.users` cascade.
-- `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then applies its theme over the cookie and resolves the language with `resolveProfileLocale()` (see Translations). `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
+- `app/plugins/profile.ts` loads the profile during SSR and whenever the signed-in user changes, then resolves its theme and language against the cookies with `resolveProfileChoice()` (see Translations and Styling conventions). `useProfile()` reads and saves the row; `useProfileSettings()` applies a change at once and puts the old value back if saving fails.
 - `/me` edits the display name, language and theme, links to Food preferences, Where you shop, Liked and skipped meals and Household, and holds sign-out.
 - `/me/preferences` (Food preferences) holds the diet picker and "My meal ratings" (C4, see "Recipe ratings"), the user's rated recipes in one tab per rating.
 - `/me/shops` (Where you shop) shows shop insights (I1, see "Shop insights").
@@ -354,7 +338,7 @@ supabase test db
 UI text comes from `i18n/locales/en.json` and `i18n/locales/lt.json` through `@nuxtjs/i18n` (`no_prefix` strategy). The locale follows the browser language (`Accept-Language` on the first request), falls back to English, and is remembered in a `locale` cookie (one year). `<html lang>` follows the active language.
 
 - **Switcher (X1a).** `AppLanguageSwitcher.vue` sits in the app bar of both layouts (`default`, and `auth` for login, sign-up and password reset), so it is on every page. It shows the active code ("EN", "LT") and opens a menu of the language names, each written in its own language. Picking one goes through `useProfileSettings().changeLanguage()`: `setLocale()` switches at once without a reload (dates, plurals and Vuetify's texts follow) and writes the cookie; signed in, it is also saved to the profile, and a failed save puts the old language back with a message. The language setting on Me uses the same call.
-- **Which language wins.** The latest explicit choice: while signed in, the profile's language wins over the cookie when the profile loads (sign-in, a new device or browser) and the cookie is updated to it. A language picked while signed out (on the login screen, say) is marked with the session cookie `locale-unsaved` (`useUnsavedLocaleChoice()`), and the next sign-in keeps it and saves it to the profile instead; this survives Google's redirect. A new profile takes the language the user is browsing in. The rule is `resolveProfileLocale()` in `app/utils/profileLocale.ts`. vue-i18n's own options are in `i18n/i18n.config.ts`: English as the fallback for a missing message, the Lithuanian plural rule, and Vuetify's own texts (`$vuetify.*`, from `vuetify/locale`).
+- **Which language wins.** The latest explicit choice: while signed in, the profile's language wins over the cookie when the profile loads (sign-in, a new device or browser) and the cookie is updated to it. A language picked while signed out (on the login screen, say) is marked with the session cookie `locale-unsaved` (`useUnsavedProfileChoice("locale")`), and the next sign-in keeps it and saves it to the profile instead; this survives Google's redirect. A new profile takes the language the user is browsing in. The rule is `resolveProfileChoice()` in `app/utils/profileChoice.ts`, which the theme follows too (X1d). vue-i18n's own options are in `i18n/i18n.config.ts`: English as the fallback for a missing message, the Lithuanian plural rule, and Vuetify's own texts (`$vuetify.*`, from `vuetify/locale`).
 
 - **No literal text.** ESLint's `vue/no-bare-strings-in-template` refuses text in templates and in user-facing attributes and Vuetify props (`title`, `label`, `text`, `hint`, `placeholder`, `aria-label` and others, listed in `eslint.config.mjs`). Punctuation such as `·` is allowed. Quotation marks are language-specific, so they are messages too (`plan.adjust.unsupportedPart`).
 - **Translation check.** `npm run i18n:check` (also run by `npm run lint`; `scripts/check-locales.ts`, logic and tests in `scripts/localeCheck.ts`) fails when a key is missing from a locale or empty, a message does not compile, placeholders differ between the locales, a plural message has a number of forms its language does not take, or the code (`app/`, `server/`, `shared/`, tests excluded) names a key, or the start of a `` `key.${…}` `` template, that no locale has.

@@ -6,8 +6,14 @@ export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 export type Profile = z.output<typeof profileRowSchema>;
 export type ProfileChanges = Partial<Pick<Profile, "displayName" | "locale" | "theme" | "diet" | "showNutrition">>;
 
-// The language to use once a profile has loaded, and whether the profile must be updated to it.
-export interface ProfileLocaleResolution {
-  locale: LocaleCode;
+// The settings a signed-out choice is kept for at the next sign-in (X1a, X1d).
+export type UnsavedProfileSetting = "locale" | "theme";
+
+// The value to use once a profile has loaded, and whether the profile must be updated to it.
+export interface ProfileChoiceResolution<T> {
+  value: T;
   isSaveNeeded: boolean;
 }
+
+// What "system" resolves to: the theme that is actually painted.
+export type ResolvedTheme = "light" | "dark";

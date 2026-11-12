@@ -9,6 +9,18 @@
   "language": {
     "switcher": "Kalba: {language}"
   },
+  "error": {
+    "notFound": {
+      "title": "Puslapis nerastas",
+      "text": "Šio puslapio nėra arba jis perkeltas."
+    },
+    "generic": {
+      "title": "Kažkas nepavyko",
+      "text": "Pabandykite dar kartą po akimirkos."
+    },
+    "home": "Į pradžią",
+    "pageTitle": "Klaida"
+  },
   "nav": {
     "label": "Pagrindinis meniu",
     "home": "Pradžia",

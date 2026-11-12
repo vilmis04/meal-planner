@@ -58,7 +58,7 @@ const { t } = useI18n();
   width: 52px;
   height: 52px;
   border-radius: var(--radius-lg);
-  background-color: rgb(255 255 255 / 14%);
+  background-color: rgba(var(--v-theme-on-hero), 0.14);
 }
 
 .title {
