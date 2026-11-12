@@ -783,10 +783,6 @@
       "hint": "A shopping list comes with every plan. Create a plan to get one.",
       "action": "Go to plans"
     },
-    "units": {
-      "pieces": "pcs",
-      "pack": "pack"
-    },
     "addItem": {
       "open": "Add item",
       "title": "Add item",
@@ -877,6 +873,18 @@
       "noHintGroup": "No shop hint",
       "noHintGroupHint": "Bought at a recorded shop fewer than 3 times before."
     }
+  },
+  "units": {
+    "pieces": "pcs",
+    "pack": "pack | packs",
+    "tablespoon": "tbsp",
+    "teaspoon": "tsp",
+    "clove": "clove | cloves",
+    "slice": "slice | slices",
+    "can": "can | cans",
+    "head": "head | heads",
+    "strip": "strip | strips",
+    "lemon": "lemon | lemons"
   },
   "insights": {
     "range": {

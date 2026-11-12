@@ -75,6 +75,7 @@ export function useShoppingItemEdits(items: Ref<ShoppingItem[]>) {
       {
         id: crypto.randomUUID(),
         source: "manual",
+        ingredientId: null,
         ...newItem,
         isExtra: false,
         swappedFor: [],

@@ -21,9 +21,12 @@ const range = computed<InsightRange>({
   },
 });
 
+const { load: loadIngredientNames } = useIngredientNames();
 const [{ data: result, status }] = await Promise.all([
   useAsyncData("shop-insights", () => load(range.value), { watch: [range] }),
   callOnce("household", loadHousehold, { mode: "navigation" }),
+  // Bought items are named in the viewer's language (X1b).
+  loadIngredientNames(),
 ]);
 
 const view = computed(() => (result.value?.status === "loaded" ? getShopInsightsView(result.value.insights) : null));

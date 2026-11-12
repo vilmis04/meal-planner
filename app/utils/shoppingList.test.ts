@@ -8,6 +8,7 @@ const SHOP_ID = "00000000-0000-4000-8000-0000000000a1";
 const itemRow = {
   id: ITEM_ID,
   source: "generated",
+  ingredient_id: "00000000-0000-4000-8000-0000000000c1",
   name: "Svogūnai",
   category: "fruit_and_vegetables",
   amount: 300,
@@ -32,7 +33,13 @@ describe("shoppingListRowSchema", () => {
   it("reads a bought line's purchase into the line", () => {
     const list = shoppingListRowSchema.parse(listRow({ shop_id: SHOP_ID, amount: 250, unit: "g" }));
 
-    expect(list.items[0]).toMatchObject({ id: ITEM_ID, shopId: SHOP_ID, boughtAmount: 250, boughtUnit: "g" });
+    expect(list.items[0]).toMatchObject({
+      id: ITEM_ID,
+      ingredientId: "00000000-0000-4000-8000-0000000000c1",
+      shopId: SHOP_ID,
+      boughtAmount: 250,
+      boughtUnit: "g",
+    });
   });
 
   it("reads a line without a purchase, embedded as null or as an empty list", () => {

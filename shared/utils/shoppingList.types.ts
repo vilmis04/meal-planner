@@ -85,6 +85,9 @@ export interface ShoppingListBuild {
 export interface ShoppingItem {
   id: string;
   source: ShoppingItemSource;
+  // The canonical ingredient of a generated line (G1), null for a manual line or an item without an alias. The page
+  // names the line through it in the viewer's language (X1b); name is the Lithuanian name the line was built with.
+  ingredientId: string | null;
   name: string;
   category: IngredientCategory;
   amount: number | null;
@@ -118,6 +121,8 @@ interface ShoppingListGroup {
 export interface ShoppingListViewOptions {
   // Bought lines go to the bottom of their group (the design's "Bought last", on by default).
   isBoughtLast: boolean;
+  // The language the names are sorted in; Lithuanian, the recipes' own, when not given.
+  locale?: string;
 }
 
 // What the list shows: its groups in list order (categories in the order of a walk through a shop, the extras, then

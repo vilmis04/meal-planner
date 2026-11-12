@@ -1,21 +1,23 @@
-import type { RecipeLoadResult, RecipeSummary } from "~/types/recipe.types";
+import type { RecipeListEntry, RecipeLoadResult } from "~/types/recipe.types";
 import type { Page } from "#shared/utils/fetchAllPages";
 
 export function useRecipes() {
   const supabase = useSupabaseClient();
+  const { locale } = useI18n();
   // The library is loaded once, whole, and filtered in the browser: a row is about 90 bytes, so a few thousand
   // recipes are still a small payload. It is read page by page because Supabase caps a response at 1000 rows
   // (silently), so a long library is never cut off. If it ever outgrows what one list can show, filtering and
   // paging move to the server (the meal_type column is already indexed).
-  const recipes = useState<RecipeSummary[] | null>("recipes", () => null);
+  // Every language's name is kept (X1b); the list follows the active language, also when it changes (X1a).
+  const entries = useState<RecipeListEntry[] | null>("recipes", () => null);
+  const recipes = computed(() => (entries.value ? localizeRecipeList(entries.value, locale.value) : null));
   const loadFailed = useState<boolean>("recipes-load-failed", () => false);
 
   const fetchPage = async (from: number, to: number): Promise<Page<unknown>> => {
     const { data, error, count } = await supabase
       .from("recipes")
       .select(RECIPE_LIST_COLUMNS, { count: "exact" })
-      // The id breaks ties, so a row can never fall between two pages.
-      .order("name")
+      // In id order, so a row can never fall between two pages; the list is sorted by name in the viewer's language.
       .order("id")
       .range(from, to);
 
@@ -37,12 +39,12 @@ export function useRecipes() {
 
     if (!result?.success) {
       console.error("Loading the recipes failed", failure ?? result?.error);
-      recipes.value = null;
+      entries.value = null;
       loadFailed.value = true;
       return;
     }
 
-    recipes.value = result.data;
+    entries.value = result.data;
     loadFailed.value = false;
   };
 
@@ -74,5 +76,5 @@ export function useRecipes() {
     return { status: "found", recipe: result.data };
   };
 
-  return { recipes: readonly(recipes), loadFailed: readonly(loadFailed), loadList, loadRecipe };
+  return { recipes, loadFailed: readonly(loadFailed), loadList, loadRecipe };
 }

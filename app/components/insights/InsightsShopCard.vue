@@ -6,6 +6,8 @@ import type { ShopInsightsView } from "~/types/shopInsights.types";
 const props = defineProps<{ shop: ShopInsightsView["shops"][number] }>();
 
 const { t } = useI18n();
+// An item is named as its ingredient's Lithuanian name (or a manual line's own); shown in the viewer's language (X1b).
+const { getIngredientNameBySourceName } = useIngredientNames();
 
 const headingId = computed(() => `insights-shop-${props.shop.id}`);
 </script>
@@ -33,7 +35,7 @@ const headingId = computed(() => `insights-shop-${props.shop.id}`);
     <h3 :class="$style.listTitle">{{ t("insights.shops.topItems") }}</h3>
     <ol :class="$style.list" data-testid="insights-shop-items">
       <li v-for="item in shop.topItems" :key="item.name" :class="$style.item">
-        <span :class="$style.itemName">{{ item.name }}</span>
+        <span :class="$style.itemName">{{ getIngredientNameBySourceName(item.name) }}</span>
         <span :class="$style.itemCount">{{ t("insights.shops.timesBought", { count: item.purchaseCount }, item.purchaseCount) }}</span>
       </li>
     </ol>

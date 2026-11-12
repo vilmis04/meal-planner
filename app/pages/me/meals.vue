@@ -11,6 +11,8 @@ const route = useRoute();
 const router = useRouter();
 const { load } = usePreferenceInsights();
 const { ratings, isLoaded: isRatingLoaded, load: loadRatings } = useRecipeRatings();
+// The insights name each meal as stored (Lithuanian); the library names it in the viewer's language (X1b).
+const { recipes, loadList: loadRecipes } = useRecipes();
 
 useHead({ title: () => t("insights.meals.pageTitle") });
 
@@ -26,13 +28,18 @@ const range = computed<InsightRange>({
 const [{ data: result, status }] = await Promise.all([
   useAsyncData("preference-insights", () => load(range.value), { watch: [range] }),
   isRatingLoaded.value ? undefined : loadRatings(),
+  recipes.value ? undefined : loadRecipes(),
 ]);
+
+const recipeNames = computed(() => new Map((recipes.value ?? []).map((recipe) => [recipe.id, recipe.name])));
+const getMealName = (meal: { id: string; name: string }): string => recipeNames.value.get(meal.id) ?? meal.name;
 
 const insights = computed(() => (result.value?.status === "loaded" ? result.value.insights : null));
 
 const likedRows = computed((): InsightMealRow[] =>
   getStillLikedMeals(insights.value?.liked ?? [], ratings.value).map((meal) => ({
     ...meal,
+    name: getMealName(meal),
     countText:
       meal.plannedCount === 0
         ? t("insights.meals.liked.notPlanned")
@@ -43,6 +50,7 @@ const likedRows = computed((): InsightMealRow[] =>
 const skippedRows = computed((): InsightMealRow[] =>
   (insights.value?.skipped ?? []).map((meal) => ({
     ...meal,
+    name: getMealName(meal),
     countText: t("insights.meals.skipped.times", { count: meal.skipCount }, meal.skipCount),
   })),
 );

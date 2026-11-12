@@ -21,6 +21,9 @@ const emit = defineEmits<{ apply: [constraints: PlanConstraints] }>();
 
 const { t, locale } = useI18n();
 const { interpret } = usePlanAdjustment();
+// The AI names ingredients by their Lithuanian canonical name; the rules show them in the viewer's language (X1b).
+const { load: loadIngredientNames, getIngredientNameBySourceName } = useIngredientNames();
+onMounted(loadIngredientNames);
 
 const text = ref("");
 const adjustment = ref<PlanAdjustment | null>(null);
@@ -79,7 +82,7 @@ const getRuleLabel = (rule: PlanConstraintRule): string => {
     case "excluded_protein":
       return t("plan.adjust.rule.excludedProtein", { protein: t(`plan.adjust.protein.${rule.protein}`) });
     case "excluded_ingredient":
-      return t("plan.adjust.rule.excludedIngredient", { ingredient: rule.ingredientName });
+      return t("plan.adjust.rule.excludedIngredient", { ingredient: getIngredientNameBySourceName(rule.ingredientName) });
     case "quick_meals":
       return t("plan.adjust.rule.quickMeals");
   }

@@ -1,15 +1,20 @@
 <script setup lang="ts">
 defineOptions({ name: "RecipePage" });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
 const { loadRecipe } = useRecipes();
 
 const id = String(route.params.id);
 const { data: result } = await useAsyncData(`recipe-${id}`, () => loadRecipe(id));
 
+// In the viewer's language, and again in the other one when they switch (X1b).
+const recipe = computed(() =>
+  result.value?.status === "found" ? localizeRecipe(result.value.recipe, locale.value) : null,
+);
+
 useHead({
-  title: () => (result.value?.status === "found" ? result.value.recipe.name : t("recipes.pageTitle")),
+  title: () => recipe.value?.name ?? t("recipes.pageTitle"),
 });
 
 // The back link keeps the meal filter the list was showing.
@@ -29,7 +34,7 @@ const listLocation = computed(() => ({ path: "/recipes", query: route.query }));
       {{ t("recipes.detail.back") }}
     </v-btn>
 
-    <RecipeDetail v-if="result?.status === 'found'" :recipe="result.recipe" />
+    <RecipeDetail v-if="recipe" :recipe="recipe" />
     <v-alert v-else-if="result?.status === 'not-found'" type="warning" variant="tonal" data-testid="recipe-not-found">
       {{ t("recipes.errors.notFound") }}
       <template #append>

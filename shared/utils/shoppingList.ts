@@ -52,7 +52,8 @@ const UNMAPPED_CATEGORY: IngredientCategory = "other";
 // shopping_items.amount is numeric(12, 2).
 const AMOUNT_FRACTION_DIGITS = 2;
 const SMALLEST_AMOUNT = 0.01;
-// Lines are sorted as the recipes are written: Lithuanian, until X1b.
+// A build stores the Lithuanian names (the source language, X1b) and sorts them as Lithuanian; the list view sorts the
+// names it is given in the viewer's language.
 const NAME_COLLATION_LOCALE = "lt";
 
 export function buildShoppingList(input: ShoppingListInput): ShoppingListBuild {
@@ -116,14 +117,15 @@ export function buildShoppingList(input: ShoppingListInput): ShoppingListBuild {
 // The lines the list shows (in the plan and not removed), by category in INGREDIENT_CATEGORIES order (a walk through a
 // shop), then the "to taste" extras, then the lines someone has at home (G4), without empty groups. Within a group,
 // bought lines go last when isBoughtLast is on (G5), so what is left to find stays at the top; otherwise lines keep
-// their name order and a tick does not move them. Lines at home count neither as bought nor as to buy. Names follow
-// the recipes' language.
+// their name order and a tick does not move them. Lines at home count neither as bought nor as to buy. Names are
+// sorted as the given locale does (the page passes the lines named in the viewer's language, X1b).
 export function getShoppingListView(
   items: readonly ShoppingItem[],
-  { isBoughtLast }: ShoppingListViewOptions = { isBoughtLast: true },
+  { isBoughtLast, locale = NAME_COLLATION_LOCALE }: ShoppingListViewOptions = { isBoughtLast: true },
 ): ShoppingListView {
   const compareLines = (first: ShoppingItem, second: ShoppingItem): number =>
-    (isBoughtLast ? Number(isBought(first)) - Number(isBought(second)) : 0) || compareNames(first.name, second.name);
+    (isBoughtLast ? Number(isBought(first)) - Number(isBought(second)) : 0) ||
+    first.name.localeCompare(second.name, locale);
   const shownItems = items.filter((item) => item.inPlan && !item.isRemoved).sort(compareLines);
   const atHomeItems = shownItems.filter((item) => item.state === "have_at_home");
   const shoppingItems = shownItems.filter((item) => item.state !== "have_at_home");

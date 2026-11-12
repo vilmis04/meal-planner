@@ -123,6 +123,7 @@ const amountsByKey = (input: ShoppingListInput) =>
 const storedItem = (overrides: Partial<ShoppingItem>): ShoppingItem => ({
   id: "item",
   source: "generated",
+  ingredientId: null,
   name: "Item",
   category: "other",
   amount: 1,
@@ -392,6 +393,19 @@ describe("getShoppingListView", () => {
     const view = getShoppingListView([storedItem({ id: "oats", name: "Avižiniai dribsniai", category: "grains_and_bread" })]);
 
     expect(view.groups.map((group) => group.key)).toEqual(["grains_and_bread"]);
+  });
+
+  it("sorts names in the language it is given, Lithuanian by default", () => {
+    const items = [
+      storedItem({ id: "yogurt", name: "Yogurt", category: "dairy_and_eggs" }),
+      storedItem({ id: "jelly", name: "Jelly", category: "dairy_and_eggs" }),
+    ];
+    const ids = (locale?: string) =>
+      getShoppingListView(items, { isBoughtLast: true, locale }).groups[0]?.items.map((item) => item.id);
+
+    // Lithuanian sorts "y" with "i", before "j".
+    expect(ids()).toEqual(["yogurt", "jelly"]);
+    expect(ids("en")).toEqual(["jelly", "yogurt"]);
   });
 
   it("has no groups for an empty list", () => {

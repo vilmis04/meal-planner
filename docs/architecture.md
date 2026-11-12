@@ -142,7 +142,7 @@ Rules:
 
 **AI protein swaps (D2).** On demand: the first request for a recipe and diet (`GET /api/recipes/:id/swaps/:diet`, or E4 on the server) claims the pair in `recipe_protein_swaps`, calls the Gemini API once, validates the structured output (ingredient exists, replacement fits the diet) and stores it per language. Every later request reads the stored row, so each pair costs one AI call; concurrent first requests make one call between them, and failed pairs retry after a growing wait. An optional backfill script (`npm run swaps:generate`) fills all pairs ahead of time through the same service.
 
-**Translations (X1, X1b).** UI strings come from `i18n/locales/*.json` through the i18n module; numbers, dates and lists are formatted by `shared/utils/localeFormat.ts` only. Recipe content is read from translation tables joined on the active locale with LT fallback.
+**Translations (X1, X1b).** UI strings come from `i18n/locales/*.json` through the i18n module; numbers, dates and lists are formatted by `shared/utils/localeFormat.ts` only. Recipe content (recipes, their ingredient lines, canonical ingredients, tips) has one translation row per language (`recipe_translations`, `recipe_ingredient_translations`, `ingredient_translations`, `tip_translations`); the Lithuanian source columns stay, and triggers keep their `lt` rows in step. The browser reads every language's rows with the content and picks the active one (`pickTranslation()`, LT fallback), so a language switch needs no new read. Shopping list lines are named through their ingredient id; units are translated by UI messages (`app/utils/unitLabel.ts`). `missing_content_translations` and `npm run translations:report` list what is missing.
 
 ## 7. Cross-cutting concerns
 

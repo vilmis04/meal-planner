@@ -13,6 +13,7 @@ const row = {
   list_id: LIST_ID,
   source: "generated",
   generated_key: "ingredient:x|g",
+  ingredient_id: "00000000-0000-4000-8000-0000000000c1",
   name: "Svogūnai",
   category: "fruit_and_vegetables",
   amount: 300,
@@ -34,7 +35,13 @@ describe("remoteShoppingItemChangeSchema", () => {
     expect(result).toEqual({
       kind: "upsert",
       listId: LIST_ID,
-      item: expect.objectContaining({ id: ITEM_ID, state: "bought", amount: 300, isExtra: false }),
+      item: expect.objectContaining({
+        id: ITEM_ID,
+        ingredientId: "00000000-0000-4000-8000-0000000000c1",
+        state: "bought",
+        amount: 300,
+        isExtra: false,
+      }),
     });
   });
 
