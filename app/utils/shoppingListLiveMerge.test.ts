@@ -10,6 +10,7 @@ import type { ShoppingItemGuardedField } from "~/types/shoppingList.types";
 const item = (id: string, overrides: Partial<ShoppingItem> = {}): ShoppingItem => ({
   id,
   source: "generated",
+  ingredientId: null,
   name: id,
   category: "other",
   amount: 100,

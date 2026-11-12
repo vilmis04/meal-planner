@@ -5,6 +5,7 @@ import type { ShoppingItem } from "#shared/utils/shoppingList.types";
 const item = (id: string, overrides: Partial<ShoppingItem> = {}): ShoppingItem => ({
   id,
   source: "generated",
+  ingredientId: null,
   name: id,
   category: "other",
   amount: 100,

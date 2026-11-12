@@ -7,12 +7,15 @@ import type { RemoteShoppingItem, ShoppingItemPurchaseFields } from "~/types/sho
 // A plan's list and its lines (G2), with each bought line's purchase (G7), as the list page reads them. Row level
 // security shows lists of plans the viewer can open only.
 export const SHOPPING_LIST_COLUMNS =
-  "id, source_version, generated_version, missing_swap_count, shopping_items(id, source, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override, added_by, purchases(shop_id, amount, unit))";
+  "id, source_version, generated_version, missing_swap_count, shopping_items(id, source, ingredient_id, name, category, amount, unit, is_extra, swapped_for, in_plan, state, is_removed, amount_override, added_by, purchases(shop_id, amount, unit))";
 
 // The columns of a line as both PostgREST and Realtime (G6) send them.
 export const shoppingItemColumnsSchema = z.object({
   id: z.guid(),
   source: z.enum(SHOPPING_ITEM_SOURCES),
+  // The line's canonical ingredient (G1), which names it in the viewer's language (X1b); null for a manual line or an
+  // item without an alias.
+  ingredient_id: z.guid().nullable(),
   name: z.string(),
   category: z.enum(INGREDIENT_CATEGORIES),
   amount: z.number().positive().nullable(),
@@ -29,6 +32,7 @@ export const shoppingItemColumnsSchema = z.object({
 export const toRemoteShoppingItem = (row: z.output<typeof shoppingItemColumnsSchema>): RemoteShoppingItem => ({
   id: row.id,
   source: row.source,
+  ingredientId: row.ingredient_id,
   name: row.name,
   category: row.category,
   amount: row.amount,

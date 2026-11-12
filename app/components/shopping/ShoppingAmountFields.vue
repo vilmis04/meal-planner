@@ -12,7 +12,7 @@ const amountText = defineModel<string>("amountText", { required: true });
 const unit = defineModel<string | null>("unit", { required: true });
 
 const { t } = useI18n();
-const { unitLabel } = useShoppingAmountFormat();
+const { unitLabel } = useAmountFormat();
 
 const ERROR_KEYS: Readonly<Record<AmountInputError, string>> = {
   not_a_number: "shoppingList.validation.notANumber",

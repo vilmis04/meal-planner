@@ -14,6 +14,7 @@ const MILK_ID = "00000000-0000-4000-8000-0000000000a2";
 const item = (id: string, overrides: Partial<ShoppingItem> = {}): ShoppingItem => ({
   id,
   source: "generated",
+  ingredientId: null,
   name: id,
   category: "other",
   amount: 100,

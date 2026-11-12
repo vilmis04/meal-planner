@@ -9,7 +9,7 @@ const isOpen = defineModel<boolean>({ required: true });
 const emit = defineEmits<{ save: [item: ShoppingItem, change: ShoppingItemAmountChange] }>();
 
 const { t, locale } = useI18n();
-const { formatQuantity } = useShoppingAmountFormat();
+const { formatQuantity } = useAmountFormat();
 
 const amountText = ref("");
 const unit = ref<string | null>(null);

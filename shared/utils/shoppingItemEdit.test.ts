@@ -26,6 +26,7 @@ const QUOTED_VALUE_REGEX = /'([^']+)'/g;
 const item = (overrides: Partial<ShoppingItem>): ShoppingItem => ({
   id: "item",
   source: "generated",
+  ingredientId: null,
   name: "Vištienos filė",
   category: "meat_and_fish",
   amount: 600,

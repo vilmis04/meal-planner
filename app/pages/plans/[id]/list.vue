@@ -38,6 +38,7 @@ const {
   applyStoredItems,
 } = useShoppingItemEdits(items);
 const { shops, loadShops, reloadShops, addShop } = useShops();
+const { load: loadIngredientNames, getIngredientName } = useIngredientNames();
 const { defaultShopName, setDefaultShopName } = useShoppingDefaultShop();
 
 // The list is brought up to date with the plan first (the server rebuilds it only when the plan changed), then read.
@@ -54,6 +55,8 @@ const [{ data: planResult }, { data: listResult, refresh: reloadList, status: li
     useAsyncData(`shopping-list-${id}`, loadList),
     callOnce("household", loadHousehold, { mode: "navigation" }),
     useAsyncData(`shops-${id}`, loadShops),
+    // Generated lines are named through their ingredient in the viewer's language (X1b).
+    loadIngredientNames(),
   ]);
 watch(
   shopsResult,
@@ -80,8 +83,17 @@ watch(
   { immediate: true },
 );
 const { isBoughtLast, setBoughtLast } = useShoppingListBoughtLast();
+// The lines as shown: a generated line named in the viewer's language through its ingredient (X1b), following a switch
+// of language at once; manual lines and items without an ingredient keep their own name. Changes still go to items.
+const shownItems = computed(() =>
+  items.value.map((item) =>
+    item.ingredientId === null ? item : { ...item, name: getIngredientName(item.ingredientId, item.name) },
+  ),
+);
 const view = computed(() =>
-  list.value ? getShoppingListView(items.value, { isBoughtLast: isBoughtLast.value }) : null,
+  list.value
+    ? getShoppingListView(shownItems.value, { isBoughtLast: isBoughtLast.value, locale: locale.value })
+    : null,
 );
 const { isGroupExpanded, setGroupExpanded } = useShoppingListGroupExpansion(() => list.value?.id ?? null);
 
@@ -315,7 +327,7 @@ function handleShopPromptChoose() {
 // The dialog's title and choices for what it sets; the line as it is now, which may have changed since it opened.
 const shopDialogItem = computed(() => {
   const target = shopDialogTarget.value;
-  return target?.kind === "item" ? (items.value.find((item) => item.id === target.itemId) ?? null) : null;
+  return target?.kind === "item" ? (shownItems.value.find((item) => item.id === target.itemId) ?? null) : null;
 });
 const shopDialog = computed(() => {
   const item = shopDialogItem.value;

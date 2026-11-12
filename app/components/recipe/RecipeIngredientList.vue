@@ -7,14 +7,17 @@ type IngredientRow = RecipeIngredient & { swapped?: boolean };
 defineProps<{ ingredients: readonly IngredientRow[] }>();
 
 const { t, locale } = useI18n();
+const { formatAmountWithUnit } = useAmountFormat();
 
-// Units are free text from the seed (g, ml, vnt., v.š.) and shown as stored; a missing amount means "to taste".
+// Units are free text from the seed (g, ml, vnt., v.š.), read in the viewer's language (X1b); a missing amount means
+// "to taste".
 function amountLabel(ingredient: IngredientRow): string {
-  const amount = formatAmount(ingredient.amount, locale.value);
-  if (amount === null) {
+  if (ingredient.amount === null) {
     return t("recipes.detail.toTaste");
   }
-  return ingredient.unit ? `${amount} ${ingredient.unit}` : amount;
+  return ingredient.unit
+    ? formatAmountWithUnit(ingredient.amount, ingredient.unit)
+    : (formatAmount(ingredient.amount, locale.value) ?? "");
 }
 </script>
 

@@ -783,10 +783,6 @@
       "hint": "Kiekvienas planas turi pirkinių sąrašą. Sukurkite planą ir jį gausite.",
       "action": "Į planus"
     },
-    "units": {
-      "pieces": "vnt.",
-      "pack": "pak."
-    },
     "addItem": {
       "open": "Pridėti prekę",
       "title": "Pridėti prekę",
@@ -877,6 +873,18 @@
       "noHintGroup": "Be užuominos",
       "noHintGroupHint": "Anksčiau nurodytoje parduotuvėje pirkta mažiau nei 3 kartus."
     }
+  },
+  "units": {
+    "pieces": "vnt.",
+    "pack": "pak.",
+    "tablespoon": "v. š.",
+    "teaspoon": "a. š.",
+    "clove": "skiltelė | skiltelės | skiltelių",
+    "slice": "riekelė | riekelės | riekelių",
+    "can": "skardinė | skardinės | skardinių",
+    "head": "galva | galvos | galvų",
+    "strip": "juostelė | juostelės | juostelių",
+    "lemon": "citrina | citrinos | citrinų"
   },
   "insights": {
     "range": {

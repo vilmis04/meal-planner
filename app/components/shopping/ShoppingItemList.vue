@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { formatQuantity } = useShoppingAmountFormat();
+const { formatQuantity } = useAmountFormat();
 
 // Extras have no amount; a changed amount reads instead of the plan's.
 const amountLabel = (item: ShoppingItem): string | null => {
