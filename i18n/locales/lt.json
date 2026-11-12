@@ -597,7 +597,7 @@
       "showSwap": "Rodyti pakeitimą",
       "sameAmount": "{item}, tas pats kiekis",
       "swappedLine": "pakeista pagal jūsų mitybą",
-      "preparing": "Ruošiamas pakeitimas jūsų mitybai ({diet})…",
+      "loading": "Įkeliamas pakeitimas jūsų mitybai ({diet})…",
       "unavailable": "Pakeitimas jūsų mitybai ({diet}) dar neparuoštas. Rodomas originalus receptas."
     },
     "rating": {

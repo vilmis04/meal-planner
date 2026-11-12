@@ -2,7 +2,7 @@
  * Protein swaps (D2): the rules for asking an AI to replace the proteins a diet excludes, and for checking
  * its answer before anything is stored.
  *
- * Pure on purpose (no database, network or framework imports): the server's on-demand service, the backfill
+ * Pure on purpose (no database, network or framework imports): the swap service, the generate
  * script and the tests all use it. Imports are relative so the script can run outside Nuxt.
  */
 import { DIETS, allowedProteins, isProteinAllowed, isRecipeCompatible } from "./diet";
@@ -23,15 +23,19 @@ import type {
 // Bump when the prompt or the rules change in a way that should regenerate stored swaps.
 export const PROMPT_VERSION = 1;
 
-// Swaps are written in the recipe content language; X1c adds English.
+// Swaps are generated in the recipe content language (Lithuanian) and translated once into the others (X1c).
 export const SWAP_LOCALES = ["lt", "en"] as const;
 export const DEFAULT_SWAP_LOCALE: SwapLocale = "lt";
+export const SWAP_TRANSLATION_LOCALES: readonly SwapLocale[] = SWAP_LOCALES.filter(
+  (locale) => locale !== DEFAULT_SWAP_LOCALE,
+);
 
 // A pending claim older than this belongs to a request that died; claim_recipe_protein_swap() uses the same.
 export const CLAIM_TTL_MS = 2 * 60 * 1000;
 
-const MAX_ITEM_LENGTH = 120;
-const MAX_NOTE_LENGTH = 300;
+// As recipe_protein_swap_items_item_length and recipe_protein_swaps_note_length (and their translations, X1c).
+export const MAX_ITEM_LENGTH = 120;
+export const MAX_NOTE_LENGTH = 300;
 const MAX_AMOUNT = 999_999.99; // numeric(8, 2)
 const MAX_AMOUNT_FACTOR = 3; // a replacement may use at most 3x the original amount in the same unit
 const NUTRITION_MIN_FACTOR = 0.5;
@@ -133,7 +137,8 @@ const PROTEIN_STEMS: Partial<Record<Protein, readonly string[]>> = {
 };
 const PLANT_MARKERS = ["augalin", "vegan", "veget", "soj", "plant-based", "plant based", "tofu", "seitan"];
 
-function namedExcludedProtein(item: string, diet: Diet, replacementProtein: Protein): Protein | null {
+// Also checks translated replacements (shared/utils/proteinSwapTranslation.ts).
+export function namedExcludedProtein(item: string, diet: Diet, replacementProtein: Protein): Protein | null {
   const name = item.toLocaleLowerCase("lt");
   if (replacementProtein === "plant" && PLANT_MARKERS.some((marker) => name.includes(marker))) {
     return null;

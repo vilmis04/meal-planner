@@ -1,13 +1,19 @@
 /*
- * Get a protein swap, generating it on demand (D2). The one entry point for the API route and the backfill
- * script, so the cache rule lives in one place (the plan generator, E4, reads stored ready swaps only):
+ * Protein swaps (D2), stored once and read many times. Viewing never calls the AI (X1c):
  *
+ *   createProteinSwapReader()   what the API route uses: a stored, ready swap made from the recipe's current
+ *                               ingredients, in every language it is stored in, or "missing". No AI client at all.
+ *   createProteinSwapService()  what `npm run swaps:generate` uses: getOrCreateSwap() generates a missing or stale
+ *                               swap in Lithuanian, and translateSwap() translates a ready one into another language,
+ *                               each once (stored ones are read, not asked for again).
+ *
+ * getOrCreateSwap()'s cache rule:
  *   stored, ready and made from the current ingredients  -> return it, no AI call
- *   another request is generating it                     -> "pending", ask again shortly
+ *   another run is generating it                         -> "pending"
  *   failed recently                                      -> "unavailable" until retry_after
  *   otherwise                                            -> claim it (one winner), ask the AI, save, return
  *
- * Callers check who is asking before calling. Imports are explicit so the backfill script can run it too.
+ * Imports are explicit so the backfill script can run it too.
  */
 import { createHash } from "node:crypto";
 import { isRecipeCompatible } from "../../shared/utils/diet";
@@ -18,12 +24,23 @@ import {
   nextRetryAfter,
   swapCacheDecision,
 } from "../../shared/utils/proteinSwap";
-import type { ProteinSwapView, SwapRecipe, ValidatedSwap } from "../../shared/utils/proteinSwap.types";
+import type {
+  ProteinSwapView,
+  SwapLocale,
+  SwapRecipe,
+  SwapTranslationSource,
+  ValidatedSwap,
+} from "../../shared/utils/proteinSwap.types";
 import type { AiClient } from "./ai/gemini.types";
-import { generateSwap } from "./proteinSwapGenerator";
-import type { GenerateSwapResult } from "./proteinSwapGenerator.types";
-import type { GetSwapOptions, GetSwapResult, ProteinSwapServiceDeps } from "./proteinSwapService.types";
-import type { StoredSwap, SwapKey } from "./proteinSwapStore.types";
+import { generateSwap, generateSwapTranslation } from "./proteinSwapGenerator";
+import type { GenerateSwapResult, GenerateSwapTranslationResult } from "./proteinSwapGenerator.types";
+import type {
+  GetSwapResult,
+  ProteinSwapServiceDeps,
+  ReadSwapResult,
+  TranslateSwapResult,
+} from "./proteinSwapService.types";
+import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore.types";
 
 // Changes when the recipe's ingredients or main proteins change, which makes a stored swap stale.
 export function recipeSourceHash(recipe: SwapRecipe): string {
@@ -41,6 +58,7 @@ function viewFromStored(recipe: SwapRecipe, key: SwapKey, stored: StoredSwap): P
     diet: key.diet,
     locale: key.locale,
     note: stored.note,
+    notes: stored.translations,
     nutrition:
       stored.caloriesKcal === null
         ? null
@@ -61,6 +79,7 @@ function viewFromStored(recipe: SwapRecipe, key: SwapKey, stored: StoredSwap): P
             position: original.position,
             original: { item: original.item, amount: original.amount, unit: original.unit },
             item: item.item,
+            texts: item.texts,
             amount: item.amount,
             unit: item.unit,
             replacementProtein: item.replacementProtein,
@@ -71,7 +90,8 @@ function viewFromStored(recipe: SwapRecipe, key: SwapKey, stored: StoredSwap): P
   };
 }
 
-function storedFromGenerated(swap: ValidatedSwap, generatedAt: Date): StoredSwap {
+// A swap just generated has its Lithuanian rows only (the database's mirror writes them as it is saved).
+function storedFromGenerated(swap: ValidatedSwap, locale: SwapLocale, generatedAt: Date): StoredSwap {
   return {
     status: "ready",
     claimedAt: null,
@@ -85,7 +105,8 @@ function storedFromGenerated(swap: ValidatedSwap, generatedAt: Date): StoredSwap
     protein: swap.nutrition?.protein ?? null,
     fat: swap.nutrition?.fat ?? null,
     generatedAt,
-    items: swap.items,
+    translations: [{ locale, note: swap.note }],
+    items: swap.items.map((item) => ({ ...item, texts: [{ locale, item: item.item }] })),
   };
 }
 
@@ -95,6 +116,24 @@ const isFresh = (stored: StoredSwap | null, sourceHash: string) =>
 const defaultLog = (entry: Record<string, unknown>) => console.info(JSON.stringify(entry));
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const keyFor = (recipeId: string, diet: Diet): SwapKey => ({ recipeId, diet, locale: DEFAULT_SWAP_LOCALE });
+
+// The swap a viewer sees (GET /api/recipes/:id/swaps/:diet). A cache miss is "missing": the script makes it.
+export function createProteinSwapReader({ store }: { store: SwapStore }) {
+  async function readSwap(recipeId: string, diet: Diet): Promise<ReadSwapResult> {
+    const recipe = await store.loadRecipe(recipeId);
+    if (!recipe) return { status: "not-found" };
+    if (isRecipeCompatible(diet, recipe.mainProteins)) return { status: "not-needed" };
+
+    const key = keyFor(recipeId, diet);
+    const stored = await store.loadSwap(key);
+    if (!isFresh(stored, recipeSourceHash(recipe))) return { status: "missing" };
+    return { status: "ready", swap: viewFromStored(recipe, key, stored!) };
+  }
+
+  return { readSwap };
+}
 
 export function createProteinSwapService(deps: ProteinSwapServiceDeps) {
   const now = deps.now ?? (() => new Date());
@@ -108,8 +147,8 @@ export function createProteinSwapService(deps: ProteinSwapServiceDeps) {
     return { status: "unavailable" as const, retryAfter };
   }
 
-  async function getOrCreateSwap(recipeId: string, diet: Diet, options: GetSwapOptions = {}): Promise<GetSwapResult> {
-    const key: SwapKey = { recipeId, diet, locale: options.locale ?? DEFAULT_SWAP_LOCALE };
+  async function getOrCreateSwap(recipeId: string, diet: Diet): Promise<GetSwapResult> {
+    const key = keyFor(recipeId, diet);
     const recipe = await store.loadRecipe(recipeId);
     if (!recipe) return { status: "not-found" };
     if (isRecipeCompatible(diet, recipe.mainProteins)) return { status: "not-needed" };
@@ -123,10 +162,9 @@ export function createProteinSwapService(deps: ProteinSwapServiceDeps) {
     }
     if (decision.action === "wait") return { status: "pending" };
     if (decision.action === "unavailable") return { status: "unavailable", retryAfter: decision.retryAfter };
-    if (options.allowGenerate && !options.allowGenerate()) return { status: "limited" };
 
     if (!(await store.claim(key, sourceHash))) {
-      // Lost the race: another request is generating it, or has just finished.
+      // Lost the race: another run is generating it, or has just finished.
       const latest = await store.loadSwap(key);
       if (isFresh(latest, sourceHash)) {
         return { status: "ready", swap: viewFromStored(recipe, key, latest!), generated: false };
@@ -167,9 +205,76 @@ export function createProteinSwapService(deps: ProteinSwapServiceDeps) {
 
     await store.save(key, result.swap, sourceHash, ai.model);
     log({ ...base, outcome: "ready", attempts: result.attempts, items: result.swap.items.length, ms: Date.now() - started });
-    const view = viewFromStored(recipe, key, storedFromGenerated(result.swap, now()));
+    const view = viewFromStored(recipe, key, storedFromGenerated(result.swap, key.locale, now()));
     return { status: "ready", swap: view, generated: true };
   }
 
-  return { getOrCreateSwap };
+  /*
+   * Translates the stored, ready swap of a pair into one language, once: a swap already translated into it is left
+   * alone. A failure is logged and stored nowhere, so the next run tries again (the swap shows in Lithuanian till then).
+   */
+  async function translateSwap(recipeId: string, diet: Diet, locale: SwapLocale): Promise<TranslateSwapResult> {
+    const key = keyFor(recipeId, diet);
+    const recipe = await store.loadRecipe(recipeId);
+    if (!recipe) return { status: "no-swap" };
+    const stored = await store.loadSwap(key);
+    if (!isFresh(stored, recipeSourceHash(recipe))) return { status: "no-swap" };
+    if (stored!.translations.some((translation) => translation.locale === locale)) return { status: "present" };
+
+    const lines = await store.loadRecipeLineTranslations(recipeId, locale);
+    const byId = new Map(recipe.ingredients.map((ingredient) => [ingredient.id, ingredient]));
+    const source: SwapTranslationSource = {
+      recipeName: recipe.name,
+      diet,
+      note: stored!.note,
+      items: stored!.items.flatMap((item) => {
+        const original = byId.get(item.recipeIngredientId);
+        if (!original) return [];
+        return [
+          {
+            recipeIngredientId: item.recipeIngredientId,
+            position: original.position,
+            original: original.item,
+            originalTranslated: lines.get(item.recipeIngredientId) ?? null,
+            item: item.item,
+            replacementProtein: item.replacementProtein,
+          },
+        ];
+      }),
+    };
+
+    let ai: AiClient;
+    try {
+      ai = deps.ai();
+    } catch (error) {
+      log({ event: "protein_swap.translate", ...key, to: locale, outcome: "failed", error: messageOf(error) });
+      return { status: "failed", error: messageOf(error) };
+    }
+
+    const started = Date.now();
+    const base = { event: "protein_swap.translate", ...key, to: locale, model: ai.model };
+    let result: GenerateSwapTranslationResult;
+    try {
+      result = await generateSwapTranslation(ai, source, locale, {
+        ...deps.generateOptions,
+        onAttemptFailed: (attempt, error) => {
+          log({ ...base, outcome: "attempt_failed", attempt, error });
+          deps.generateOptions?.onAttemptFailed?.(attempt, error);
+        },
+      });
+    } catch (error) {
+      result = { ok: false, error: messageOf(error), attempts: 1 };
+    }
+
+    if (!result.ok) {
+      log({ ...base, outcome: "failed", attempts: result.attempts, error: result.error, ms: Date.now() - started });
+      return { status: "failed", error: result.error };
+    }
+
+    await store.saveTranslation(key, result.translation);
+    log({ ...base, outcome: "translated", attempts: result.attempts, ms: Date.now() - started });
+    return { status: "translated" };
+  }
+
+  return { getOrCreateSwap, translateSwap };
 }

@@ -1,22 +1,29 @@
-import type { ProteinSwapView, SwapLocale } from "../../shared/utils/proteinSwap.types";
+import type { ProteinSwapView } from "../../shared/utils/proteinSwap.types";
 import type { AiClient } from "./ai/gemini.types";
 import type { GenerateSwapOptions } from "./proteinSwapGenerator.types";
-import type { createProteinSwapService } from "./proteinSwapService";
+import type { createProteinSwapReader } from "./proteinSwapService";
 import type { SwapStore } from "./proteinSwapStore.types";
 
 export type GetSwapResult =
   | { status: "ready"; swap: ProteinSwapView; generated: boolean }
   | { status: "pending" }
   | { status: "unavailable"; retryAfter: Date }
-  | { status: "limited" }
   | { status: "not-needed" }
   | { status: "not-found" };
 
-export interface GetSwapOptions {
-  locale?: SwapLocale;
-  // Asked just before a cache miss would call the AI; false stops it (the route's per-user limit).
-  allowGenerate?: () => boolean;
-}
+// What a viewer gets (X1c): "missing" is a cache miss, which nothing generates at view time.
+export type ReadSwapResult =
+  | { status: "ready"; swap: ProteinSwapView }
+  | { status: "missing" }
+  | { status: "not-needed" }
+  | { status: "not-found" };
+
+// "no-swap": the pair has no ready swap from the current ingredients to translate (generate it first).
+export type TranslateSwapResult =
+  | { status: "translated" }
+  | { status: "present" }
+  | { status: "no-swap" }
+  | { status: "failed"; error: string };
 
 export interface ProteinSwapServiceDeps {
   store: SwapStore;
@@ -27,4 +34,4 @@ export interface ProteinSwapServiceDeps {
   generateOptions?: GenerateSwapOptions;
 }
 
-export type ProteinSwapService = ReturnType<typeof createProteinSwapService>;
+export type ProteinSwapReader = ReturnType<typeof createProteinSwapReader>;

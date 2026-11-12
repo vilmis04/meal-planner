@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CLAIM_TTL_MS, PROMPT_VERSION } from "../../shared/utils/proteinSwap";
-import type { SwapRecipe } from "../../shared/utils/proteinSwap.types";
+import type { SwapRecipe, SwapTranslation } from "../../shared/utils/proteinSwap.types";
 import { AiError } from "./ai/gemini";
 import type { AiClient } from "./ai/gemini.types";
-import { createProteinSwapService, recipeSourceHash } from "./proteinSwapService";
+import { createProteinSwapReader, createProteinSwapService, recipeSourceHash } from "./proteinSwapService";
 import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore.types";
 
 /*
@@ -12,10 +12,16 @@ import type { StoredSwap, SwapKey, SwapStore } from "./proteinSwapStore.types";
  */
 function memoryStore(recipes: SwapRecipe[], clock: () => Date) {
   const rows = new Map<string, StoredSwap>();
+  const lineTranslations = new Map<string, string>([["i1", "Lean beef"]]);
   const id = (key: SwapKey) => `${key.recipeId}/${key.diet}/${key.locale}`;
   const store: SwapStore = {
     async loadRecipe(recipeId) {
       return recipes.find((recipe) => recipe.id === recipeId) ?? null;
+    },
+    async loadRecipeLineTranslations(recipeId) {
+      const recipe = recipes.find((candidate) => candidate.id === recipeId);
+      const ids = new Set(recipe?.ingredients.map((ingredient) => ingredient.id));
+      return new Map([...lineTranslations].filter(([id]) => ids.has(id)));
     },
     async loadSwap(key) {
       const row = rows.get(id(key));
@@ -55,15 +61,32 @@ function memoryStore(recipes: SwapRecipe[], clock: () => Date) {
         protein: swap.nutrition?.protein ?? null,
         fat: swap.nutrition?.fat ?? null,
         generatedAt: clock(),
+        // As save_recipe_protein_swap(): other languages go, the Lithuanian rows follow the new text.
+        translations: [{ locale: key.locale, note: swap.note }],
         items: swap.items.map(({ recipeIngredientId, item, amount, unit, replacementProtein }) => ({
           recipeIngredientId,
           item,
+          texts: [{ locale: key.locale, item }],
           amount,
           unit,
           replacementProtein,
         })),
       });
       models.push(model);
+    },
+    async saveTranslation(key, translation) {
+      const row = rows.get(id(key));
+      if (row?.status !== "ready") throw new Error("not_ready");
+      row.translations = [
+        ...row.translations.filter((existing) => existing.locale !== translation.locale),
+        { locale: translation.locale, note: translation.note },
+      ];
+      for (const item of row.items) {
+        const translated = translation.items.find((candidate) => candidate.recipeIngredientId === item.recipeIngredientId);
+        if (translated?.sourceItem !== item.item) throw new Error("swap_changed");
+        item.texts = [...item.texts.filter((text) => text.locale !== translation.locale), { locale: translation.locale, item: translated.item }];
+      }
+      saved.push(structuredClone(translation));
     },
     async markFailed(key, attempts, _error, retryAfter) {
       const row = rows.get(id(key));
@@ -72,7 +95,8 @@ function memoryStore(recipes: SwapRecipe[], clock: () => Date) {
     },
   };
   const models: string[] = [];
-  return { store, rows, models };
+  const saved: SwapTranslation[] = [];
+  return { store, rows, models, saved };
 }
 
 function emptyRow(): StoredSwap {
@@ -89,6 +113,7 @@ function emptyRow(): StoredSwap {
     protein: null,
     fat: null,
     generatedAt: null,
+    translations: [],
     items: [],
   };
 }
@@ -304,19 +329,119 @@ describe("getOrCreateSwap", () => {
     now = new Date(now.getTime() + CLAIM_TTL_MS + 1000);
     expect(await service.getOrCreateSwap("beef-chili", "vegetarian")).toMatchObject({ status: "ready" });
   });
+});
 
-  it("asks before a miss and makes no AI call when refused", async () => {
-    const ai = fakeAi(mince);
-    const { service } = setup(ai);
-    const allowGenerate = vi.fn(() => false);
-    expect(await service.getOrCreateSwap("beef-chili", "vegetarian", { allowGenerate })).toEqual({ status: "limited" });
-    expect(ai.generateJson).not.toHaveBeenCalled();
+const englishMince = { items: [{ position: 1, item: "Plant-based mince" }], note: "Fry for 5 min." };
 
-    // A hit never asks.
+describe("translateSwap", () => {
+  const now = new Date("2026-11-05T10:00:00Z");
+  const log = vi.fn();
+
+  async function setup(...answers: unknown[]) {
+    const memory = memoryStore([chili, porridge], () => now);
+    const ai = fakeAi(mince, ...answers);
+    const service = createProteinSwapService({
+      store: memory.store,
+      ai: () => ai,
+      now: () => now,
+      log,
+      generateOptions: { sleep: async () => {} },
+    });
     await service.getOrCreateSwap("beef-chili", "vegetarian");
-    allowGenerate.mockClear();
-    expect(await service.getOrCreateSwap("beef-chili", "vegetarian", { allowGenerate })).toMatchObject({ status: "ready" });
-    expect(allowGenerate).not.toHaveBeenCalled();
+    return { ...memory, ai, service };
+  }
+
+  it("translates a ready swap once, with the recipe's own translated line as context", async () => {
+    const { service, ai, saved } = await setup(englishMince);
+
+    expect(await service.translateSwap("beef-chili", "vegetarian", "en")).toEqual({ status: "translated" });
+    expect(saved).toEqual([
+      {
+        locale: "en",
+        sourceNote: "Kepti 5 min.",
+        note: "Fry for 5 min.",
+        items: [{ recipeIngredientId: "i1", sourceItem: "Augalinis faršas", item: "Plant-based mince" }],
+      },
+    ]);
+    const prompt = vi.mocked(ai.generateJson).mock.calls[1]![0].prompt;
+    expect(prompt).toContain('"Liesa jautienos mėsa" (British English: "Lean beef") -> "Augalinis faršas"');
+
+    expect(await service.translateSwap("beef-chili", "vegetarian", "en")).toEqual({ status: "present" });
+    expect(ai.generateJson).toHaveBeenCalledTimes(2);
+  });
+
+  it("serves the translation with the swap, without any AI", async () => {
+    const { service, store } = await setup(englishMince);
+    await service.translateSwap("beef-chili", "vegetarian", "en");
+
+    const read = await createProteinSwapReader({ store }).readSwap("beef-chili", "vegetarian");
+    expect(read).toMatchObject({
+      status: "ready",
+      swap: {
+        note: "Kepti 5 min.",
+        notes: [
+          { locale: "lt", note: "Kepti 5 min." },
+          { locale: "en", note: "Fry for 5 min." },
+        ],
+        items: [
+          {
+            item: "Augalinis faršas",
+            texts: [
+              { locale: "lt", item: "Augalinis faršas" },
+              { locale: "en", item: "Plant-based mince" },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("asks again with the errors of an invalid answer, and logs a failure without storing anything", async () => {
+    const wrong = { items: [{ position: 1, item: "Beef mince" }], note: "Fry." };
+    const { service, saved, ai } = await setup(wrong, englishMince);
+    expect(await service.translateSwap("beef-chili", "vegetarian", "en")).toEqual({ status: "translated" });
+    expect(vi.mocked(ai.generateJson).mock.calls[2]![0].prompt).toContain("reads as beef");
+    expect(saved).toHaveLength(1);
+
+    const failing = await setup(new AiError("HTTP 400", false));
+    expect(await failing.service.translateSwap("beef-chili", "vegetarian", "en")).toEqual({ status: "failed", error: "HTTP 400" });
+    expect(failing.saved).toEqual([]);
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({ event: "protein_swap.translate", outcome: "failed", to: "en" }));
+  });
+
+  it("has nothing to translate without a ready swap from the current ingredients", async () => {
+    const { service } = await setup(englishMince);
+    expect(await service.translateSwap("beef-chili", "fish", "en")).toEqual({ status: "no-swap" });
+    expect(await service.translateSwap("missing", "fish", "en")).toEqual({ status: "no-swap" });
+  });
+
+  it("translates again after the swap is regenerated", async () => {
+    const { service, rows } = await setup(englishMince, mince, englishMince);
+    await service.translateSwap("beef-chili", "vegetarian", "en");
+    rows.get("beef-chili/vegetarian/lt")!.status = "rejected";
+    await service.getOrCreateSwap("beef-chili", "vegetarian");
+    expect(await service.translateSwap("beef-chili", "vegetarian", "en")).toEqual({ status: "translated" });
+  });
+});
+
+describe("readSwap", () => {
+  it("reads stored swaps only: a miss or a stale swap is missing, and no AI client exists", async () => {
+    const now = new Date("2026-11-05T10:00:00Z");
+    const recipes = [structuredClone(chili), porridge];
+    const memory = memoryStore(recipes, () => now);
+    const reader = createProteinSwapReader({ store: memory.store });
+
+    expect(await reader.readSwap("beef-chili", "vegetarian")).toEqual({ status: "missing" });
+    expect(memory.rows.size).toBe(0);
+    expect(await reader.readSwap("porridge", "vegetarian")).toEqual({ status: "not-needed" });
+    expect(await reader.readSwap("missing", "vegetarian")).toEqual({ status: "not-found" });
+
+    const service = createProteinSwapService({ store: memory.store, ai: () => fakeAi(mince), now: () => now, log: () => {} });
+    await service.getOrCreateSwap("beef-chili", "vegetarian");
+    expect(await reader.readSwap("beef-chili", "vegetarian")).toMatchObject({ status: "ready" });
+
+    recipes[0]!.ingredients[1]!.amount = 100;
+    expect(await reader.readSwap("beef-chili", "vegetarian")).toEqual({ status: "missing" });
   });
 });
 

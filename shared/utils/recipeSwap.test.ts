@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applySwap, keepsAmount, retryDelayMs, swapNeeded } from "./recipeSwap";
+import type { ProteinSwapView } from "./proteinSwap.types";
+import { applySwap, keepsAmount, localizeSwap, swapNeeded } from "./recipeSwap";
 import type { IngredientLine, SwapReplacement } from "./recipeSwap.types";
 
 const ingredients: IngredientLine[] = [
@@ -87,18 +88,60 @@ describe("keepsAmount", () => {
   });
 });
 
-describe("retryDelayMs", () => {
-  it("reads Retry-After seconds", () => {
-    expect(retryDelayMs("3")).toBe(3000);
+describe("localizeSwap", () => {
+  const swap: ProteinSwapView = {
+    recipeId: "r1",
+    diet: "fish",
+    locale: "lt",
+    note: "Kepti 5 min.",
+    notes: [
+      { locale: "lt", note: "Kepti 5 min." },
+      { locale: "en", note: "Fry for 5 min." },
+    ],
+    nutrition: null,
+    nutritionApproximate: true,
+    generatedAt: "2026-11-05T10:00:00Z",
+    items: [
+      {
+        ...cod,
+        texts: [
+          { locale: "lt", item: "Menkės filė" },
+          { locale: "en", item: "Cod fillet" },
+        ],
+        replacementProtein: "fish",
+      },
+    ],
+  };
+  const english: IngredientLine[] = [{ position: 2, item: "Chicken thighs", amount: 150, unit: "g" }];
+
+  it("picks the viewer's language and names the original as the recipe does", () => {
+    const localized = localizeSwap(swap, english, "en");
+    expect(localized.note).toBe("Fry for 5 min.");
+    expect(localized.items[0]).toMatchObject({
+      item: "Cod fillet",
+      original: { item: "Chicken thighs", amount: 150, unit: "g" },
+      amount: 150,
+      unit: "g",
+    });
   });
 
-  it("falls back to 3 s when the header is missing or not a number", () => {
-    expect(retryDelayMs(null)).toBe(3000);
-    expect(retryDelayMs("soon")).toBe(3000);
+  it("falls back to Lithuanian when the swap is not translated yet", () => {
+    const untranslated = {
+      ...swap,
+      notes: [swap.notes[0]!],
+      items: [{ ...swap.items[0]!, texts: [swap.items[0]!.texts[0]!] }],
+    };
+    const localized = localizeSwap(untranslated, english, "en");
+    expect(localized.note).toBe("Kepti 5 min.");
+    expect(localized.items[0]!.item).toBe("Menkės filė");
   });
 
-  it("stays between 1 and 10 seconds", () => {
-    expect(retryDelayMs("0")).toBe(1000);
-    expect(retryDelayMs("120")).toBe(10_000);
+  it("keeps a translated note that is empty, and the stored text when nothing matches", () => {
+    expect(localizeSwap({ ...swap, notes: [{ locale: "en", note: null }] }, [], "en").note).toBeNull();
+    const bare = { ...swap, notes: [], items: [{ ...swap.items[0]!, texts: [] }] };
+    expect(localizeSwap(bare, [], "en")).toMatchObject({
+      note: "Kepti 5 min.",
+      items: [{ item: "Menkės filė", original: { item: "Vištienos šlaunelės" } }],
+    });
   });
 });
