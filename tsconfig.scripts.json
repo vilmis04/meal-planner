@@ -1,0 +1,9 @@
+{
+  // The Node scripts (scripts/) and the Vitest config, which none of Nuxt's generated projects include, so
+  // `npm run typecheck` checks them too (X2).
+  "extends": "./.nuxt/tsconfig.node.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["./scripts/**/*.ts", "./vitest.config.ts"]
+}

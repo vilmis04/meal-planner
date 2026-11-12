@@ -9,6 +9,9 @@ dist
 # Node dependencies
 node_modules
 
+# Unit test coverage report (npm run test:coverage)
+coverage
+
 # Logs
 logs
 *.log

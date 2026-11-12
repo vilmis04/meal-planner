@@ -364,6 +364,143 @@ describe("buildShoppingList", () => {
 
     expect(amountsByKey(input)[`ingredient:${EGGS.id}|vnt.`]).toBe(0.3);
   });
+
+  describe("edge cases (X2)", () => {
+    const recipeOf = (id: string, portionDays: number, ingredients: ShoppingListRecipe["ingredients"]) => ({
+      id,
+      portionDays,
+      mainProteins: ["egg_dairy"] as const,
+      ingredients,
+    });
+
+    it("skips a slot whose recipe is no longer in the library", () => {
+      const input = buildInput({
+        slots: [
+          { mealType: "breakfast", recipeId: "recipe-deleted" },
+          { mealType: "lunch", recipeId: PORRIDGE.id },
+        ],
+      });
+
+      expect(amountsByKey(input)).toEqual({
+        [`ingredient:${OATS.id}|g`]: 50,
+        [`ingredient:${SALT.id}|`]: null,
+      });
+    });
+
+    it("merges an item without an alias across kg and g and unit spellings, but not across spellings of the item", () => {
+      const butter = recipeOf("recipe-butter", 1, [
+        { id: "butter-1", item: "Sviestas", amount: 0.1, unit: "kg" },
+        { id: "butter-2", item: "Sviestas", amount: 50, unit: " G " },
+        { id: "butter-3", item: "Sviestas", amount: 1, unit: "VNT" },
+        { id: "butter-4", item: "Sviestas", amount: 2, unit: "vnt." },
+        { id: "butter-5", item: "sviestas", amount: 10, unit: "g" },
+      ]);
+      const input = buildInput({ recipes: new Map([[butter.id, butter]]), slots: [{ mealType: "breakfast", recipeId: butter.id }] });
+
+      expect(amountsByKey(input)).toEqual({
+        "item:Sviestas|g": 150,
+        "item:Sviestas|vnt.": 3,
+        "item:sviestas|g": 10,
+      });
+    });
+
+    it("takes 1 / portion days of a longer batch per planned day", () => {
+      const soup = recipeOf("recipe-soup", 3, [{ id: "soup-1", item: "Avižiniai dribsniai", amount: 300, unit: "g" }]);
+      const recipes = new Map([[soup.id, soup]]);
+      const slot = { mealType: "lunch" as const, recipeId: soup.id };
+
+      expect(amountsByKey(buildInput({ recipes, slots: [slot, slot] }))[`ingredient:${OATS.id}|g`]).toBe(200);
+      expect(amountsByKey(buildInput({ recipes, slots: [slot, slot, slot] }))[`ingredient:${OATS.id}|g`]).toBe(300);
+    });
+
+    it("never stores an amount that rounds to zero: it keeps the smallest one, 0.01", () => {
+      const pinch = recipeOf("recipe-pinch", 3, [{ id: "pinch-1", item: "Kiaušiniai", amount: 0.01, unit: "vnt." }]);
+      const input = buildInput({ recipes: new Map([[pinch.id, pinch]]), slots: [{ mealType: "breakfast", recipeId: pinch.id }] });
+
+      expect(amountsByKey(input)[`ingredient:${EGGS.id}|vnt.`]).toBe(0.01);
+    });
+
+    it("merges a swap's replacement into the line of the same ingredient, naming everyone it was swapped for", () => {
+      const codDinner: ShoppingListRecipe = {
+        id: "recipe-cod",
+        portionDays: 1,
+        mainProteins: ["fish"],
+        ingredients: [{ id: "cod-1", item: "Menkė", amount: 200, unit: "g" }],
+      };
+      const build = buildShoppingList(
+        buildInput({
+          recipes: new Map([
+            [codDinner.id, codDinner],
+            [CHILLI.id, CHILLI],
+          ]),
+          slots: [
+            { mealType: "lunch", recipeId: codDinner.id },
+            { mealType: "dinner", recipeId: CHILLI.id },
+          ],
+          participants: [
+            { userId: MONIKA, diet: "fish" },
+            { userId: ANA, diet: "fish" },
+            { userId: "user-jonas", diet: "full" },
+          ],
+          swaps: swapsFor(CHILLI.id, "fish", { "chilli-1": { item: "Menkė", amount: 0.15, unit: "kg" } }),
+        }),
+      );
+
+      expect(build.items.filter((item) => item.category === "meat_and_fish")).toEqual([
+        expect.objectContaining({ name: "Liesa jautienos malta mėsa", amount: 150, swappedFor: [] }),
+        // 3 × 200 g of the cod dinner, and 2 × 150 g swapped in for the chilli.
+        expect.objectContaining({ name: "Menkė", amount: 900, unit: "g", swappedFor: [ANA, MONIKA] }),
+      ]);
+    });
+
+    it("lists a to-taste replacement among the extras, for the participant it was swapped for", () => {
+      const build = buildShoppingList(
+        buildInput({
+          slots: [{ mealType: "dinner", recipeId: CHILLI.id }],
+          participants: [{ userId: MONIKA, diet: "vegetarian" }],
+          swaps: swapsFor(CHILLI.id, "vegetarian", { "chilli-1": { item: "Lęšiai", amount: null, unit: null } }),
+        }),
+      );
+
+      expect(build.missingSwapCount).toBe(0);
+      expect(build.items.filter((item) => item.isExtra)).toEqual([
+        expect.objectContaining({ key: "item:Lęšiai|", amount: null, unit: null, swappedFor: [MONIKA] }),
+      ]);
+      expect(build.items.some((item) => item.ingredientId === MINCE.id)).toBe(false);
+    });
+
+    it("counts a missing swap once per recipe and diet, however many days or people need it", () => {
+      const build = buildShoppingList(
+        buildInput({
+          slots: [
+            { mealType: "lunch", recipeId: CHILLI.id },
+            { mealType: "dinner", recipeId: CHILLI.id },
+            { mealType: "dinner", recipeId: CHICKEN_BATCH.id },
+          ],
+          participants: [
+            { userId: ANA, diet: "vegetarian" },
+            { userId: MONIKA, diet: "vegetarian" },
+            { userId: "user-jonas", diet: "fish" },
+          ],
+        }),
+      );
+
+      // Chilli for vegetarian and for fish, chicken for vegetarian and for fish.
+      expect(build.missingSwapCount).toBe(4);
+    });
+
+    it("leaves an ingredient that is never bought out even when a swap brings it in", () => {
+      const build = buildShoppingList(
+        buildInput({
+          slots: [{ mealType: "dinner", recipeId: CHILLI.id }],
+          participants: [{ userId: MONIKA, diet: "vegetarian" }],
+          swaps: swapsFor(CHILLI.id, "vegetarian", { "chilli-1": { item: "Vanduo", amount: 100, unit: "ml" } }),
+        }),
+      );
+
+      expect(build.items.map((item) => item.name)).toEqual(["Graikiškas jogurtas"]);
+    });
+  });
 });
 
 describe("getShoppingListView", () => {

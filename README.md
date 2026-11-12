@@ -317,21 +317,47 @@ Recipes (name, instructions), their ingredient lines, canonical ingredients and 
 - Missing translations: `public.missing_content_translations` lists every recipe, line, ingredient and tip without a row in a language, and recipes whose row lacks the instructions the source has (service role and SQL editor only). The report is [docs/missing-translations-report.md](docs/missing-translations-report.md); regenerate it with `DATABASE_URL=<connection string> npm run translations:report` (needs `psql`). It currently lists none, and `supabase/tests/content_translations.test.sql` fails while a seed has no English row, so a seed migration that adds content must add its English rows.
 - AI protein swaps are stored in both languages since X1c (see "Protein swaps"). The AI prompts of swaps and plan adjustments still use the Lithuanian names, the source language.
 
-## Unit tests
+## Testing and CI
 
-Pure modules in `shared/` (such as the diet ladder and the plan generator) and the server's swap and plan generation services have Vitest tests next to them:
+Node 22 (`.node-version`, `engines` in `package.json`, the `Dockerfile`), as Nuxt 4 and Vitest 5 require.
 
 ```bash
-npm test
+npm run lint           # ESLint, then the translation and theme color checks (see Linting)
+npm run typecheck      # nuxi typecheck (vue-tsc) over the app, server, shared code and tests
+npm test               # Vitest unit tests
+npm run test:coverage  # the same, with a coverage report in coverage/ (open coverage/index.html)
+npm run test:db        # pgTAP database tests on a plain PostgreSQL 16 server (see below)
+npm run build
 ```
 
-## Database tests
+### Unit tests
+
+Pure modules in `shared/` (the plan generator and its seeded random choice, shopping list scaling and merging, units, diets, nutrition and the rest), the server's services and the pure helpers in `app/utils/` and `scripts/` have Vitest tests next to them (`*.test.ts`). The generator is tested with fixed seeds, so a plan is the same on every run.
+
+Coverage (`@vitest/coverage-v8`) covers `shared/`, `server/`, `app/utils/`, `scripts/` and `i18n/`. `shared/` has a floor (95 % of statements, functions and lines, 90 % of branches, in `vitest.config.ts`) and `npm run test:coverage` fails below it: these are the rules plans and lists are made by, so new logic there comes with tests. The server's stores and API handlers only call Supabase and are covered by the database tests instead, so the rest has no floor. Vue components and pages are checked in the browser (Playwright, by hand for now).
+
+### Database tests
 
 pgTAP tests live in `supabase/tests/`. With the Supabase CLI and a local stack (`supabase start`), run:
 
 ```bash
 supabase test db
 ```
+
+Without the CLI, `npm run test:db` (`scripts/test-db.sh`) runs them on any PostgreSQL 16 server with pgTAP and `pg_prove` (Debian and Ubuntu: `postgresql-16-pgtap` and `libtap-parser-sourcehandler-pgtap-perl`). It drops and creates the database `TEST_DATABASE` (default `meal_planner_test`), adds the Supabase parts the migrations rely on (`supabase/ci/supabase-stub.sql`: the `anon`, `authenticated` and `service_role` roles, `auth.users`, `auth.uid()`, `auth.role()`, the `extensions` schema and the `supabase_realtime` publication), applies every migration in order and runs every test. The server comes from the usual `PGHOST`, `PGPORT`, `PGUSER` and `PGPASSWORD`, as a superuser:
+
+```bash
+PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres npm run test:db
+```
+
+### CI
+
+`.github/workflows/ci.yml` (GitHub Actions) runs on every pull request, whatever its base branch (stories are stacked), and on pushes to `main`. A new push cancels the run still going for the same pull request or branch. Two jobs run side by side:
+
+- **Lint, type check, unit tests and build:** Node from `.node-version` with the npm cache, `npm ci`, `npm run lint` (ESLint, `i18n:check`, `theme:check`), `npm run typecheck`, `npm run test:coverage` (the coverage report is kept as the run's `coverage` artifact for 7 days) and `npm run build`.
+- **Database tests (pgTAP):** PostgreSQL 16 with pgTAP from Ubuntu's packages, then `scripts/test-db.sh`, so every migration is also applied to a fresh database on every pull request.
+
+No secrets are needed: the build and the tests use no Supabase or Gemini keys. To require the checks before merging, add both jobs as required status checks in the branch protection of `main`.
 
 ## Translations
 

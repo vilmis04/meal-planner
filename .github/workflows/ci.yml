@@ -1,0 +1,78 @@
+# Lint, type check, unit tests, build and the database tests (X2). See README, "Testing and CI".
+name: CI
+
+on:
+  # Every pull request, whatever its base: stories are stacked on each other's branches.
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the run still going for the one before.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Lint, type check, unit tests and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      # Also runs `nuxt prepare` (postinstall), which ESLint's config and the type check read from .nuxt.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint, translation check, theme color check)
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Build
+        run: npm run build
+
+  database:
+    name: Database tests (pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v5
+
+      # PostgreSQL 16 with pgTAP and pg_prove from Ubuntu's packages, the version Supabase runs. The Supabase parts the
+      # migrations need come from supabase/ci/supabase-stub.sql.
+      - name: Start PostgreSQL 16 with pgTAP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-16 postgresql-16-pgtap libtap-parser-sourcehandler-pgtap-perl
+          sudo pg_ctlcluster 16 main start
+          echo "PGPORT=$(pg_lsclusters --no-header | awk '$1 == "16" && $2 == "main" { print $3 }')" >> "$GITHUB_ENV"
+          sudo -u postgres psql -X -q -c "alter user postgres password 'postgres'"
+
+      - name: Apply the migrations and run the pgTAP tests
+        run: bash scripts/test-db.sh
