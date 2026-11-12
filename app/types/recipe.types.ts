@@ -27,6 +27,8 @@ export interface RecipeIngredient {
 export interface Recipe extends RecipeSummary {
   instructions: string;
   ingredients: RecipeIngredient[];
+  // The lines' items as stored (Lithuanian), which ingredient aliases match: tips are found through them (X3).
+  sourceItems: string[];
 }
 
 // Kept apart so the page can tell "no such recipe" from "could not ask".

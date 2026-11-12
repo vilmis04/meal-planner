@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ShoppingItem } from "#shared/utils/shoppingList.types";
 import type { ShoppingItemShopHint } from "~/types/shoppingList.types";
+import type { ShownTip } from "~/types/tip.types";
 
 const props = defineProps<{
   items: readonly ShoppingItem[];
@@ -11,6 +12,8 @@ const props = defineProps<{
   shopNames: ReadonlyMap<string, string>;
   // Line id → where its item is usually or was last bought (I1a); empty while the viewer hides the hints.
   shopHints: ReadonlyMap<string, ShoppingItemShopHint>;
+  // Line id → the tips about its ingredient (X3), such as how to store it; lines without tips are left out.
+  tips: ReadonlyMap<string, readonly ShownTip[]>;
 }>();
 
 // Tapping a line ticks it bought or back (G5); the rest are in the line's actions menu (G4). Lines at home are not
@@ -25,6 +28,20 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { formatQuantity } = useAmountFormat();
+
+// A line with tips has a lightbulb button that opens them under the line (X3); they stay closed until asked for, so
+// the list stays a list. Which lines are open lasts while the list is on screen.
+const openTipItemIds = ref<ReadonlySet<string>>(new Set());
+const getItemTips = (item: ShoppingItem): readonly ShownTip[] => props.tips.get(item.id) ?? [];
+const isTipOpen = (item: ShoppingItem): boolean => openTipItemIds.value.has(item.id);
+const toggleTip = (item: ShoppingItem): void => {
+  const next = new Set(openTipItemIds.value);
+  if (!next.delete(item.id)) {
+    next.add(item.id);
+  }
+  openTipItemIds.value = next;
+};
+const tipsId = (item: ShoppingItem): string => `shopping-item-tips-${item.id}`;
 
 // Extras have no amount; a changed amount reads instead of the plan's.
 const amountLabel = (item: ShoppingItem): string | null => {
@@ -148,6 +165,19 @@ const addedByLabel = (item: ShoppingItem): string | null => {
           {{ amountLabel(item) }}
         </span>
       </component>
+      <v-btn
+        v-if="getItemTips(item).length > 0"
+        :icon="isTipOpen(item) ? 'mdi-lightbulb-on' : 'mdi-lightbulb-outline'"
+        variant="text"
+        :color="isTipOpen(item) ? 'secondary' : 'muted'"
+        size="small"
+        :class="$style.trigger"
+        :aria-label="t('tips.itemToggle', { name: item.name })"
+        :aria-expanded="isTipOpen(item)"
+        :aria-controls="isTipOpen(item) ? tipsId(item) : undefined"
+        data-testid="shopping-item-tip-toggle"
+        @click="toggleTip(item)"
+      />
       <v-menu location="bottom end">
         <template #activator="{ props: activatorProps }">
           <v-btn
@@ -199,6 +229,14 @@ const addedByLabel = (item: ShoppingItem): string | null => {
           />
         </v-list>
       </v-menu>
+      <div
+        v-if="getItemTips(item).length > 0 && isTipOpen(item)"
+        :id="tipsId(item)"
+        :class="$style.tips"
+        data-testid="shopping-item-tips"
+      >
+        <TipNote v-for="tip in getItemTips(item)" :key="tip.id" :tip="tip" />
+      </div>
     </li>
   </ul>
 </template>
@@ -212,6 +250,7 @@ const addedByLabel = (item: ShoppingItem): string | null => {
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
   min-height: 48px;
@@ -310,6 +349,15 @@ button.line:focus-visible {
   flex: 0 0 auto;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* A line's tips, opened below it across the whole row. */
+.tips {
+  display: flex;
+  flex: 1 0 100%;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) var(--space-2) 14px;
 }
 
 /* A touch target of at least 44 px. */

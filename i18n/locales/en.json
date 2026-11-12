@@ -966,5 +966,15 @@
       },
       "loadFailed": "Your meal insights could not be loaded. Reload the page to try again."
     }
+  },
+  "tips": {
+    "planTitle": "Tip",
+    "recipeTitle": "Tips ({count})",
+    "about": "About: {names}",
+    "position": "{current} of {total}",
+    "next": "Next tip",
+    "hide": "Hide tips",
+    "show": "Show tips",
+    "itemToggle": "Tips for {name}"
   }
 }
