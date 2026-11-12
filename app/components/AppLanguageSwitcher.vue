@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import type { LocaleCode } from "~/types/profile.types";
 
-// On the auth hero the pill carries the translate icon and a light outline, as in the mock-up.
-const { isOnHero = false } = defineProps<{ isOnHero?: boolean }>();
+// On the auth hero the pill carries the translate icon and a light outline, as in the mock-up. In the desktop rail
+// (X4) the menu opens beside the pill rather than below it.
+const { isOnHero = false, menuLocation = "bottom end" } = defineProps<{
+  isOnHero?: boolean;
+  menuLocation?: "bottom end" | "end bottom";
+}>();
 
 const { t, locale, locales, localeProperties } = useI18n();
 const { changeLanguage } = useProfileSettings();
@@ -26,7 +30,7 @@ async function handleSelect(next: LocaleCode) {
 </script>
 
 <template>
-  <v-menu location="bottom end">
+  <v-menu :location="menuLocation">
     <template #activator="{ props: activatorProps }">
       <v-btn
         v-bind="activatorProps"
@@ -59,9 +63,10 @@ async function handleSelect(next: LocaleCode) {
 </template>
 
 <style module>
+/* As tall as a touch target; the outline sits inside it. */
 .pill {
-  height: 36px;
-  min-width: 0;
+  height: var(--touch-target) !important;
+  min-width: var(--touch-target);
   padding-inline: 10px;
   border-color: var(--color-border);
   font-size: 13px;

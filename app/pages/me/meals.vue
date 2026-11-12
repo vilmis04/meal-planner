@@ -60,7 +60,7 @@ const hiddenLikedCount = computed(() => (insights.value ? insights.value.likedCo
 </script>
 
 <template>
-  <div :class="$style.page">
+  <LayoutPage width="medium" is-compact>
     <header :class="$style.header">
       <h1 :class="$style.title">{{ t("insights.meals.title") }}</h1>
       <p :class="$style.intro">{{ t("insights.meals.intro") }}</p>
@@ -118,18 +118,10 @@ const hiddenLikedCount = computed(() => (insights.value ? insights.value.likedCo
         </template>
       </InsightsMealCard>
     </div>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
 .header {
   display: flex;
   flex-direction: column;
@@ -154,6 +146,15 @@ const hiddenLikedCount = computed(() => (insights.value ? insights.value.likedCo
   transition: opacity 0.2s;
 }
 
+/* Side by side from 960px, where there is room. */
+@media (min-width: 960px) {
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
+  }
+}
+
 /* The previous range stays on screen, dimmed, while the next one loads. */
 .pending {
   opacity: 0.6;
@@ -169,7 +170,7 @@ const hiddenLikedCount = computed(() => (insights.value ? insights.value.likedCo
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  min-height: 44px;
+  min-height: var(--touch-target);
   color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;

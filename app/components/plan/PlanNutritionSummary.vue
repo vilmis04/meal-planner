@@ -131,7 +131,7 @@ async function hide() {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--touch-target);
 }
 
 .participant {
@@ -148,7 +148,7 @@ async function hide() {
 }
 
 .hide {
-  min-height: 44px;
+  min-height: var(--touch-target);
   margin-left: auto;
   text-transform: none;
 }

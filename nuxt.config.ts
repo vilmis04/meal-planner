@@ -1,9 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { DISPLAY_THRESHOLDS } from "./shared/utils/layoutBreakpoints";
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  css: ["~/assets/css/tokens.css", "~/assets/css/theme.css"],
+  css: ["~/assets/css/tokens.css", "~/assets/css/theme.css", "~/assets/css/touch.css"],
 
   runtimeConfig: {
     supabaseServiceRoleKey: "",
@@ -45,6 +47,12 @@ export default defineNuxtConfig({
   vuetify: {
     moduleOptions: {},
     vuetifyOptions: {
+      // The layout breakpoints (X4), so useDisplay() and Vuetify's components change where the CSS does. Below md is
+      // "mobile": the bottom navigation, bottom sheets and one column.
+      display: {
+        mobileBreakpoint: "md",
+        thresholds: DISPLAY_THRESHOLDS,
+      },
       theme: {
         defaultTheme: "light",
         themes: {

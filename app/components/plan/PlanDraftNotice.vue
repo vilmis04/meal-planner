@@ -69,7 +69,7 @@ const notices = computed(() => {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  min-height: 44px;
+  min-height: var(--touch-target);
   color: var(--color-secondary);
   font-size: 14px;
   font-weight: 700;

@@ -126,7 +126,7 @@ async function handleRowChange() {
 
 .tab {
   min-width: 0;
-  height: 44px;
+  height: var(--touch-target);
   padding-inline: var(--space-1);
   font-size: 14px;
   letter-spacing: normal;

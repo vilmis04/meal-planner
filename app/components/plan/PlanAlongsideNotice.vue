@@ -76,7 +76,7 @@ const notice = computed(() => {
 }
 
 .action {
-  min-height: 44px;
+  min-height: var(--touch-target);
   text-transform: none;
 }
 </style>

@@ -37,6 +37,6 @@ const handleUpdate = (picked: unknown): void => {
 <style module>
 /* At least 44px tall to tap. */
 .chip {
-  min-height: 44px;
+  min-height: var(--touch-target);
 }
 </style>

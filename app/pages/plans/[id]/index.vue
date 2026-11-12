@@ -94,6 +94,14 @@ const kindLabel = computed(() => {
 
 const isSaving = ref(false);
 
+// From 1280px the plan's shopping list sits beside it (X4). Each saved change to what the list is made from bumps this,
+// so the list catches up at once.
+const isListBeside = useBreakpointUp("lg");
+const listSourceVersion = ref(0);
+const markListSourceChanged = () => {
+  listSourceVersion.value += 1;
+};
+
 // The switch follows the tap at once; if nothing was saved, the previous options come back.
 async function saveSnacks(change: Partial<SnackSettings>) {
   const current = plan.value;
@@ -110,7 +118,9 @@ async function saveSnacks(change: Partial<SnackSettings>) {
   if (!isSaved) {
     result.value = { status: "found", plan: current };
     show("plan.snacks.saveFailed", "error");
+    return;
   }
+  markListSourceChanged();
 }
 
 const includeSnacks = computed({
@@ -143,6 +153,7 @@ async function saveParticipants(participantIds: string[]) {
     }
     return;
   }
+  markListSourceChanged();
   // The hate warnings and recent recipes follow who eats from the plan.
   recentRecipes.value = null;
   await refreshHated();
@@ -182,6 +193,8 @@ const planDays = computed(() => (plan.value ? getPlanDays(plan.value.startDate, 
 const pickerSlotId = ref<string | null>(null);
 const pickerSlot = computed(() => plan.value?.slots.find((slot) => slot.id === pickerSlotId.value) ?? null);
 const isPickerOpen = ref(false);
+// From 960px the picker shows the selected recipe in full beside its list (X4).
+const isPickerWide = useBreakpointUp("md");
 
 // The picker's filters (E6). "Enjoyed" knows the viewer's own ratings only: everyone else's are private.
 const enjoyedRecipeIds = computed(() =>
@@ -247,6 +260,7 @@ async function saveSlot(recipeId: string | null, fillDays: number) {
     return;
   }
 
+  markListSourceChanged();
   isPickerOpen.value = false;
   show(recipeId === null ? "plan.slot.cleared" : fillDays > 1 ? "plan.slot.savedBatch" : "plan.slot.saved", "success");
 }
@@ -273,6 +287,7 @@ async function swapPickerSlot() {
   isSaving.value = false;
 
   if (swapped.isSwapped) {
+    markListSourceChanged();
     show("plan.swap.done", "success");
   } else {
     show(swapped.errorKey, "error");
@@ -420,6 +435,7 @@ async function applyAdjustment(constraints: PlanConstraints) {
   isSaving.value = false;
 
   if (generated.isGenerated) {
+    markListSourceChanged();
     isAdjustOpen.value = false;
     show(getAdjustmentDoneKey(generated.summary), "success");
   } else {
@@ -442,6 +458,7 @@ async function generatePlan(mode: GenerationMode) {
   isSaving.value = false;
 
   if (generated.isGenerated) {
+    markListSourceChanged();
     show(getGenerationDoneKey(generated.summary, mode), "success");
   } else {
     show(generated.errorKey, "error");
@@ -450,12 +467,11 @@ async function generatePlan(mode: GenerationMode) {
 </script>
 
 <template>
-  <div :class="[$style.page, { [$style.withFab]: canRegenerate }]">
-    <v-btn to="/plans" exact variant="text" prepend-icon="mdi-arrow-left" :class="$style.back" data-testid="plan-back">
-      {{ t("plan.detail.back") }}
-    </v-btn>
+  <LayoutPage width="full" is-compact>
+    <LayoutBackButton to="/plans" :label="t('plan.detail.back')" data-testid="plan-back" />
 
-    <template v-if="plan">
+    <!-- The plan, and from 1280px its shopping list beside it, as in the desktop design. -->
+    <LayoutSplit v-if="plan" from="lg" phone-pane="main" is-aside-sticky :aside-label="t('shoppingList.title')">
       <header :class="$style.header">
         <div :class="$style.heading">
           <span :class="$style.kind" data-testid="plan-kind-label">{{ kindLabel }}</span>
@@ -476,20 +492,21 @@ async function generatePlan(mode: GenerationMode) {
         </div>
         <NutritionToggle is-compact-on-phone />
         <!-- A floating button above the navigation on phones, beside the title from 960px. -->
-        <v-btn
-          v-if="canRegenerate"
-          color="primary"
-          size="large"
-          rounded="pill"
-          prepend-icon="mdi-auto-fix"
-          :loading="generatingMode === 'regenerate_unlocked'"
-          :disabled="isSaving"
-          :class="$style.regenerate"
-          data-testid="plan-regenerate"
-          @click="generatePlan('regenerate_unlocked')"
-        >
-          {{ t("plan.regenerate.action") }}
-        </v-btn>
+        <LayoutActionBar v-if="canRegenerate">
+          <v-btn
+            color="primary"
+            size="large"
+            rounded="pill"
+            prepend-icon="mdi-auto-fix"
+            :loading="generatingMode === 'regenerate_unlocked'"
+            :disabled="isSaving"
+            :class="$style.regenerate"
+            data-testid="plan-regenerate"
+            @click="generatePlan('regenerate_unlocked')"
+          >
+            {{ t("plan.regenerate.action") }}
+          </v-btn>
+        </LayoutActionBar>
       </header>
 
       <v-alert v-if="isReadOnly" type="info" variant="tonal" density="compact" data-testid="plan-past-notice">
@@ -615,6 +632,7 @@ async function generatePlan(mode: GenerationMode) {
           :recent-recipes="recentRecipes"
           :disabled="isSaving"
           :is-swapping="isSwapping"
+          :is-wide="isPickerWide"
           @choose="chooseRecipe"
           @clear="clearSlot"
           @swap="swapPickerSlot"
@@ -622,34 +640,21 @@ async function generatePlan(mode: GenerationMode) {
           @retry="loadRecipes"
         />
       </PlanSlotPicker>
-    </template>
+
+      <template #aside>
+        <ShoppingListPanel v-if="isListBeside" :plan-id="plan.id" :source-version="listSourceVersion" is-pane />
+      </template>
+    </LayoutSplit>
     <v-alert v-else-if="result?.status === 'not-found'" type="warning" variant="tonal" data-testid="plan-not-found">
       {{ t("plan.errors.notFound") }}
     </v-alert>
     <v-alert v-else type="error" variant="tonal" data-testid="plan-load-failed">
       {{ t("plan.errors.loadFailed") }}
     </v-alert>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.back {
-  align-self: flex-start;
-  min-height: 44px;
-  margin-left: calc(-1 * var(--space-2));
-}
-
-.withFab {
-  /* Room below the last day for the floating "Regenerate unlocked" button. */
-  padding-bottom: 72px;
-}
-
 .header {
   display: flex;
   align-items: center;
@@ -666,10 +671,7 @@ async function generatePlan(mode: GenerationMode) {
 }
 
 .regenerate {
-  position: fixed;
-  right: var(--space-3);
-  bottom: calc(var(--nav-height) + var(--space-3) + env(safe-area-inset-bottom, 0px));
-  z-index: 5;
+  flex: 0 0 auto;
   text-transform: none;
 }
 
@@ -706,7 +708,7 @@ async function generatePlan(mode: GenerationMode) {
 
 .listLink {
   align-self: flex-start;
-  min-height: 44px;
+  min-height: var(--touch-target);
   text-transform: none;
 }
 
@@ -727,20 +729,8 @@ async function generatePlan(mode: GenerationMode) {
   display: none;
 }
 
-/* 960px is --breakpoint-md: the week becomes a grid, and the options sit side by side below it. */
+/* From 960px (md) the week becomes a grid, and the options sit side by side below it. */
 @media (min-width: 960px) {
-  .withFab {
-    padding-bottom: 0;
-  }
-
-  /* Relative, as Vuetify's ripple makes a static button relative on press: the phone offsets must not apply. */
-  .regenerate {
-    position: relative;
-    right: auto;
-    bottom: auto;
-    flex: 0 0 auto;
-  }
-
   .settings {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -753,6 +743,13 @@ async function generatePlan(mode: GenerationMode) {
 
   .weekGrid {
     display: flex;
+  }
+}
+
+/* From 1280px (lg) the list is beside the plan, so the link to it goes. */
+@media (min-width: 1280px) {
+  .listLink {
+    display: none;
   }
 }
 </style>

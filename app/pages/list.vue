@@ -23,8 +23,7 @@ if (featuredPlan.value) {
 </script>
 
 <template>
-  <div :class="$style.page">
-    <h1 :class="$style.title">{{ t("shoppingList.title") }}</h1>
+  <LayoutPage width="medium" is-compact :title="t('shoppingList.title')">
     <v-alert v-if="result?.status === 'failed'" type="error" variant="tonal" data-testid="list-load-failed">
       {{ t("shoppingList.loadFailed") }}
     </v-alert>
@@ -33,22 +32,10 @@ if (featuredPlan.value) {
       <span :class="$style.hint">{{ t("shoppingList.pick.hint") }}</span>
       <v-btn to="/plans" color="primary" size="large" :class="$style.action">{{ t("shoppingList.pick.action") }}</v-btn>
     </v-card>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-}
-
 .card {
   display: flex;
   flex-direction: column;

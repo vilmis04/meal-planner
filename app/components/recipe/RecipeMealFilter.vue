@@ -45,7 +45,7 @@ function handleUpdate(next: MealFilter | null) {
 <style module>
 /* Chips are 44px tall so each is a comfortable touch target; they wrap onto a second line when they do not fit. */
 .chip {
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding-inline: var(--space-3);
   font-size: 14px;
 }

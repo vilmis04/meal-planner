@@ -161,7 +161,7 @@ function clear() {
   align-items: center;
   gap: 6px;
   max-width: 100%;
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: 0 14px;
   border: 1px solid color-mix(in srgb, var(--color-muted) 55%, transparent);
   border-radius: 22px;

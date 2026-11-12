@@ -45,7 +45,7 @@ const scrollToDay = (date: string) => {
 .day {
   position: relative;
   display: flex;
-  flex: 1 0 44px;
+  flex: 1 0 var(--touch-target);
   flex-direction: column;
   align-items: center;
   gap: 2px;

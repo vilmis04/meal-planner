@@ -94,7 +94,7 @@ function changeSettings(change: Partial<PlanScheduleSettings>) {
 </script>
 
 <template>
-  <div :class="$style.page">
+  <LayoutPage width="narrow">
     <header :class="$style.header">
       <v-btn
         icon="mdi-arrow-left"
@@ -153,18 +153,10 @@ function changeSettings(change: Partial<PlanScheduleSettings>) {
         @change="changeSettings"
       />
     </template>
-  </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
 .header {
   display: flex;
   align-items: center;

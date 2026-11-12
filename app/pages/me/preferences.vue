@@ -14,8 +14,7 @@ await Promise.all([recipes.value ? undefined : loadList(), isRatingLoaded.value 
 </script>
 
 <template>
-  <div :class="$style.page">
-    <h1 :class="$style.title">{{ t("profile.preferences.title") }}</h1>
+  <LayoutPage width="narrow" :title="t('profile.preferences.title')">
 
     <v-alert v-if="!profile" type="error" variant="tonal">
       {{ t("profile.errors.loadFailed") }}
@@ -24,21 +23,5 @@ await Promise.all([recipes.value ? undefined : loadList(), isRatingLoaded.value 
       <ProfileDietSetting />
       <ProfileMealRatings />
     </template>
-  </div>
+  </LayoutPage>
 </template>
-
-<style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
-.title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-}
-</style>

@@ -58,7 +58,7 @@ async function handleTap(tapped: RecipeRating) {
 .option {
   flex: 1 1 auto;
   min-width: 0;
-  height: 44px !important;
+  height: var(--touch-target) !important;
   padding-inline: var(--space-1) !important;
   font-size: 14px;
   letter-spacing: normal;

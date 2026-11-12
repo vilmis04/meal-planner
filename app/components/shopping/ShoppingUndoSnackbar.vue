@@ -27,7 +27,7 @@ function undo() {
 
 <style module>
 .action {
-  min-height: 44px;
+  min-height: var(--touch-target);
   font-weight: 700;
 }
 

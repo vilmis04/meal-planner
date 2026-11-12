@@ -154,7 +154,7 @@ async function savePlan(shouldGenerate: boolean) {
         <v-btn
           icon="mdi-minus"
           variant="text"
-          size="small"
+          size="44"
           :disabled="dayCount <= minDays"
           :aria-label="t('plan.new.fewerDays')"
           data-testid="plan-days-decrease"
@@ -164,7 +164,7 @@ async function savePlan(shouldGenerate: boolean) {
         <v-btn
           icon="mdi-plus"
           variant="text"
-          size="small"
+          size="44"
           color="primary"
           :disabled="dayCount >= maxDays"
           :aria-label="t('plan.new.moreDays')"
@@ -184,7 +184,7 @@ async function savePlan(shouldGenerate: boolean) {
 
     <PlanGenerationSettings v-model:workdays="workdays" v-model:cooldown-days="cooldownDays" />
 
-    <div :class="$style.actions">
+    <LayoutActionBar variant="sticky" :class="$style.actions">
       <v-btn
         variant="outlined"
         size="large"
@@ -208,7 +208,7 @@ async function savePlan(shouldGenerate: boolean) {
       >
         {{ t("plan.new.generate") }}
       </v-btn>
-    </div>
+    </LayoutActionBar>
   </v-form>
 </template>
 
@@ -295,8 +295,7 @@ async function savePlan(shouldGenerate: boolean) {
 }
 
 .actions {
-  display: flex;
-  gap: var(--space-2);
+  flex-wrap: nowrap;
 }
 
 .action {

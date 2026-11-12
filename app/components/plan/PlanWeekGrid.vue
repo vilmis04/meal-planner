@@ -182,7 +182,7 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrit
               v-if="cell.slot.recipeId && !isReadOnly"
               :icon="cell.slot.isLocked ? 'mdi-lock' : 'mdi-lock-open-variant-outline'"
               variant="text"
-              size="36"
+              size="44"
               :color="cell.slot.isLocked ? 'primary' : undefined"
               :class="$style.lock"
               :disabled="disabled"
@@ -373,12 +373,12 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrit
 .recipe {
   display: -webkit-box;
   overflow: hidden;
-  /* Clear of the lock button in the corner. */
-  padding-right: 28px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
-  overflow-wrap: anywhere;
+  /* Whole words where they fit; only a word longer than the cell is broken. */
+  overflow-wrap: break-word;
+  hyphens: auto;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
 }
@@ -459,10 +459,15 @@ const getSlotAttributes = (slot: MealPlanSlot, weekday: string, meal: MealNutrit
   color: var(--color-muted);
 }
 
+/* A full touch target in the cell's bottom corner (X4), below the recipe's name, which keeps the cell's width. */
 .lock {
   position: absolute;
-  top: 0;
   right: 0;
+  bottom: 0;
   color: var(--color-muted);
+}
+
+.cellBody:has(+ .lock) {
+  padding-bottom: var(--touch-target);
 }
 </style>

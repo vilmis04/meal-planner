@@ -38,7 +38,7 @@ const { t } = useI18n();
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-1);
-  max-width: var(--auth-max-width);
+  max-width: var(--page-narrow-width);
   margin-inline: auto;
 }
 
@@ -46,7 +46,7 @@ const { t } = useI18n();
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: var(--auth-max-width);
+  max-width: var(--page-narrow-width);
   margin-inline: auto;
   padding: var(--space-4) var(--space-2) 0;
 }
@@ -77,7 +77,7 @@ const { t } = useI18n();
 }
 
 .content {
-  max-width: var(--auth-max-width);
+  max-width: var(--page-narrow-width);
   margin: -40px auto 0;
   padding: 0 var(--space-3) var(--space-5);
 }

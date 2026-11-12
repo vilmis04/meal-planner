@@ -9,28 +9,28 @@ await callOnce("household", load, { mode: "navigation" });
 </script>
 
 <template>
-  <div :class="$style.page">
-    <h1 :class="$style.title">
-      {{ profile ? t("home.greeting", { name: profile.displayName }) : t("home.title") }}
-    </h1>
-    <PlanHomeCard />
-    <PlanDraftNotice />
-    <HouseholdHomeCard />
-  </div>
+  <LayoutPage width="medium" :title="profile ? t('home.greeting', { name: profile.displayName }) : t('home.title')">
+    <!-- One column on phones; from 960px the cards sit side by side. -->
+    <div :class="$style.cards">
+      <PlanHomeCard />
+      <PlanDraftNotice />
+      <HouseholdHomeCard />
+    </div>
+  </LayoutPage>
 </template>
 
 <style module>
-.page {
+.cards {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
 }
 
-.title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
+@media (min-width: 960px) {
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
+  }
 }
 </style>

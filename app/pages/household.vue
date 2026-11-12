@@ -31,29 +31,11 @@ onBeforeUnmount(() => document.removeEventListener("visibilitychange", refreshOn
 </script>
 
 <template>
-  <div :class="$style.page">
-    <h1 :class="$style.title">{{ t("household.title") }}</h1>
-
+  <LayoutPage width="medium" :title="t('household.title')">
     <v-alert v-if="loadFailed" type="error" variant="tonal">
       {{ t("household.errors.loadFailed") }}
     </v-alert>
     <HouseholdOverview v-else-if="household" :household="household" />
     <HouseholdCreateForm v-else />
-  </div>
+  </LayoutPage>
 </template>
-
-<style module>
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  max-width: var(--auth-max-width);
-  margin-inline: auto;
-}
-
-.title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-}
-</style>

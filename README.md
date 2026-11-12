@@ -22,10 +22,11 @@ Runs on `http://localhost:3000`.
 ## Linting
 
 ```bash
-npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs), then the translation and theme color checks
+npm run lint       # ESLint via @nuxt/eslint (config in eslint.config.mjs), then the translation, theme color and layout breakpoint checks
 npm run lint:fix   # apply auto-fixes
 npm run i18n:check # the translation check alone (see Translations)
 npm run theme:check # the theme color check alone (see Styling conventions)
+npm run layout:check # the layout breakpoint check alone (see Responsive layout)
 ```
 
 Vue single-file components put `<script>` first, then `<template>`, then `<style>` (`vue/block-order`). Templates may not hold literal text (`vue/no-bare-strings-in-template`, see Translations).
@@ -60,10 +61,26 @@ Keep every schema change as SQL in `supabase/migrations/` so the database can be
 
 - **Vuetify** components (`v-btn`, `v-card`, form inputs, etc.) own look and feel.
 - **CSS Modules** (`<style module>` in SFCs, or `Component.module.css` files) own page/layout structure — grids, containers, spacing wrappers.
-- Shared design tokens live in `app/assets/css/tokens.css` (spacing, radii, breakpoints) and `app/assets/css/theme.css` (color custom properties). Colors are defined only in the `vuetify.vuetifyOptions.theme` block in `nuxt.config.ts`; Vuetify writes the active theme to `--v-theme-*` variables on `:root`, and `theme.css` aliases them as `--color-*` for CSS-Modules layout code. Add a new color to both themes in `nuxt.config.ts`, then alias it in `theme.css`.
+- Shared design tokens live in `app/assets/css/tokens.css` (spacing, radii, breakpoints, page and pane widths, the 44 px `--touch-target`) and `app/assets/css/theme.css` (color custom properties). Colors are defined only in the `vuetify.vuetifyOptions.theme` block in `nuxt.config.ts`; Vuetify writes the active theme to `--v-theme-*` variables on `:root`, and `theme.css` aliases them as `--color-*` for CSS-Modules layout code. Add a new color to both themes in `nuxt.config.ts`, then alias it in `theme.css`.
 - **Only theme colors (X1d).** Every color comes from the theme, so it works in both: `var(--color-*)` or `rgb(var(--v-theme-*))` (with an alpha: `rgba(var(--v-theme-on-hero), 0.14)`) in CSS, theme names (`primary`, `muted`, `error`) in Vuetify `color` props. `npm run theme:check` (also run by `npm run lint`; `scripts/check-theme-colors.ts`, logic and tests in `scripts/themeColorCheck.ts`) refuses hex colors, `rgb()`/`hsl()` without a theme variable, named CSS colors in color properties and Vuetify's material palette names (`red`, `grey-lighten-2`) anywhere in `app/`.
 - **Theme (X1d).** The preference is `light`, `dark` or `system`, and is `system` (follow the OS) until the user picks one. The sun/moon toggle (`AppThemeToggle.vue`) is in the app bar of both layouts and on the error page (`app/error.vue`, which uses the auth layout), so it is on every page; it switches between light and dark, and Me also offers System. Both go through `useProfileSettings().changeTheme()`: applied at once, kept in the `theme` cookie (one year), and saved to the profile when signed in. Which value wins at sign-in follows the language's rule (see Translations, "Which language wins"): a theme picked while signed out is marked with the session cookie `theme-unsaved` and saved to the profile at the next sign-in; otherwise the profile's theme wins over the cookie.
 - **No flash of the wrong theme.** `app/plugins/theme.ts` applies the cookie during the server render, so Vuetify's `:root` variables and classes are right in the HTML, and `<html>` carries `data-theme`, `data-theme-preference` and its `color-scheme`. For `system` the server needs the OS setting: it asks for the `Sec-CH-Prefers-Color-Scheme` client hint (`Accept-CH`, with `Critical-CH` so Chromium retries a first visit with it) and otherwise uses the theme the browser last reported (`theme-system` cookie). Browsers without the hint (Firefox, Safari) run a small inline `<head>` script (`SYSTEM_THEME_SCRIPT`, `app/utils/systemTheme.ts`) before the body is parsed: when the rendered theme is not the OS theme (first visit, or the OS setting changed since) it saves the OS theme in the cookie and reloads once with the page hidden, so the wrong theme never paints. After hydration Vuetify follows OS changes live.
+
+## Responsive layout
+
+Every screen is laid out for a phone first and uses the room on larger screens (X4).
+
+- **Breakpoints.** Vuetify's own display thresholds, defined once in `shared/utils/layoutBreakpoints.ts` and given to Vuetify (`vuetifyOptions.display` in `nuxt.config.ts`, with `md` as the mobile breakpoint): xs below 600 px (phones), sm 600 px (large phones, small tablets), md 960 px (tablets in landscape, small laptops), lg 1280 px (desktops), xl 1920 px. Media queries cannot read custom properties, so styles write the number: `@media (min-width: 960px)` from a breakpoint up and `@media (max-width: 959.98px)` below it. `npm run layout:check` (also run by `npm run lint`; `scripts/check-layout-breakpoints.ts`, logic and tests in `scripts/layoutBreakpointCheck.ts`) refuses any other media query width and keeps the `--breakpoint-*` tokens equal to the module. Container queries (a component sized by its own box, such as the recipe's ingredient columns) are not breakpoints and are not checked.
+- **Shell.** Below 960 px: a top bar with the app's name, language, theme and profile, and the navigation as a bar along the bottom (primary actions sit above it, in reach of the thumb). From 960 px the top bar goes and the navigation is a rail down the left edge with the app's mark on top and the language, theme and profile at its foot, as in the desktop design (`AppNavigation.vue`, `app/layouts/default.vue`).
+- **Shared layout components** (`app/components/layout/`), used by every page of the default layout:
+  - `LayoutPage`: the page container, one column, centred at a width for the page: `narrow` (440 px: forms and settings), `medium` (720 px: lists to read), `wide` (1120 px: two panes) or `full` (1680 px: the plan's week). It takes an optional title and back link.
+  - `LayoutBackButton`: "← Plans", a full touch target aligned with the page's text.
+  - `LayoutSplit`: two panes, one column on phones (showing the main pane, the side pane or both) and side by side from `md` or `lg`; the side pane has a fixed width (`--pane-list-width`, `--pane-picker-width`) and can stay in place and scroll on its own.
+  - `LayoutActionBar`: primary actions within reach. `float` puts its buttons above the bottom navigation on phones (the page keeps room for them) and leaves them in place from 960 px; `sticky` is a bar at the end of a form that sticks to the bottom of the window.
+  - `useBreakpointUp(breakpoint)`: whether the window is at least that wide, false on the server and until mounted, so the server's HTML and the first render agree. Layout itself is CSS; this only decides what is worth mounting, such as a pane that loads its own data.
+- **Wider screens use the room.** The plan page shows the day list on phones and the week grid from 960 px, full width; from 1280 px the plan's shopping list sits beside it (`ShoppingListPanel` as a pane, which also makes the list page) and catches up after each change saved on the plan. The slot picker is a bottom sheet on phones and from 960 px a wide dialog with the recipe list beside the selected recipe in full (`PlanSlotRecipePreview`): a tap selects, "Use for Wed" (or "Only Tue" / "Use for Tue + Wed" for a batch) chooses. "Add item" on the shopping list is a dialog on phones and a form in place from 960 px. Recipes show the list beside the open recipe from 960 px; Home, shop insights and liked and skipped meals put their cards side by side.
+- **Touch targets.** Every control is at least 44 px (`--touch-target`) in both directions, on every screen size.
+- **Checking a screen.** Each new or changed screen is accepted only once it is checked at phone and desktop widths (see the definition of done in `docs/architecture.md`, section 8): at 320, 390, 768, 1024 and 1280 px, in both themes and both languages, there is no sideways scrolling and no control under 44 px.
 
 ## Profile
 
@@ -322,7 +339,7 @@ Recipes (name, instructions), their ingredient lines, canonical ingredients and 
 Node 22 (`.node-version`, `engines` in `package.json`, the `Dockerfile`), as Nuxt 4 and Vitest 5 require.
 
 ```bash
-npm run lint           # ESLint, then the translation and theme color checks (see Linting)
+npm run lint           # ESLint, then the translation, theme color and layout breakpoint checks (see Linting)
 npm run typecheck      # nuxi typecheck (vue-tsc) over the app, server, shared code and tests
 npm test               # Vitest unit tests
 npm run test:coverage  # the same, with a coverage report in coverage/ (open coverage/index.html)
@@ -354,7 +371,7 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres npm run test:db
 
 `.github/workflows/ci.yml` (GitHub Actions) runs on every pull request, whatever its base branch (stories are stacked), and on pushes to `main`. A new push cancels the run still going for the same pull request or branch. Two jobs run side by side:
 
-- **Lint, type check, unit tests and build:** Node from `.node-version` with the npm cache, `npm ci`, `npm run lint` (ESLint, `i18n:check`, `theme:check`), `npm run typecheck`, `npm run test:coverage` (the coverage report is kept as the run's `coverage` artifact for 7 days) and `npm run build`.
+- **Lint, type check, unit tests and build:** Node from `.node-version` with the npm cache, `npm ci`, `npm run lint` (ESLint, `i18n:check`, `theme:check`, `layout:check`), `npm run typecheck`, `npm run test:coverage` (the coverage report is kept as the run's `coverage` artifact for 7 days) and `npm run build`.
 - **Database tests (pgTAP):** PostgreSQL 16 with pgTAP from Ubuntu's packages, then `scripts/test-db.sh`, so every migration is also applied to a fresh database on every pull request.
 
 No secrets are needed: the build and the tests use no Supabase or Gemini keys. To require the checks before merging, add both jobs as required status checks in the branch protection of `main`.
