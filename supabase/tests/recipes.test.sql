@@ -101,7 +101,7 @@ select lives_ok(
 -- D1: the seeded recipes, as tagged by the reviewed migration
 select is(
   (select count(*)::int from public.recipes where name not like 'C2 test%' and name not like 'D1 test%'),
-  123, 'all 123 seeded recipes are present');
+  164, 'all 164 seeded recipes are present');
 select is_empty(
   $$ select name from public.recipes where cardinality(main_proteins) = 0 $$,
   'no seeded recipe is left untagged');
@@ -131,8 +131,8 @@ select results_eq(
   $$ select array_to_string(main_proteins, ','), count(*)::int from public.recipes
      where name not like 'C2 test%' and name not like 'D1 test%'
      group by 1 order by 1 $$,
-  $$ values ('beef'::text, 5), ('egg_dairy', 59), ('fish', 24), ('plant', 12), ('pork', 6),
-            ('pork,poultry', 1), ('poultry', 16) $$,
+  $$ values ('beef'::text, 6), ('egg_dairy', 78), ('fish', 32), ('plant', 15), ('pork', 4),
+            ('pork,poultry', 1), ('poultry', 28) $$,
   'the seeded recipes split into the reviewed groups');
 
 select * from finish();
