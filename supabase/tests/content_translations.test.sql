@@ -48,11 +48,11 @@ select is_empty(
 select is_empty(
   $$ select kind, source_text, locale from public.missing_content_translations $$,
   'the report lists no missing translation for the seeds');
-select is((select count(*)::int from public.recipe_translations where locale = 'en'), 123, 'the 123 recipes are in English');
-select is((select count(*)::int from public.recipe_ingredient_translations where locale = 'en'), 829,
-  'the 829 recipe lines are in English');
-select is((select count(*)::int from public.ingredient_translations where locale = 'en'), 155,
-  'the 155 ingredients are in English');
+select is((select count(*)::int from public.recipe_translations where locale = 'en'), 164, 'the 164 recipes are in English');
+select is((select count(*)::int from public.recipe_ingredient_translations where locale = 'en'), 1176,
+  'the 1176 recipe lines are in English');
+select is((select count(*)::int from public.ingredient_translations where locale = 'en'), 169,
+  'the 169 ingredients are in English');
 select is((select count(*)::int from public.tip_translations where locale = 'en'), 15, 'the 15 tips are in English');
 select is_empty(
   $$ select recipe.name from public.recipes recipe

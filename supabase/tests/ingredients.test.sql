@@ -26,10 +26,10 @@ select is_empty(
   'the report lists no unmapped item for the seeded recipes');
 select is(
   (select count(distinct item)::int from public.recipe_ingredients),
-  240, 'the 240 distinct seeded items were reviewed');
+  290, 'the 290 distinct seeded items were reviewed');
 select is(
   (select count(*)::int from public.ingredients),
-  155, 'they map to 155 canonical ingredients');
+  169, 'they map to 169 canonical ingredients');
 select is_empty(
   $$ select name from public.ingredients ingredient
      where not exists (select 1 from public.ingredient_aliases alias
@@ -129,7 +129,7 @@ set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000a", 
 
 select is(
   (select count(*)::int from public.ingredients),
-  155, 'a signed-in user reads the ingredients');
+  169, 'a signed-in user reads the ingredients');
 select ok(
   (select count(*)::int from public.ingredient_aliases) > 240, 'a signed-in user reads the aliases');
 select results_eq(

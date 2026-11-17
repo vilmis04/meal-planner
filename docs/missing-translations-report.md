@@ -8,10 +8,10 @@ Translated of all, per language. Lithuanian rows mirror the source text.
 
 | Content | Lithuanian | English |
 |---|---|---|
-| Recipes | 123 of 123 | 123 of 123 |
-| Recipe instructions | 122 of 122 | 122 of 122 |
-| Recipe lines | 829 of 829 | 829 of 829 |
-| Ingredients | 155 of 155 | 155 of 155 |
+| Recipes | 164 of 164 | 164 of 164 |
+| Recipe instructions | 164 of 164 | 164 of 164 |
+| Recipe lines | 1176 of 1176 | 1176 of 1176 |
+| Ingredients | 169 of 169 | 169 of 169 |
 | Tips | 15 of 15 | 15 of 15 |
 
 ## Missing
